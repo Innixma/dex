@@ -214,9 +214,9 @@ for j in range(num_tries):
     key_moves = np.zeros(memory_size, dtype=np.uint8)
     process_move.reset_globs()
     
-    time.sleep(.2)
-    press('enter')
     time.sleep(.1)
+    press('enter')
+    time.sleep(.01)
     release('enter')
     
     start_time = time.time()
@@ -236,7 +236,6 @@ for j in range(num_tries):
             release(prevKey)
         elif key == 'esc':
             defeat = time.time()
-            print('Run ' + str(j) + ' survived ' + str("%.2f" % (defeat - start_time)) + 's')
             break
         else:
             release(prevKey)
@@ -244,12 +243,13 @@ for j in range(num_tries):
             prevKey = key
     end_time = time.time()
     release(prevKey)
-    press('esc')
-    time.sleep(.01)
-    release('esc')
-    time.sleep(.1)
-    print("--- %s fps ---" % ((i+1)/(end_time - start_time))) 
-
+    
+    print('Run ' + str(j) + ' survived ' + str("%.2f" % (end_time - start_time)) + 's')
+    print("--- %s fps ---" % ((i+1)/(end_time - start_time)))
+    
+press('esc')
+time.sleep(.01)
+release('esc')
 # Free Resources
 dcObj.DeleteDC()
 cDC.DeleteDC()
