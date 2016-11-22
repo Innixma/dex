@@ -214,8 +214,9 @@ for j in range(num_tries):
     key_moves = np.zeros(memory_size, dtype=np.uint8)
     process_move.reset_globs()
     
+    time.sleep(.2)
     press('enter')
-    time.sleep(.01)
+    time.sleep(.1)
     release('enter')
     
     start_time = time.time()
@@ -241,11 +242,13 @@ for j in range(num_tries):
             release(prevKey)
             press(key)
             prevKey = key
-    
+    end_time = time.time()
+    release(prevKey)
     press('esc')
     time.sleep(.01)
     release('esc')
-    print("--- %s fps ---" % ((i+1)/(time.time() - start_time))) 
+    time.sleep(.1)
+    print("--- %s fps ---" % ((i+1)/(end_time - start_time))) 
 
 # Free Resources
 dcObj.DeleteDC()
