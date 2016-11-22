@@ -42,6 +42,8 @@ class SuperHexagonEnvironment(Env):
     action_space = None
     observation_space = None
     _action_set = None
+    
+    prevAct = 'none'
 
     def __init__(self, window_length, *args, **kwargs):
         self.window_length = window_length
@@ -85,7 +87,7 @@ class SuperHexagonEnvironment(Env):
     def done(self):
         raise NotImplementedError()
     
-    def act(self, action):
+    def act(self, *args):
         """Run one timestep of the environment's dynamics. When end of
         episode is reached, you are responsible for calling `reset()`
         to reset this environment's state.
@@ -95,7 +97,14 @@ class SuperHexagonEnvironment(Env):
         Returns:
             reward: time
         """
-        raise NotImplementedError()
+        for i in args:
+            if i != 'none':
+                win32api.keybd_event(VK_CODE[i], 0, 0, 0)
+            
+    def unact(self, *args):
+        for i in args:
+            if i != 'none':
+                win32api.keybd_event(VK_CODE[i], 0, win32con.KEYEVENTF_KEYUP, 0)
 
     def reset(self):
         """
