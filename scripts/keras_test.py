@@ -18,14 +18,14 @@ from keras import backend as K
 
 import main
 
-batch_size = 128
-nb_classes = 5
+batch_size = 10
+nb_classes = 3
 nb_epoch = 12
 
-# input image dimensions
-img_rows, img_cols = 200, 200
+
+
 # number of convolutional filters to use
-nb_filters = 32
+nb_filters = 16
 # size of pooling area for max pooling
 pool_size = (2, 2)
 # convolution kernel size
@@ -36,8 +36,12 @@ kernel_size = (3, 3)
 
 X_train = main.imageData_grey
 X_test = main.imageData_grey
-y_train = main.key_moves
-y_test = main.key_moves
+y_train = main.key_moves_final
+y_test = main.key_moves_final
+
+# input image dimensions
+img_rows = X_train.shape[1]
+img_cols = X_train.shape[2]
 
 if K.image_dim_ordering() == 'th':
     X_train = X_train.reshape(X_train.shape[0], 1, img_rows, img_cols)

@@ -182,7 +182,7 @@ hwnd = win32gui.FindWindow(None, 'Open Hexagon 1.92 - by vittorio romeo')
 shell = win32com.client.Dispatch("WScript.Shell")
 shell.SendKeys('%')
 win32gui.SetForegroundWindow(hwnd)
-win32gui.MoveWindow(hwnd, 0, 0, 200, 200, True)
+win32gui.MoveWindow(hwnd, 0, 0, 500, 500, True)
 
 if hwnd == 0:
     print('ERROR: Can\'t find window')
@@ -204,7 +204,7 @@ cDC.SelectObject(dataBitMap)
 
 num_iters = 10000
 num_tries = 1
-num_classes = 5
+num_classes = 3
 memory_size = 100 # Number of frames to keep in memory for backpropagation
 
 keys = np.array(['none', 'left_arrow', 'right_arrow', 'enter', 'esc'])
@@ -212,7 +212,7 @@ keys = np.array(['none', 'left_arrow', 'right_arrow', 'enter', 'esc'])
 # Run a number of tries
 for j in range(num_tries):
     imageData = np.zeros((memory_size,h,w,3), dtype=np.uint8)
-    key_moves = np.zeros((memory_size,num_classes), dtype=np.uint8)
+    key_moves = np.zeros((memory_size), dtype=np.uint8)
     process_move.reset_globs()
     
     time.sleep(.1)
@@ -232,7 +232,7 @@ for j in range(num_tries):
         key = process_move.get_move(imageData[i % memory_size], keys)
         
         # Memory of moves
-        key_moves[i % memory_size][np.where(keys==key)[0]] = 1
+        key_moves[i % memory_size] = np.where(keys==key)[0]
         if key == None:
             release(prevKey)
         elif key == 'esc':
@@ -247,10 +247,26 @@ for j in range(num_tries):
     print('Run ' + str(j) + ' survived ' + str("%.2f" % (end_time - start_time)) + 's')
     print("--- %s fps ---" % ((i+1)/(end_time - start_time)))
     
+    
     imageData_grey = rgb2gray(imageData)
     imageData_grey = imageData_grey.astype('float32')
+    rollCount = memory_size - (i % memory_size) - 1
+    imageData_grey = np.roll(imageData_grey, rollCount, axis=0)
+    key_moves = np.roll(key_moves, rollCount, axis=0)
     
-    
+    key_moves_final = np.zeros((memory_size, num_classes), dtype=np.uint8)
+    for k in range(memory_size):
+        if k+30 < memory_size:
+            key_moves_final[k][key_moves[k]] = 1
+        else:
+            if key_moves[k] == 0:    
+                key_moves_final[k][1] = 1
+            elif key_moves[k] == 1:
+                key_moves_final[k][2] = 1
+            elif key_moves[k] == 2:
+                key_moves_final[k][1] = 1
+            else:
+                key_moves_final[k][0] = 0
 press('esc')
 time.sleep(.01)
 release('esc')
