@@ -8,8 +8,9 @@ keys = np.array(['none', 'left_arrow', 'right_arrow', 'enter', 'esc'])
 x_offset = 0
 y_offset = 0 
 
-x_size = 500
-y_size = 500
+x_size = 140
+y_size = 140
+
 num_iters = 10000
 num_tries = 1
 num_classes = 3
