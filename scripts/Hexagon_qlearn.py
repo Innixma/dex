@@ -21,7 +21,15 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.optimizers import SGD , Adam
+#%%
+import importlib
+import OpenHexagonEmulator
+importlib.reload(OpenHexagonEmulator)
+from OpenHexagonEmulator import gameState
+keys = np.array(['none', 'left_arrow', 'right_arrow', 'enter', 'esc'])
 
+
+#%%
 GAME = 'bird' # the name of the game being played for log files
 CONFIG = 'nothreshold'
 ACTIONS = 2 # number of valid actions
@@ -37,6 +45,9 @@ FRAME_PER_ACTION = 1
 img_rows , img_cols = 80, 80
 #Convert image into Black and white
 img_channels = 4 #We stack 4 frames
+
+
+
 
 #==============================================================================
 # CNN model structure (Unmodified)
@@ -67,7 +78,8 @@ def buildmodel():
 #==============================================================================
 def trainNetwork(model,args):
     # open up a game state to communicate with emulator
-    game_state = game.GameState()
+    #game_state = game.GameState()
+    
 
     # store the previous observations in replay memory
     D = deque()
@@ -75,7 +87,7 @@ def trainNetwork(model,args):
     # get the first state by doing nothing and preprocess the image to 80x80x4
     do_nothing = np.zeros(ACTIONS)
     do_nothing[0] = 1
-    x_t, r_0, terminal = game_state.frame_step(do_nothing)
+    x_t, r_0, terminal = gameState('enter')#game_state.frame_step(do_nothing)
 
     x_t = skimage.color.rgb2gray(x_t)
     x_t = skimage.transform.resize(x_t,(80,80))
@@ -105,24 +117,27 @@ def trainNetwork(model,args):
         action_index = 0
         r_t = 0
         a_t = np.zeros([ACTIONS])
+        newAction = 0
         #choose an action epsilon greedy
         if t % FRAME_PER_ACTION == 0:
             if random.random() <= epsilon:
                 print("----------Random Action----------")
                 action_index = random.randrange(ACTIONS)
                 a_t[action_index] = 1
+                newAction = random.randrange(ACTIONS)
             else:
                 q = model.predict(s_t)       #input a stack of 4 images, get the prediction
                 max_Q = np.argmax(q)
                 action_index = max_Q
                 a_t[max_Q] = 1
+                newAction = max_Q
 
         #We reduced the epsilon gradually
         if epsilon > FINAL_EPSILON and t > OBSERVE:
             epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 
-        #run the selected action and observed next state and reward
-        x_t1_colored, r_t, terminal = game_state.frame_step(a_t)
+        #run the selected action and observed next state and reward        
+        x_t1_colored, r_t, terminal = gameState(keys[newAction+1])#game_state.frame_step(a_t)
 
         x_t1 = skimage.color.rgb2gray(x_t1_colored)
         x_t1 = skimage.transform.resize(x_t1,(80,80))
