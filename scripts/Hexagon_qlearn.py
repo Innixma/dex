@@ -42,7 +42,7 @@ EXPLORE = 3000000. # frames over which to anneal epsilon
 FINAL_EPSILON = 0.0001 # final value of epsilon
 INITIAL_EPSILON = 0.1 # starting value of epsilon
 REPLAY_MEMORY = 50000 # number of previous transitions to remember
-BATCH = 32 # size of minibatch
+BATCH = 640 #32 # size of minibatch
 FRAME_PER_ACTION = 1
 
 img_rows , img_cols = G.x_size, G.y_size
@@ -115,14 +115,18 @@ def trainNetwork(model,args):
 
     t = 0
     run_count = -1
+    saveIterator = 0
+    saveThreshold = 10000
+    framerate = 60 # Temp
     while (True):
         run_count += 1
         run_start_t = t
         alive = True
-        press('enter')
+        OpenHexagonEmulator.press('enter')
         time.sleep(0.01)
-        release('enter')
+        OpenHexagonEmulator.release('enter')
         start_time = time.time()
+        current_run_frames = 0
         while alive == True:
             #print(s_t.shape)
             loss = 0
@@ -160,49 +164,21 @@ def trainNetwork(model,args):
             s_t1 = np.append(x_t1, s_t[:, :img_channels-1, :, :], axis=1)
     
             # store the transition in D
-            D.append((s_t, action_index, r_t, s_t1, terminal))
-            if len(D) > REPLAY_MEMORY:
-                D.popleft()
+            if current_run_frames > framerate*4: # Don't store early useless frames
+                D.append((s_t, action_index, r_t, s_t1, terminal))
+                if len(D) > REPLAY_MEMORY:
+                    D.popleft()
+            #elif current_run_frames > framerate*4 - 1:
+                #print('hi')
     
-            #only train if done observing
-            if t > OBSERVE:
-                #sample a minibatch to train on
-                minibatch = random.sample(D, BATCH)
-    
-                inputs = np.zeros((BATCH, s_t.shape[1], s_t.shape[2], s_t.shape[3]))   #32, 80, 80, 4
-                targets = np.zeros((inputs.shape[0], ACTIONS))                         #32, 2
-    
-                #Now we do the experience replay
-                for i in range(0, len(minibatch)):
-                    state_t = minibatch[i][0]
-                    action_t = minibatch[i][1]   #This is action index
-                    reward_t = minibatch[i][2]
-                    state_t1 = minibatch[i][3]
-                    terminal = minibatch[i][4]
-                    # if terminated, only equals reward
-    
-                    inputs[i:i + 1] = state_t    #I saved down s_t
-    
-                    targets[i] = model.predict(state_t)  # Hitting each buttom probability
-                    Q_sa = model.predict(state_t1)
-    
-                    if terminal:
-                        targets[i, action_t] = reward_t
-                    else:
-                        targets[i, action_t] = reward_t + GAMMA * np.max(Q_sa)
-    
-                # targets2 = normalize(targets)
-                loss += model.train_on_batch(inputs, targets)
+            
     
             s_t = s_t1
             t = t + 1
+            current_run_frames += 1
+            saveIterator += 1
     
-            # save progress every 10000 iterations
-            if t % 1000 == 0:
-                print("Now we save model")
-                model.save_weights("model.h5", overwrite=True)
-                with open("model.json", "w") as outfile:
-                    json.dump(model.to_json(), outfile)
+            
     
             # print info
             state = ""
@@ -212,7 +188,7 @@ def trainNetwork(model,args):
                 state = "explore"
             else:
                 state = "train"
-            if t % 100 == 0:
+            if t % 1000 == 0:
                 print("TIMESTEP", t, "/ STATE", state, \
                     "/ EPSILON", epsilon, "/ ACTION", action_index, "/ REWARD", r_t, \
                     "/ Q_MAX " , np.max(Q_sa), "/ Loss ", loss)
@@ -223,12 +199,60 @@ def trainNetwork(model,args):
                 alive = 0
                 
                 
-        OpenHexagonEmulator.release(G.curKey)    
+        OpenHexagonEmulator.release(G.curKey)
         end_time = time.time()
+        time.sleep(0.01)
+        OpenHexagonEmulator.press('esc')
+        time.sleep(0.05)
+        OpenHexagonEmulator.release('esc')
+        terminal_detection.reset_globs()
         
         print('Run ' + str(run_count) + ' survived ' + str("%.2f" % (end_time - start_time)) + 's')
-        print("--- %s fps ---" % ((t - run_start_t)/(end_time - start_time)))
+        framerate = (t - run_start_t)/(end_time - start_time)
+        print("--- %.2f fps ---" % framerate)
         
+        # Now Train!
+        #only train if done observing
+        if t > OBSERVE:
+            #sample a minibatch to train on
+            minibatch = random.sample(D, BATCH)
+
+            inputs = np.zeros((BATCH, s_t.shape[1], s_t.shape[2], s_t.shape[3]))   #32, 80, 80, 4
+            targets = np.zeros((inputs.shape[0], ACTIONS))                         #32, 2
+
+            #Now we do the experience replay
+            for i in range(0, len(minibatch)):
+                state_t = minibatch[i][0]
+                action_t = minibatch[i][1]   #This is action index
+                reward_t = minibatch[i][2]
+                state_t1 = minibatch[i][3]
+                terminal = minibatch[i][4]
+                # if terminated, only equals reward
+
+                inputs[i:i + 1] = state_t    #I saved down s_t
+
+                targets[i] = model.predict(state_t)  # Hitting each buttom probability
+                Q_sa = model.predict(state_t1)
+
+                if terminal:
+                    targets[i, action_t] = reward_t
+                else:
+                    targets[i, action_t] = reward_t + GAMMA * np.max(Q_sa)
+
+            # targets2 = normalize(targets)
+            loss += model.train_on_batch(inputs, targets)        
+        
+            if saveIterator >= saveThreshold:
+                saveIterator = 0
+                # save progress every 10000 iterations
+                print("Saving Model...")
+                model.save_weights("model.h5", overwrite=True)
+                with open("model.json", "w") as outfile:
+                    json.dump(model.to_json(), outfile)
+        
+        # Prep for next round
+        time.sleep(0.25)
+            
     print("Episode finished!")
     print("************************")
 #==============================================================================

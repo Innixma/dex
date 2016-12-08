@@ -134,10 +134,6 @@ def gameState(inKey):
     optimal_move = terminal_detection.get_move(state, G.keys)
     if optimal_move == 'esc':
         release(inKey)
-        press('enter')
-        time.sleep(0.01)
-        release('enter')
-        terminal_detection.reset_globs()
         terminal = 1
     else:
         terminal = 0
