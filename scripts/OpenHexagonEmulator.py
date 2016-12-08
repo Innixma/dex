@@ -38,6 +38,24 @@ def release(*args):
             win32api.keybd_event(G.VK_CODE[i], 0, win32con.KEYEVENTF_KEYUP, 0)
 #==============================================================================
 
+def configure():
+    #time.sleep(0.5)
+    #win32gui.SetForegroundWindow(hwnd)
+    time.sleep(0.5)
+    #img = captureIm()
+    #img = img[31:G.y_size-10,10:G.x_size-10,:]
+    #print(img.shape)
+    #for pixel in img[0]:
+    #    print(pixel)
+    #img = smp.toimage(img)
+    #img.show()
+
+    G.x_offset = 10
+    G.y_offset = 31
+    
+    G.x_size = G.x_size - G.x_offset - 10
+    G.y_size = G.y_size - G.y_offset - 10
+
 #==============================================================================
 # 
 #==============================================================================
@@ -57,13 +75,21 @@ coords = win32gui.GetWindowRect(hwnd)
 w = coords[2] - coords[0]
 h = coords[3] - coords[1]
 
+configure()
+
+#rect = (0, 0, G.x_size, G.y_size)
+#frame = win32ui.CreateFrame()
+#frame.CreateWindow(None, "New Window", 0, rect)
+        
+#time.sleep(1)
+#hwnd = frame.GetSafeHwnd()
 hwnd = win32gui.GetDesktopWindow()
 
 wDC = win32gui.GetWindowDC(hwnd)
 dcObj = win32ui.CreateDCFromHandle(wDC)
 cDC = dcObj.CreateCompatibleDC()
 dataBitMap = win32ui.CreateBitmap()
-dataBitMap.CreateCompatibleBitmap(dcObj, w, h)
+dataBitMap.CreateCompatibleBitmap(dcObj, G.x_size, G.y_size)
 cDC.SelectObject(dataBitMap)
 
 #'memory_size' marked for deletion
@@ -79,13 +105,22 @@ memory_size = 1 # Number of frames to keep in memory for backpropagation
 def captureIm():
   
     
-    G.image = np.zeros((memory_size,h,w,3), dtype=np.uint8)
-    cDC.BitBlt((G.x_offset, G.y_offset), (w, h), dcObj, (G.x_offset, G.y_offset), win32con.SRCCOPY)     
-    G.image = np.frombuffer(dataBitMap.GetBitmapBits(True), dtype=np.uint8).reshape((h, w, 4))[:,:,:-1][:,:,::-1]       
+    #print(G.y_size, G.x_size)
+    #G.image = np.zeros((memory_size,G.y_size,G.x_size,3), dtype=np.uint8)
+    #print(G.image.shape)
+    cDC.BitBlt((0, 0), (G.x_size, G.y_size), dcObj, (G.x_offset, G.y_offset), win32con.SRCCOPY)
+    #print(np.frombuffer(dataBitMap.GetBitmapBits(True), dtype=np.uint8).shape)
+    G.image = np.frombuffer(dataBitMap.GetBitmapBits(True), dtype=np.uint8).reshape((G.y_size, G.x_size, 4))[:,:,:-1][:,:,::-1]       
+
+    
 
     return G.image
 #==============================================================================
 
+
+
+    
+    
 #==============================================================================
 # Free resources
 #==============================================================================
@@ -129,7 +164,8 @@ def gameState(inKey):
     
     #img = smp.toimage(state)
     #img.show()
-    #time.sleep(4)
+    #smp.imsave('outfile.png', img)
+    #exit(1)
     
     optimal_move = terminal_detection.get_move(state, G.keys)
     if optimal_move == 'esc':

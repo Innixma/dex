@@ -27,7 +27,7 @@ from keras.optimizers import SGD , Adam
 import importlib
 import OpenHexagonEmulator
 import terminal_detection
-importlib.reload(OpenHexagonEmulator)
+#importlib.reload(OpenHexagonEmulator)
 from OpenHexagonEmulator import gameState
 keys = np.array(['none', 'left_arrow', 'right_arrow', 'enter', 'esc'])
 
@@ -45,7 +45,11 @@ REPLAY_MEMORY = 50000 # number of previous transitions to remember
 BATCH = 640 #32 # size of minibatch
 FRAME_PER_ACTION = 1
 
+#OpenHexagonEmulator.configure()
+
 img_rows , img_cols = G.x_size, G.y_size
+
+print('Resolution: ', img_rows, img_cols)
 #Convert image into Black and white
 img_channels = 2 #We stack 4 frames
 
@@ -97,10 +101,10 @@ def trainNetwork(model,args):
     x_t = skimage.exposure.rescale_intensity(x_t,out_range=(0,255))
 
     s_t = np.stack((x_t, x_t), axis=0)
-    print(s_t.shape)
+    #print(s_t.shape)
     #In Keras, need to reshape
     s_t = s_t.reshape(1, s_t.shape[0], s_t.shape[1], s_t.shape[2])
-    print(s_t.shape)
+    #print(s_t.shape)
     if args['mode'] == 'Run':
         OBSERVE = 999999999    #We keep observe, never trai
         epsilon = FINAL_EPSILON
@@ -123,7 +127,7 @@ def trainNetwork(model,args):
         run_start_t = t
         alive = True
         OpenHexagonEmulator.press('enter')
-        time.sleep(0.01)
+        time.sleep(0.05)
         OpenHexagonEmulator.release('enter')
         start_time = time.time()
         current_run_frames = 0
@@ -189,9 +193,9 @@ def trainNetwork(model,args):
             else:
                 state = "train"
             if t % 1000 == 0:
-                print("TIMESTEP", t, "/ STATE", state, \
-                    "/ EPSILON", epsilon, "/ ACTION", action_index, "/ REWARD", r_t, \
-                    "/ Q_MAX " , np.max(Q_sa), "/ Loss ", loss)
+                print("TS", t, "/ S", state, \
+                    "/ E", epsilon, "/ A", action_index, "/ R", r_t, \
+                    "/ Q_MAX " , np.max(Q_sa), "/ L ", loss)
             
             
             if terminal == 1:
