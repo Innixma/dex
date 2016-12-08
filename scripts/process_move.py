@@ -44,10 +44,15 @@ def get_move(data, moves, model):
         threshold = (230 - meanLight) / 2
         #print(threshold, diff, maxDiff)
         #print(diff, threshold)
+<<<<<<< HEAD
         if diff > threshold and c > 60:
             print(diff, threshold)
+=======
+        if diff > threshold and c > 20:
+>>>>>>> 5d9e6839bded9089ccc713fd72bf5ca74475cb57
             return 'esc' # Lost!
     prevMean = curMean
+    
     ##############################################################
     
     ##############################################################
