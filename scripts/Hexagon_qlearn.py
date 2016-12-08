@@ -22,9 +22,6 @@ from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.optimizers import SGD , Adam
 
-from HexagonImCapture import captureIm
-
-
 GAME = 'bird' # the name of the game being played for log files
 CONFIG = 'nothreshold'
 ACTIONS = 2 # number of valid actions
@@ -71,7 +68,6 @@ def buildmodel():
 def trainNetwork(model,args):
     # open up a game state to communicate with emulator
     game_state = game.GameState()
-    
 
     # store the previous observations in replay memory
     D = deque()
