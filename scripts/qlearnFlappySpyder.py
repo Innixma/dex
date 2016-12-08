@@ -113,6 +113,7 @@ def trainNetwork(model,args):
         if epsilon > FINAL_EPSILON and t > OBSERVE:
             epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 
+        
         #run the selected action and observed next state and reward
         x_t1_colored, r_t, terminal = game_state.frame_step(a_t)
 

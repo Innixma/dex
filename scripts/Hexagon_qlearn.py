@@ -23,9 +23,9 @@ from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.optimizers import SGD , Adam
 #%%
 import importlib
-import OpenHexagonEmulator
-importlib.reload(OpenHexagonEmulator)
-from OpenHexagonEmulator import gameState
+import OpenHexagonEmulator_new
+importlib.reload(OpenHexagonEmulator_new)
+from OpenHexagonEmulator_new import gameState
 keys = np.array(['none', 'left_arrow', 'right_arrow', 'enter', 'esc'])
 
 
@@ -225,7 +225,7 @@ def main():
     #parser.add_argument('-m','--mode', help='Train / Run', required=True)    
     #args = vars(parser.parse_args())
     
-    args = {'mode' : 'Run'}
+    args = {'mode' : 'Train'}
     playGame(args)    
 #==============================================================================
 

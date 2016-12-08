@@ -39,9 +39,11 @@ def get_move(data, moves):
         #print(meanDiff, diff)
         threshold = (255 - meanLight) / 2
         #print(threshold, diff, maxDiff)
+        #print(diff, threshold)
         if diff > threshold and c > 20:
             return 'esc' # Lost!
     prevMean = curMean
+    
     ##############################################################
     
     ##############################################################
