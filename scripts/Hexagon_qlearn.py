@@ -35,7 +35,7 @@ keys = np.array(['none', 'left_arrow', 'right_arrow'])
 #%%
 GAME = 'bird' # the name of the game being played for log files
 CONFIG = 'nothreshold'
-ACTIONS = 2 # number of valid actions
+ACTIONS = 3 # number of valid actions
 GAMMA = 0.99 # decay rate of past observations
 OBSERVATION = 3200. # timesteps to observe before training
 EXPLORE = 3000000. # frames over which to anneal epsilon
@@ -71,7 +71,7 @@ def buildmodel():
     model.add(Flatten())
     model.add(Dense(512, init=lambda shape, name: normal(shape, scale=0.01, name=name)))
     model.add(Activation('relu'))
-    model.add(Dense(2,init=lambda shape, name: normal(shape, scale=0.01, name=name)))
+    model.add(Dense(ACTIONS,init=lambda shape, name: normal(shape, scale=0.01, name=name)))
    
     adam = Adam(lr=1e-6)
     model.compile(loss='mse',optimizer=adam)
@@ -214,7 +214,7 @@ def trainNetwork(model,args):
         survival_time = end_time - start_time
         framerate = (t - run_start_t)/survival_time
         survival_times.append(survival_time)
-        print('Run ' + str(run_count) + ' survived ' + "%.2f" % survival_time + 's' + ', %.2f fps' % framerate + ', key: [%.2f' % useRate[0] + ', %.2f' % useRate[1] + ']')
+        print('Run ' + str(run_count) + ' survived ' + "%.2f" % survival_time + 's' + ', %.2f fps' % framerate + ', key: ', ['%.2f' % k for k in useRate])
         
         # Now Train!
         #only train if done observing
