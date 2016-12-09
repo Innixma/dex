@@ -20,12 +20,12 @@ def reset_globs():
     maxMean = 0
     prevMean = 0
     c = 0
-    
+
 # Gets the optimal move
 def get_move(data, moves):
     global prevMean, meanDiff, meanLight, c, maxDiff, maxMean
     c += 1
-    
+
     ##############################################################
     # Check if you lost, screen goes white when you lose, so check
     curMean = np.mean(data)
@@ -48,11 +48,15 @@ def get_move(data, moves):
         if diff > threshold:
             return 'esc' # Lost!
     prevMean = curMean
-    
+
     ##############################################################
     # Compute the optimal move
     optimal_move = moves[np.random.randint(0,3)]
     ##############################################################
-    
+
     return optimal_move
-    
+
+def terminal_state(img):
+    if np.sum(np.abs(img[:,:,0]-img[:,:,1]) + np.abs(img[:, :, 0]-img[:,:,2]) + np.abs(img[:, :, 1]-img[:, :, 2])) > 0:
+        return True
+    return False

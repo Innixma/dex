@@ -7,9 +7,9 @@ import numpy as np
 import scipy.misc as smp
 import time
 import terminal_detection
-           
+
 #==============================================================================
-# 
+#
 #==============================================================================
 def press(*args):
     '''
@@ -25,7 +25,7 @@ def press(*args):
 
 
 #==============================================================================
-#             
+#
 #==============================================================================
 def release(*args):
     '''
@@ -52,12 +52,12 @@ def configure():
 
     G.x_offset = 10
     G.y_offset = 31
-    
+
     G.x_size = G.x_size - G.x_offset - 10
     G.y_size = G.y_size - G.y_offset - 10
 
 #==============================================================================
-# 
+#
 #==============================================================================
 
 hwnd = win32gui.FindWindow(None, G.application)
@@ -80,7 +80,7 @@ configure()
 #rect = (0, 0, G.x_size, G.y_size)
 #frame = win32ui.CreateFrame()
 #frame.CreateWindow(None, "New Window", 0, rect)
-        
+
 #time.sleep(1)
 #hwnd = frame.GetSafeHwnd()
 hwnd = win32gui.GetDesktopWindow()
@@ -103,24 +103,24 @@ memory_size = 1 # Number of frames to keep in memory for backpropagation
 # capture 1 screenshot
 #==============================================================================
 def captureIm():
-  
-    
+
+
     #print(G.y_size, G.x_size)
     #G.image = np.zeros((memory_size,G.y_size,G.x_size,3), dtype=np.uint8)
     #print(G.image.shape)
     cDC.BitBlt((0, 0), (G.x_size, G.y_size), dcObj, (G.x_offset, G.y_offset), win32con.SRCCOPY)
     #print(np.frombuffer(dataBitMap.GetBitmapBits(True), dtype=np.uint8).shape)
-    image = np.frombuffer(dataBitMap.GetBitmapBits(True), dtype=np.uint8).reshape((G.y_size, G.x_size, 4))[:,:,:-1][:,:,::-1]       
+    image = np.frombuffer(dataBitMap.GetBitmapBits(True), dtype=np.uint8).reshape((G.y_size, G.x_size, 4))[:,:,:-1][:,:,::-1]
 
-    
+
 
     return image
 #==============================================================================
 
 
 
-    
-    
+
+
 #==============================================================================
 # Free resources
 #==============================================================================
@@ -131,9 +131,9 @@ def freeResources():
     win32gui.ReleaseDC(hwnd, wDC)
     win32gui.DeleteObject(dataBitMap.GetHandle())
     return()
-    
+
 #==============================================================================
-    
+
 
 
 #==============================================================================
@@ -154,31 +154,21 @@ def termination(data):
 # Game state function
 #==============================================================================
 def gameState(inKey):
-    
     G.prevKey = G.curKey
     G.curKey = inKey
     release(G.prevKey)
     press(inKey)
-    
+
     state = captureIm()
-    
-    #img = smp.toimage(state)
-    #img.show()
-    #smp.imsave('outfile.png', img)
-    #exit(1)
-    
-    optimal_move = terminal_detection.get_move(state, G.keys)
-    if optimal_move == 'esc':
+
+    if terminal_detection.terminal_state(state):
         release(inKey)
         terminal = 1
+        reward = -1
     else:
         terminal = 0
-    #terminal = termination(state)
-    if terminal == 0:
-        reward = 0.1
-    else:
-        reward = -100
-    #print(optimal_move)
+        reward = .1
+
     return(state, reward, terminal)
 #==============================================================================
 
@@ -190,20 +180,20 @@ memory_size = 100
 
 
 
-    
+
 #imageData = np.zeros((memory_size,h,w,3), dtype=np.uint8)
 st = time.time()
 for i in range(0,memory_size,1):
-    
+
     #imageData[i] = captureIm()
     print(gameState()[1])
 
 et = time.time()
 print(et-st)
 print('images per second')
-print(100/(et-st))    
-        
-#smp.toimage(imageData[0]) 
+print(100/(et-st))
+
+#smp.toimage(imageData[0])
 
 
 '''
