@@ -41,8 +41,8 @@ ACTIONS = 3 # number of valid actions
 GAMMA = 0.99 # decay rate of past observations
 OBSERVATION = 3200. # timesteps to observe before training
 EXPLORE = 3000000. # frames over which to anneal epsilon
-FINAL_EPSILON = 0.1 # final value of epsilon
-INITIAL_EPSILON = 0.5 # starting value of epsilon
+FINAL_EPSILON = 0.01 # final value of epsilon
+INITIAL_EPSILON = 0.33 # starting value of epsilon
 REPLAY_MEMORY = 50000 # number of previous transitions to remember
 BATCH = 640 #32 # size of minibatch
 FRAME_PER_ACTION = 3
@@ -54,9 +54,6 @@ img_rows , img_cols = G.x_size, G.y_size
 print('Resolution: ', img_rows, img_cols)
 #Convert image into Black and white
 img_channels = 3 #We stack 4 frames
-
-
-
 
 #==============================================================================
 # CNN model structure (Unmodified)
