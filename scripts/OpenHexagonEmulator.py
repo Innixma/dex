@@ -110,11 +110,11 @@ def captureIm():
     #print(G.image.shape)
     cDC.BitBlt((0, 0), (G.x_size, G.y_size), dcObj, (G.x_offset, G.y_offset), win32con.SRCCOPY)
     #print(np.frombuffer(dataBitMap.GetBitmapBits(True), dtype=np.uint8).shape)
-    G.image = np.frombuffer(dataBitMap.GetBitmapBits(True), dtype=np.uint8).reshape((G.y_size, G.x_size, 4))[:,:,:-1][:,:,::-1]       
+    image = np.frombuffer(dataBitMap.GetBitmapBits(True), dtype=np.uint8).reshape((G.y_size, G.x_size, 4))[:,:,:-1][:,:,::-1]       
 
     
 
-    return G.image
+    return image
 #==============================================================================
 
 

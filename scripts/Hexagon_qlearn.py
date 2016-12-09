@@ -29,7 +29,7 @@ import OpenHexagonEmulator
 import terminal_detection
 #importlib.reload(OpenHexagonEmulator)
 from OpenHexagonEmulator import gameState
-keys = np.array(['none', 'left_arrow', 'right_arrow', 'enter', 'esc'])
+keys = np.array(['none', 'left_arrow', 'right_arrow'])
 
 
 #%%
@@ -122,43 +122,39 @@ def trainNetwork(model,args):
     saveIterator = 0
     saveThreshold = 10000
     framerate = 60 # Temp
+    survival_times = []
     while (True):
         run_count += 1
         run_start_t = t
         alive = True
         OpenHexagonEmulator.press('enter')
-        time.sleep(0.05)
+        time.sleep(0.1)
         OpenHexagonEmulator.release('enter')
         start_time = time.time()
         current_run_frames = 0
+        useRate = np.zeros([ACTIONS])
         while alive == True:
             #print(s_t.shape)
-            loss = 0
-            Q_sa = 0
             action_index = 0
             r_t = 0
             a_t = np.zeros([ACTIONS])
-            newAction = 0
             #choose an action epsilon greedy
             if t % FRAME_PER_ACTION == 0:
                 if random.random() <= epsilon:
                     #print("----------Random Action----------")
                     action_index = random.randrange(ACTIONS)
-                    a_t[action_index] = 1
-                    newAction = random.randrange(ACTIONS)
                 else:
                     q = model.predict(s_t)       #input a stack of 4 images, get the prediction
-                    max_Q = np.argmax(q)
-                    action_index = max_Q
-                    a_t[max_Q] = 1
-                    newAction = max_Q
-    
+                    action_index = np.argmax(q)
+                    
+                a_t[action_index] = 1
+                useRate = useRate + a_t
             #We reduced the epsilon gradually
             if epsilon > FINAL_EPSILON and t > OBSERVE:
                 epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
     
             #run the selected action and observed next state and reward        
-            x_t1_colored, r_t, terminal = gameState(keys[newAction+1])#game_state.frame_step(a_t)
+            x_t1_colored, r_t, terminal = gameState(keys[action_index])#game_state.frame_step(a_t)
     
             x_t1 = skimage.color.rgb2gray(x_t1_colored)
             x_t1 = skimage.transform.resize(x_t1,(img_rows , img_cols))
@@ -194,30 +190,37 @@ def trainNetwork(model,args):
                 state = "train"
             if t % 1000 == 0:
                 print("TS", t, "/ S", state, \
-                    "/ E", epsilon, "/ A", action_index, "/ R", r_t, \
-                    "/ Q_MAX " , np.max(Q_sa), "/ L ", loss)
-            
+                    "/ E %.2f" % epsilon + " / A", action_index, "/ R", r_t)
             
             if terminal == 1:
                 # Lost!
                 alive = 0
                 
+            if current_run_frames > 10000:
+                # Likely stuck, just go to new level
+                alive = 0
                 
-        OpenHexagonEmulator.release(G.curKey)
+                
+        
         end_time = time.time()
-        time.sleep(0.01)
+        OpenHexagonEmulator.release(G.curKey)
+        time.sleep(0.1)
         OpenHexagonEmulator.press('esc')
-        time.sleep(0.05)
+        time.sleep(0.1)
         OpenHexagonEmulator.release('esc')
         terminal_detection.reset_globs()
         
-        print('Run ' + str(run_count) + ' survived ' + str("%.2f" % (end_time - start_time)) + 's')
-        framerate = (t - run_start_t)/(end_time - start_time)
-        print("--- %.2f fps ---" % framerate)
+        useRate = useRate/np.sum(useRate)
+        survival_time = end_time - start_time
+        framerate = (t - run_start_t)/survival_time
+        survival_times.append(survival_time)
+        print('Run ' + str(run_count) + ' survived ' + "%.2f" % survival_time + 's' + ', %.2f fps' % framerate + ', key: [%.2f' % useRate[0] + ', %.2f' % useRate[1] + ']')
         
         # Now Train!
         #only train if done observing
         if t > OBSERVE:
+            loss = 0
+            Q_sa = 0
             #sample a minibatch to train on
             minibatch = random.sample(D, BATCH)
 
@@ -254,8 +257,9 @@ def trainNetwork(model,args):
                 with open("model.json", "w") as outfile:
                     json.dump(model.to_json(), outfile)
         
+            print("Q_MAX " , np.max(Q_sa), "/ L ", loss)
         # Prep for next round
-        time.sleep(0.25)
+        time.sleep(0.2)
             
     print("Episode finished!")
     print("************************")
@@ -279,6 +283,7 @@ def main():
     #args = vars(parser.parse_args())
     
     args = {'mode' : 'Train'}
+    #args = {'mode' : 'Run'}
     playGame(args)    
 #==============================================================================
 

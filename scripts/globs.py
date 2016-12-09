@@ -19,7 +19,7 @@ memory_size = 100
 curKey = 'enter'
 prevKey = 'enter'
 
-image = []
+#image = []
 
 #Giant dictonary to hold key name and VK value
 VK_CODE = {'backspace':0x08,
