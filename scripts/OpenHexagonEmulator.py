@@ -6,8 +6,9 @@ import random
 import numpy as np
 import scipy.misc as smp
 import time
-import terminal_detection
-           
+import terminal_detection          
+import convert_to_polar
+ 
 #==============================================================================
 # 
 #==============================================================================
@@ -162,7 +163,10 @@ def gameState(inKey):
     
     state = captureIm()
     
-    #img = smp.toimage(state)
+    #print(state.shape)
+    #img = convert_to_polar.reproject_image_into_polar(state)[0]
+    #print(img.shape)
+    #img = smp.toimage(img)
     #img.show()
     #smp.imsave('outfile.png', img)
     #exit(1)

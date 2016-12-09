@@ -7,6 +7,7 @@ import skimage as skimage
 from skimage import transform, color, exposure
 from skimage.transform import rotate
 from skimage.viewer import ImageViewer
+import scipy.misc as smp
 import sys
 #sys.path.append("game/")
 #import wrapped_flappy_bird as game
@@ -40,7 +41,7 @@ GAMMA = 0.99 # decay rate of past observations
 OBSERVATION = 3200. # timesteps to observe before training
 EXPLORE = 3000000. # frames over which to anneal epsilon
 FINAL_EPSILON = 0.0001 # final value of epsilon
-INITIAL_EPSILON = 0.1 # starting value of epsilon
+INITIAL_EPSILON = 0.3 # starting value of epsilon
 REPLAY_MEMORY = 50000 # number of previous transitions to remember
 BATCH = 640 #32 # size of minibatch
 FRAME_PER_ACTION = 1
@@ -76,9 +77,30 @@ def buildmodel():
     adam = Adam(lr=1e-6)
     model.compile(loss='mse',optimizer=adam)
     print("We finish building the model")
+    
+    #print(model.layers)
     return model
 #==============================================================================
 
+def prepareImage(image):
+    tmpImage = skimage.color.rgb2gray(image)
+    thresh = skimage.filters.threshold_otsu(tmpImage)
+    tmpImage = tmpImage > thresh
+    tmpImage = skimage.transform.resize(tmpImage,(img_rows , img_cols))
+            
+    
+    #tmpImage = skimage.exposure.rescale_intensity(tmpImage, out_range=(0, 255))
+    
+    #print(tmpImage)
+    #img = smp.toimage(binary)
+    #img.show()
+    #smp.imsave('outfile.png', img)
+    #exit(1)
+    #time.sleep(5)
+    #print(tmpImage.shape)
+    tmpImage = tmpImage.reshape(1, 1, tmpImage.shape[0], tmpImage.shape[1])
+    
+    return tmpImage
 
 #==============================================================================
 # CNN model based Q-learning - adapted for openhexagon
@@ -95,15 +117,15 @@ def trainNetwork(model,args):
     do_nothing = np.zeros(ACTIONS)
     do_nothing[0] = 1
     x_t, r_0, terminal = gameState('enter')#game_state.frame_step(do_nothing)
-
-    x_t = skimage.color.rgb2gray(x_t)
-    x_t = skimage.transform.resize(x_t,(img_rows , img_cols))
-    x_t = skimage.exposure.rescale_intensity(x_t,out_range=(0,255))
-
+    #print(x_t.shape)
+    x_t = prepareImage(x_t)
+    #print(x_t.shape)
     s_t = np.stack((x_t, x_t), axis=0)
     #print(s_t.shape)
     #In Keras, need to reshape
-    s_t = s_t.reshape(1, s_t.shape[0], s_t.shape[1], s_t.shape[2])
+    #print(s_t.shape)
+    s_t = s_t.reshape(1, s_t.shape[0], s_t.shape[3], s_t.shape[4])
+    #print(s_t.shape)
     #print(s_t.shape)
     if args['mode'] == 'Run':
         OBSERVE = 999999999    #We keep observe, never trai
@@ -157,19 +179,16 @@ def trainNetwork(model,args):
                     action_index = np.argmax(q)
                     
                 a_t[action_index] = 1
-                useRate = useRate + a_t
+                
             #We reduced the epsilon gradually
             if epsilon > FINAL_EPSILON and t > OBSERVE:
                 epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
     
             #run the selected action and observed next state and reward        
-            x_t1_colored, r_t, terminal = gameState(keys[action_index])#game_state.frame_step(a_t)
-    
-            x_t1 = skimage.color.rgb2gray(x_t1_colored)
-            x_t1 = skimage.transform.resize(x_t1,(img_rows , img_cols))
-            x_t1 = skimage.exposure.rescale_intensity(x_t1, out_range=(0, 255))
-    
-            x_t1 = x_t1.reshape(1, 1, x_t1.shape[0], x_t1.shape[1])
+            x_t1_colored, r_t, terminal = gameState(keys[action_index])
+            
+            x_t1 = prepareImage(x_t1_colored)
+            
             s_t1 = np.append(x_t1, s_t[:, :img_channels-1, :, :], axis=1)
     
             # store the transition in D
@@ -177,6 +196,8 @@ def trainNetwork(model,args):
                 D.append((s_t, action_index, r_t, s_t1, terminal))
                 if len(D) > REPLAY_MEMORY:
                     D.popleft()
+            else:
+                useRate = useRate + a_t
             #elif current_run_frames > framerate*4 - 1:
                 #print('hi')
     
@@ -205,8 +226,9 @@ def trainNetwork(model,args):
                 # Lost!
                 alive = 0
                 
-            if current_run_frames > 10000:
+            if current_run_frames > 50000:
                 # Likely stuck, just go to new level
+                print('Stuck! Moving on...')
                 alive = 0
                 
                 
@@ -224,7 +246,7 @@ def trainNetwork(model,args):
         framerate = (t - run_start_t)/survival_time
         survival_times.append(survival_time)
         print('Run ' + str(run_count) + ' survived ' + "%.2f" % survival_time + 's' + ', %.2f fps' % framerate + ', key: ', ['%.2f' % k for k in useRate])
-        
+        print('Mean: %.2f' % np.mean(survival_times), 'Max: %.2f' % np.max(survival_times), 'Last 100: %.2f' % np.mean(survival_times[-100:]))
         # Now Train!
         #only train if done observing
         if t > OBSERVE:
@@ -291,7 +313,7 @@ def main():
     #parser.add_argument('-m','--mode', help='Train / Run', required=True)    
     #args = vars(parser.parse_args())
     
-    args = {'mode' : 'Train_old'}
+    args = {'mode' : 'Train'}
     #args = {'mode' : 'Run'}
     playGame(args)    
 #==============================================================================
