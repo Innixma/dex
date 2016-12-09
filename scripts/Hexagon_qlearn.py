@@ -112,8 +112,17 @@ def trainNetwork(model,args):
         model.load_weights("model.h5")
         adam = Adam(lr=1e-6)
         model.compile(loss='mse',optimizer=adam)
-        print ("Weight load successfully")    
+        print ("Weight load successfully")
+    elif args['mode'] == 'Train_old': # Continue training old network
+        OBSERVE = OBSERVATION
+        epsilon = INITIAL_EPSILON
+        print ("Now we load weight")
+        model.load_weights("model.h5")
+        adam = Adam(lr=1e-6)
+        model.compile(loss='mse',optimizer=adam)
+        print ("Weight load successfully")
     else:                       #We go to training mode
+        print('Training new network!')
         OBSERVE = OBSERVATION
         epsilon = INITIAL_EPSILON
 
@@ -282,7 +291,7 @@ def main():
     #parser.add_argument('-m','--mode', help='Train / Run', required=True)    
     #args = vars(parser.parse_args())
     
-    args = {'mode' : 'Train'}
+    args = {'mode' : 'Train_old'}
     #args = {'mode' : 'Run'}
     playGame(args)    
 #==============================================================================
