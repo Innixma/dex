@@ -56,7 +56,22 @@ def configure():
     
     G.x_size = G.x_size - G.x_offset - 10
     G.y_size = G.y_size - G.y_offset - 10
+    
+    # Zoom in:
+        
+    G.x_offset += G.x_zoom
+    G.x_size -= G.x_zoom*2
+    G.y_offset += G.y_zoom
+    G.y_size -= G.y_zoom*2
+    
+    if G.y_size % 2 == 1:
+        G.y_size += 1
+    if G.x_size % 2 == 1:
+        G.x_size += 1
 
+    G.x_size_final = G.x_size
+    G.y_size_final = G.y_size - 14
+        
 #==============================================================================
 # 
 #==============================================================================
@@ -112,8 +127,17 @@ def captureIm():
     cDC.BitBlt((0, 0), (G.x_size, G.y_size), dcObj, (G.x_offset, G.y_offset), win32con.SRCCOPY)
     #print(np.frombuffer(dataBitMap.GetBitmapBits(True), dtype=np.uint8).shape)
     image = np.frombuffer(dataBitMap.GetBitmapBits(True), dtype=np.uint8).reshape((G.y_size, G.x_size, 4))[:,:,:-1][:,:,::-1]       
+    #print(image.shape)
+    image = convert_to_polar.reproject_image_into_polar(image)[0].reshape((G.y_size, G.x_size, 3))
+    
+    image = image[14:][:]
 
     
+    
+    #print(image.shape)
+    #img = smp.toimage(image)
+    #img.show()
+    #time.sleep(10)
 
     return image
 #==============================================================================
@@ -179,9 +203,9 @@ def gameState(inKey):
         terminal = 0
     #terminal = termination(state)
     if terminal == 0:
-        reward = 0.1
+        reward = 0.001
     else:
-        reward = -100
+        reward = -1
     #print(optimal_move)
     return(state, reward, terminal)
 #==============================================================================

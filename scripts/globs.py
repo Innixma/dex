@@ -5,11 +5,17 @@ import numpy as np
 application = 'Open Hexagon 1.92 - by vittorio romeo'
 keys = np.array(['none', 'left_arrow', 'right_arrow', 'enter', 'esc'])
 
+x_zoom = 28
+y_zoom = 18
+
 x_offset = 0
 y_offset = 0 
 
 x_size = 140#140
 y_size = 140#140
+
+x_size_final = x_size
+y_size_final = y_size
 
 num_iters = 10000
 num_tries = 1

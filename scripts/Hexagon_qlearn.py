@@ -32,23 +32,25 @@ import terminal_detection
 from OpenHexagonEmulator import gameState
 keys = np.array(['none', 'left_arrow', 'right_arrow'])
 
+t = 0
 
 #%%
 GAME = 'bird' # the name of the game being played for log files
 CONFIG = 'nothreshold'
 ACTIONS = 3 # number of valid actions
-GAMMA = 0.99 # decay rate of past observations
+GAMMA = 0.95 # decay rate of past observations
 OBSERVATION = 3200. # timesteps to observe before training
-EXPLORE = 3000000. # frames over which to anneal epsilon
-FINAL_EPSILON = 0.0001 # final value of epsilon
-INITIAL_EPSILON = 0.3 # starting value of epsilon
+EXPLORE = 100000. # frames over which to anneal epsilon
+FINAL_EPSILON = 0.1 # final value of epsilon
+INITIAL_EPSILON = 0.6 # starting value of epsilon
 REPLAY_MEMORY = 50000 # number of previous transitions to remember
-BATCH = 640 #32 # size of minibatch
+BATCH = 32 #32 # size of minibatch
+BATCH_COUNT = 1
 FRAME_PER_ACTION = 1
 
 #OpenHexagonEmulator.configure()
 
-img_rows , img_cols = G.x_size, G.y_size
+img_rows , img_cols = G.x_size_final, G.y_size_final
 
 print('Resolution: ', img_rows, img_cols)
 #Convert image into Black and white
@@ -63,38 +65,51 @@ img_channels = 2 #We stack 4 frames
 def buildmodel():
     print("Now we build the model")
     model = Sequential()
-    model.add(Convolution2D(32, 8, 8, subsample=(4,4),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same',input_shape=(img_channels,img_rows,img_cols)))
+    model.add(Convolution2D(32, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same',input_shape=(img_channels,img_rows,img_cols)))
     model.add(Activation('relu'))
+    #model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Convolution2D(64, 4, 4, subsample=(2,2),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
     model.add(Activation('relu'))
     model.add(Convolution2D(64, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
     model.add(Activation('relu'))
+    #model.add(MaxPooling2D(pool_size=(2, 2)))
+    #model.add(Convolution2D(16, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
+    #model.add(Activation('relu'))
+    #model.add(MaxPooling2D(pool_size=(2, 2)))
+    #model.add(Convolution2D(16, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
+    #model.add(Activation('relu'))
+    #model.add(MaxPooling2D(pool_size=(2, 2)))
+    #model.add(Activation('relu'))
+    #model.add(Convolution2D(64, 16, 16, subsample=(4,4),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
+    #model.add(Activation('relu'))
     model.add(Flatten())
     model.add(Dense(512, init=lambda shape, name: normal(shape, scale=0.01, name=name)))
     model.add(Activation('relu'))
+    #model.add(Dropout(0.1))
     model.add(Dense(ACTIONS,init=lambda shape, name: normal(shape, scale=0.01, name=name)))
-   
+    
     adam = Adam(lr=1e-6)
     model.compile(loss='mse',optimizer=adam)
     print("We finish building the model")
-    
+    print(model.summary())
     #print(model.layers)
     return model
 #==============================================================================
 
 def prepareImage(image):
     tmpImage = skimage.color.rgb2gray(image)
-    thresh = skimage.filters.threshold_otsu(tmpImage)
-    tmpImage = tmpImage > thresh
+    #thresh = skimage.filters.threshold_otsu(tmpImage)
+    #tmpImage = tmpImage > thresh
     tmpImage = skimage.transform.resize(tmpImage,(img_rows , img_cols))
             
     
     #tmpImage = skimage.exposure.rescale_intensity(tmpImage, out_range=(0, 255))
     
     #print(tmpImage)
-    #img = smp.toimage(binary)
-    #img.show()
-    #smp.imsave('outfile.png', img)
+    #if t % 100 == 0:
+        #img = smp.toimage(tmpImage)
+        #img.show()
+        #smp.imsave('outfile' + str(t) + '.png', img)
     #exit(1)
     #time.sleep(5)
     #print(tmpImage.shape)
@@ -147,8 +162,9 @@ def trainNetwork(model,args):
         print('Training new network!')
         OBSERVE = OBSERVATION
         epsilon = INITIAL_EPSILON
-
+    global t
     t = 0
+    t_saved = 0
     run_count = -1
     saveIterator = 0
     saveThreshold = 10000
@@ -164,7 +180,11 @@ def trainNetwork(model,args):
         start_time = time.time()
         current_run_frames = 0
         useRate = np.zeros([ACTIONS])
+        prev_time = 0
         while alive == True:
+            step_time = time.time()
+            if step_time - prev_time < 1/30: # Cap to 30 FPS
+                time.sleep(1/30 - (step_time - prev_time))
             #print(s_t.shape)
             action_index = 0
             r_t = 0
@@ -193,6 +213,7 @@ def trainNetwork(model,args):
     
             # store the transition in D
             if current_run_frames > framerate*4: # Don't store early useless frames
+                t_saved += 1
                 D.append((s_t, action_index, r_t, s_t1, terminal))
                 if len(D) > REPLAY_MEMORY:
                     D.popleft()
@@ -212,16 +233,17 @@ def trainNetwork(model,args):
     
             # print info
             state = ""
-            if t <= OBSERVE:
+            if t_saved <= OBSERVE:
                 state = "observe"
-            elif t > OBSERVE and t <= OBSERVE + EXPLORE:
+            elif t_saved > OBSERVE and t_saved <= OBSERVE + EXPLORE:
                 state = "explore"
             else:
                 state = "train"
+            """
             if t % 1000 == 0:
                 print("TS", t, "/ S", state, \
                     "/ E %.2f" % epsilon + " / A", action_index, "/ R", r_t)
-            
+            """
             if terminal == 1:
                 # Lost!
                 alive = 0
@@ -231,7 +253,8 @@ def trainNetwork(model,args):
                 print('Stuck! Moving on...')
                 alive = 0
                 
-                
+            prev_time = step_time
+            
         
         end_time = time.time()
         OpenHexagonEmulator.release(G.curKey)
@@ -246,39 +269,45 @@ def trainNetwork(model,args):
         framerate = (t - run_start_t)/survival_time
         survival_times.append(survival_time)
         print('Run ' + str(run_count) + ' survived ' + "%.2f" % survival_time + 's' + ', %.2f fps' % framerate + ', key: ', ['%.2f' % k for k in useRate])
-        print('Mean: %.2f' % np.mean(survival_times), 'Max: %.2f' % np.max(survival_times), 'Last 100: %.2f' % np.mean(survival_times[-100:]))
+        print('\tMean: %.2f' % np.mean(survival_times), 'Last 10: %.2f' % np.mean(survival_times[-10:]), 'Max: %.2f' % np.max(survival_times), "TS", t, "E %.2f" % epsilon)
         # Now Train!
         #only train if done observing
-        if t > OBSERVE:
-            loss = 0
-            Q_sa = 0
-            #sample a minibatch to train on
-            minibatch = random.sample(D, BATCH)
-
-            inputs = np.zeros((BATCH, s_t.shape[1], s_t.shape[2], s_t.shape[3]))   #32, 80, 80, 4
-            targets = np.zeros((inputs.shape[0], ACTIONS))                         #32, 2
-
-            #Now we do the experience replay
-            for i in range(0, len(minibatch)):
-                state_t = minibatch[i][0]
-                action_t = minibatch[i][1]   #This is action index
-                reward_t = minibatch[i][2]
-                state_t1 = minibatch[i][3]
-                terminal = minibatch[i][4]
-                # if terminated, only equals reward
-
-                inputs[i:i + 1] = state_t    #I saved down s_t
-
-                targets[i] = model.predict(state_t)  # Hitting each buttom probability
-                Q_sa = model.predict(state_t1)
-
-                if terminal:
-                    targets[i, action_t] = reward_t
-                else:
-                    targets[i, action_t] = reward_t + GAMMA * np.max(Q_sa)
-
-            # targets2 = normalize(targets)
-            loss += model.train_on_batch(inputs, targets)        
+        if t_saved > OBSERVE:
+            for j in range(0, BATCH_COUNT):
+                loss = 0
+                Q_sa = 0
+                #sample a minibatch to train on
+                minibatch = random.sample(D, BATCH)
+    
+                inputs = np.zeros((BATCH, s_t.shape[1], s_t.shape[2], s_t.shape[3]))   #32, 80, 80, 4
+                targets = np.zeros((inputs.shape[0], ACTIONS))                        #32, 2
+                
+                
+                
+                #Now we do the experience replay
+                for i in range(0, len(minibatch)):
+                    state_t = minibatch[i][0]
+                    action_t = minibatch[i][1]   #This is action index
+                    reward_t = minibatch[i][2]
+                    state_t1 = minibatch[i][3]
+                    terminal = minibatch[i][4]
+                    # if terminated, only equals reward
+                    
+                    inputs[i:i + 1] = state_t    #I saved down s_t
+    
+                    targets[i] = model.predict(state_t)  # Hitting each buttom probability
+                    Q_sa = model.predict(state_t1)
+    
+                    if terminal:
+                        targets[i, action_t] = reward_t
+                    else:
+                        targets[i, action_t] = reward_t + GAMMA * np.max(Q_sa)
+    
+                #print("Q_MAX " , np.max(Q_sa), "/ L ", loss)
+                #print(targets)
+                        
+                # targets2 = normalize(targets)
+                loss += model.train_on_batch(inputs, targets)        
         
             if saveIterator >= saveThreshold:
                 saveIterator = 0
@@ -288,7 +317,7 @@ def trainNetwork(model,args):
                 with open("model.json", "w") as outfile:
                     json.dump(model.to_json(), outfile)
         
-            print("Q_MAX " , np.max(Q_sa), "/ L ", loss)
+            
         # Prep for next round
         time.sleep(0.2)
             
