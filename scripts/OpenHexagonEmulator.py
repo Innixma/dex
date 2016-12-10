@@ -203,9 +203,9 @@ def gameState(inKey):
         terminal = 0
     #terminal = termination(state)
     if terminal == 0:
-        reward = 0.001
+        reward = G.REWARD_ALIVE
     else:
-        reward = -1
+        reward = G.REWARD_TERMINAL
     #print(optimal_move)
     return(state, reward, terminal)
 #==============================================================================

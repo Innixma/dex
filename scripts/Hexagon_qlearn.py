@@ -39,22 +39,23 @@ GAME = 'bird' # the name of the game being played for log files
 CONFIG = 'nothreshold'
 ACTIONS = 3 # number of valid actions
 GAMMA = 0.95 # decay rate of past observations
-OBSERVATION = 3200. # timesteps to observe before training
-EXPLORE = 100000. # frames over which to anneal epsilon
+OBSERVATION = 1600. # timesteps to observe before training
+EXPLORE = 15000. # frames over which to anneal epsilon
 FINAL_EPSILON = 0.1 # final value of epsilon
-INITIAL_EPSILON = 0.6 # starting value of epsilon
+INITIAL_EPSILON = 1 # starting value of epsilon
 REPLAY_MEMORY = 50000 # number of previous transitions to remember
 BATCH = 32 #32 # size of minibatch
 BATCH_COUNT = 1
 FRAME_PER_ACTION = 1
 
+NEG_REGRET_FRAMES = 10
 #OpenHexagonEmulator.configure()
 
 img_rows , img_cols = G.x_size_final, G.y_size_final
 
 print('Resolution: ', img_rows, img_cols)
 #Convert image into Black and white
-img_channels = 2 #We stack 4 frames
+img_channels = 1 #We stack 4 frames
 
 
 
@@ -64,14 +65,28 @@ img_channels = 2 #We stack 4 frames
 #==============================================================================
 def buildmodel():
     print("Now we build the model")
+    
     model = Sequential()
-    model.add(Convolution2D(32, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same',input_shape=(img_channels,img_rows,img_cols)))
+    
+    model.add(Convolution2D(64, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same',input_shape=(img_channels,img_rows,img_cols)))
     model.add(Activation('relu'))
+    
+    #model.add(Convolution2D(64, 5, 5, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
+    #model.add(Activation('relu'))
+    
+    #model.add(Convolution2D(64, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
+    #model.add(Activation('relu'))
+    
     #model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Convolution2D(64, 4, 4, subsample=(2,2),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
+    model.add(Convolution2D(128, 4, 4, subsample=(2,2),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
     model.add(Activation('relu'))
+    
     model.add(Convolution2D(64, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
     model.add(Activation('relu'))
+    
+    model.add(Convolution2D(64, 4, 4, subsample=(2,2),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
+    model.add(Activation('relu'))
+    
     #model.add(MaxPooling2D(pool_size=(2, 2)))
     #model.add(Convolution2D(16, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
     #model.add(Activation('relu'))
@@ -83,7 +98,7 @@ def buildmodel():
     #model.add(Convolution2D(64, 16, 16, subsample=(4,4),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
     #model.add(Activation('relu'))
     model.add(Flatten())
-    model.add(Dense(512, init=lambda shape, name: normal(shape, scale=0.01, name=name)))
+    model.add(Dense(1024, init=lambda shape, name: normal(shape, scale=0.01, name=name)))
     model.add(Activation('relu'))
     #model.add(Dropout(0.1))
     model.add(Dense(ACTIONS,init=lambda shape, name: normal(shape, scale=0.01, name=name)))
@@ -107,9 +122,9 @@ def prepareImage(image):
     
     #print(tmpImage)
     #if t % 100 == 0:
-        #img = smp.toimage(tmpImage)
-        #img.show()
-        #smp.imsave('outfile' + str(t) + '.png', img)
+    #    img = smp.toimage(tmpImage)
+    #    #img.show()
+    #    smp.imsave('outfile' + str(t) + '.png', img)
     #exit(1)
     #time.sleep(5)
     #print(tmpImage.shape)
@@ -135,7 +150,14 @@ def trainNetwork(model,args):
     #print(x_t.shape)
     x_t = prepareImage(x_t)
     #print(x_t.shape)
-    s_t = np.stack((x_t, x_t), axis=0)
+    
+    
+    #s_t = np.stack((x_t, x_t), axis=0)
+    #print(s_t.shape)
+    #s_t = np.stack((x_t), axis=0)
+    s_t = np.reshape(x_t, (1, 1, 1, img_rows, img_cols))
+    #print(s_t.shape)
+    
     #print(s_t.shape)
     #In Keras, need to reshape
     #print(s_t.shape)
@@ -183,8 +205,8 @@ def trainNetwork(model,args):
         prev_time = 0
         while alive == True:
             step_time = time.time()
-            if step_time - prev_time < 1/30: # Cap to 30 FPS
-                time.sleep(1/30 - (step_time - prev_time))
+            if step_time - prev_time < 1/60: # Cap to 30 FPS
+                time.sleep(1/60 - (step_time - prev_time))
             #print(s_t.shape)
             action_index = 0
             r_t = 0
@@ -209,12 +231,17 @@ def trainNetwork(model,args):
             
             x_t1 = prepareImage(x_t1_colored)
             
-            s_t1 = np.append(x_t1, s_t[:, :img_channels-1, :, :], axis=1)
-    
+            #s_t1 = np.append(x_t1, s_t[:, :img_channels-1, :, :], axis=1)
+            s_t1 = x_t1
+            
             # store the transition in D
             if current_run_frames > framerate*4: # Don't store early useless frames
                 t_saved += 1
-                D.append((s_t, action_index, r_t, s_t1, terminal))
+                D.append([s_t, action_index, r_t, s_t1, terminal])
+                if terminal == 1:
+                    for i in range(NEG_REGRET_FRAMES):
+                        D[-2-i][2] = G.REWARD_TERMINAL/(i+2)
+                    #D[-(NEG_REGRET_FRAMES+1):-1][3] += G.REWARD_TERMINAL
                 if len(D) > REPLAY_MEMORY:
                     D.popleft()
             else:
@@ -279,8 +306,8 @@ def trainNetwork(model,args):
                 #sample a minibatch to train on
                 minibatch = random.sample(D, BATCH)
     
-                inputs = np.zeros((BATCH, s_t.shape[1], s_t.shape[2], s_t.shape[3]))   #32, 80, 80, 4
-                targets = np.zeros((inputs.shape[0], ACTIONS))                        #32, 2
+                inputs = np.zeros([BATCH, s_t.shape[1], s_t.shape[2], s_t.shape[3]])   #32, 80, 80, 4
+                targets = np.zeros([inputs.shape[0], ACTIONS])                        #32, 2
                 
                 
                 

@@ -22,6 +22,9 @@ num_tries = 1
 num_classes = 3
 memory_size = 100
 
+REWARD_TERMINAL = -1
+REWARD_ALIVE = 0.01
+
 curKey = 'enter'
 prevKey = 'enter'
 
