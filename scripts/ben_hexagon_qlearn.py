@@ -61,49 +61,21 @@ img_channels = 4 #We stack 4 frames
 #==============================================================================
 def buildmodel():
     print("Now we build the model")
-
     model = Sequential()
-
-    model.add(Convolution2D(64, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same',input_shape=(img_channels,img_rows,img_cols)))
+    model.add(Convolution2D(32, 8, 8, subsample=(4,4),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same',input_shape=(img_channels,img_rows,img_cols)))
     model.add(Activation('relu'))
-
-    #model.add(Convolution2D(64, 5, 5, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-    #model.add(Activation('relu'))
-
-    #model.add(Convolution2D(64, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-    #model.add(Activation('relu'))
-
-    #model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Convolution2D(128, 4, 4, subsample=(2,2),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-    model.add(Activation('relu'))
-
-    model.add(Convolution2D(64, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-    model.add(Activation('relu'))
-
     model.add(Convolution2D(64, 4, 4, subsample=(2,2),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
     model.add(Activation('relu'))
-
-    #model.add(MaxPooling2D(pool_size=(2, 2)))
-    #model.add(Convolution2D(16, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-    #model.add(Activation('relu'))
-    #model.add(MaxPooling2D(pool_size=(2, 2)))
-    #model.add(Convolution2D(16, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-    #model.add(Activation('relu'))
-    #model.add(MaxPooling2D(pool_size=(2, 2)))
-    #model.add(Activation('relu'))
-    #model.add(Convolution2D(64, 16, 16, subsample=(4,4),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-    #model.add(Activation('relu'))
-    model.add(Flatten())
-    model.add(Dense(1024, init=lambda shape, name: normal(shape, scale=0.01, name=name)))
+    model.add(Convolution2D(64, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
     model.add(Activation('relu'))
-    #model.add(Dropout(0.1))
+    model.add(Flatten())
+    model.add(Dense(512, init=lambda shape, name: normal(shape, scale=0.01, name=name)))
+    model.add(Activation('relu'))
     model.add(Dense(ACTIONS,init=lambda shape, name: normal(shape, scale=0.01, name=name)))
 
     adam = Adam(lr=1e-6)
     model.compile(loss='mse',optimizer=adam)
     print("We finish building the model")
-    print(model.summary())
-    #print(model.layers)
     return model
 #==============================================================================
 
