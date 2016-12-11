@@ -5,6 +5,8 @@ import numpy as np
 application = 'Open Hexagon 1.92 - by vittorio romeo'
 keys = np.array(['none', 'left_arrow', 'right_arrow', 'enter', 'esc'])
 
+model = None
+
 x_zoom = 28
 y_zoom = 18
 
@@ -23,7 +25,7 @@ num_classes = 3
 memory_size = 100
 
 REWARD_TERMINAL = -1
-REWARD_ALIVE = 0.01
+REWARD_ALIVE = 1
 
 curKey = 'enter'
 prevKey = 'enter'

@@ -28,6 +28,7 @@ from keras.optimizers import SGD , Adam
 import importlib
 import OpenHexagonEmulator
 import terminal_detection
+import graphHelper
 #importlib.reload(OpenHexagonEmulator)
 from OpenHexagonEmulator import gameState
 keys = np.array(['none', 'left_arrow', 'right_arrow'])
@@ -38,14 +39,13 @@ t = 0
 GAME = 'bird' # the name of the game being played for log files
 CONFIG = 'nothreshold'
 ACTIONS = 3 # number of valid actions
-GAMMA = 0.95 # decay rate of past observations
-OBSERVATION = 1600. # timesteps to observe before training
-EXPLORE = 15000. # frames over which to anneal epsilon
+GAMMA = 0.9 # decay rate of past observations
+OBSERVATION = 1000. # timesteps to observe before training
+EXPLORE = 12000. # frames over which to anneal epsilon
 FINAL_EPSILON = 0.1 # final value of epsilon
 INITIAL_EPSILON = 1 # starting value of epsilon
-REPLAY_MEMORY = 50000 # number of previous transitions to remember
-BATCH = 32 #32 # size of minibatch
-BATCH_COUNT = 1
+REPLAY_MEMORY = 10000 # number of previous transitions to remember
+BATCH = 16 #32 # size of minibatch
 FRAME_PER_ACTION = 1
 
 NEG_REGRET_FRAMES = 10
@@ -55,7 +55,7 @@ img_rows , img_cols = G.x_size_final, G.y_size_final
 
 print('Resolution: ', img_rows, img_cols)
 #Convert image into Black and white
-img_channels = 1 #We stack 4 frames
+img_channels = 4 #We stack 4 frames
 
 
 
@@ -68,7 +68,7 @@ def buildmodel():
     
     model = Sequential()
     
-    model.add(Convolution2D(64, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same',input_shape=(img_channels,img_rows,img_cols)))
+    model.add(Convolution2D(16, 8, 8, subsample=(4,4),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same',input_shape=(img_channels,img_rows,img_cols)))
     model.add(Activation('relu'))
     
     #model.add(Convolution2D(64, 5, 5, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
@@ -78,14 +78,14 @@ def buildmodel():
     #model.add(Activation('relu'))
     
     #model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Convolution2D(128, 4, 4, subsample=(2,2),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
+    model.add(Convolution2D(32, 4, 4, subsample=(2,2),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
     model.add(Activation('relu'))
     
-    model.add(Convolution2D(64, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-    model.add(Activation('relu'))
+    #model.add(Convolution2D(64, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
+    #model.add(Activation('relu'))
     
-    model.add(Convolution2D(64, 4, 4, subsample=(2,2),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-    model.add(Activation('relu'))
+    #model.add(Convolution2D(64, 4, 4, subsample=(2,2),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
+    #model.add(Activation('relu'))
     
     #model.add(MaxPooling2D(pool_size=(2, 2)))
     #model.add(Convolution2D(16, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
@@ -98,7 +98,7 @@ def buildmodel():
     #model.add(Convolution2D(64, 16, 16, subsample=(4,4),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
     #model.add(Activation('relu'))
     model.add(Flatten())
-    model.add(Dense(1024, init=lambda shape, name: normal(shape, scale=0.01, name=name)))
+    model.add(Dense(256, init=lambda shape, name: normal(shape, scale=0.01, name=name)))
     model.add(Activation('relu'))
     #model.add(Dropout(0.1))
     model.add(Dense(ACTIONS,init=lambda shape, name: normal(shape, scale=0.01, name=name)))
@@ -107,6 +107,7 @@ def buildmodel():
     model.compile(loss='mse',optimizer=adam)
     print("We finish building the model")
     print(model.summary())
+    G.model = model
     #print(model.layers)
     return model
 #==============================================================================
@@ -118,7 +119,7 @@ def prepareImage(image):
     tmpImage = skimage.transform.resize(tmpImage,(img_rows , img_cols))
             
     
-    #tmpImage = skimage.exposure.rescale_intensity(tmpImage, out_range=(0, 255))
+    tmpImage = skimage.exposure.rescale_intensity(tmpImage, out_range=(0, 255))
     
     #print(tmpImage)
     #if t % 100 == 0:
@@ -151,11 +152,13 @@ def trainNetwork(model,args):
     x_t = prepareImage(x_t)
     #print(x_t.shape)
     
-    
-    #s_t = np.stack((x_t, x_t), axis=0)
+    #s_t = np.reshape(x_t, (1, 1, 1, img_rows, img_cols))
+    stacking = [x_t for i in range(img_channels)]
+    s_t = np.stack(stacking, axis=0)
     #print(s_t.shape)
     #s_t = np.stack((x_t), axis=0)
-    s_t = np.reshape(x_t, (1, 1, 1, img_rows, img_cols))
+    
+    #s_t = np.reshape(x_t, (1, 1, 1, img_rows, img_cols))
     #print(s_t.shape)
     
     #print(s_t.shape)
@@ -192,6 +195,8 @@ def trainNetwork(model,args):
     saveThreshold = 10000
     framerate = 60 # Temp
     survival_times = []
+    survival_times_last_10 = []
+    survival_times_full_mean = []
     while (True):
         run_count += 1
         run_start_t = t
@@ -231,8 +236,8 @@ def trainNetwork(model,args):
             
             x_t1 = prepareImage(x_t1_colored)
             
-            #s_t1 = np.append(x_t1, s_t[:, :img_channels-1, :, :], axis=1)
-            s_t1 = x_t1
+            s_t1 = np.append(x_t1, s_t[:, :img_channels-1, :, :], axis=1)
+            #s_t1 = x_t1
             
             # store the transition in D
             if current_run_frames > framerate*4: # Don't store early useless frames
@@ -295,47 +300,50 @@ def trainNetwork(model,args):
         survival_time = end_time - start_time
         framerate = (t - run_start_t)/survival_time
         survival_times.append(survival_time)
+        survival_times_last_10.append(np.mean(survival_times[-10:]))
+        survival_times_full_mean.append(np.mean(survival_times))
         print('Run ' + str(run_count) + ' survived ' + "%.2f" % survival_time + 's' + ', %.2f fps' % framerate + ', key: ', ['%.2f' % k for k in useRate])
-        print('\tMean: %.2f' % np.mean(survival_times), 'Last 10: %.2f' % np.mean(survival_times[-10:]), 'Max: %.2f' % np.max(survival_times), "TS", t, "E %.2f" % epsilon)
+        print('\tMean: %.2f' % np.mean(survival_times), 'Last 10: %.2f' % survival_times_last_10[-1], 'Max: %.2f' % np.max(survival_times), "TS", t, "E %.2f" % epsilon)
         # Now Train!
         #only train if done observing
         if t_saved > OBSERVE:
-            for j in range(0, BATCH_COUNT):
-                loss = 0
-                Q_sa = 0
-                #sample a minibatch to train on
-                minibatch = random.sample(D, BATCH)
-    
-                inputs = np.zeros([BATCH, s_t.shape[1], s_t.shape[2], s_t.shape[3]])   #32, 80, 80, 4
-                targets = np.zeros([inputs.shape[0], ACTIONS])                        #32, 2
+            loss = 0
+            Q_sa = 0
+            #sample a minibatch to train on
+            minibatch = random.sample(D, BATCH)
+            for frame in range(NEG_REGRET_FRAMES):
+                minibatch.append(D[-frame-1])
+
+            inputs = np.zeros([len(minibatch), s_t.shape[1], s_t.shape[2], s_t.shape[3]])   #32, 80, 80, 4
+            targets = np.zeros([inputs.shape[0], ACTIONS])                        #32, 2
+            
+            
+            
+            #Now we do the experience replay
+            for i in range(0, len(minibatch)):
+                state_t = minibatch[i][0]
+                action_t = minibatch[i][1]   #This is action index
+                reward_t = minibatch[i][2]
+                state_t1 = minibatch[i][3]
+                terminal = minibatch[i][4]
+                # if terminated, only equals reward
                 
-                
-                
-                #Now we do the experience replay
-                for i in range(0, len(minibatch)):
-                    state_t = minibatch[i][0]
-                    action_t = minibatch[i][1]   #This is action index
-                    reward_t = minibatch[i][2]
-                    state_t1 = minibatch[i][3]
-                    terminal = minibatch[i][4]
-                    # if terminated, only equals reward
+                inputs[i:i + 1] = state_t    #I saved down s_t
+
+                targets[i] = model.predict(state_t)  # Hitting each buttom probability
+                Q_sa = model.predict(state_t1)
+
+                if terminal:
+                    targets[i, action_t] = reward_t
+                else:
+                    targets[i, action_t] = reward_t + GAMMA * np.max(Q_sa)
+
+            print("\tQ_MAX " , np.max(Q_sa), "/ L ", loss)
+            #print(targets)
                     
-                    inputs[i:i + 1] = state_t    #I saved down s_t
+            # targets2 = normalize(targets)
+            loss += model.train_on_batch(inputs, targets)        
     
-                    targets[i] = model.predict(state_t)  # Hitting each buttom probability
-                    Q_sa = model.predict(state_t1)
-    
-                    if terminal:
-                        targets[i, action_t] = reward_t
-                    else:
-                        targets[i, action_t] = reward_t + GAMMA * np.max(Q_sa)
-    
-                #print("Q_MAX " , np.max(Q_sa), "/ L ", loss)
-                #print(targets)
-                        
-                # targets2 = normalize(targets)
-                loss += model.train_on_batch(inputs, targets)        
-        
             if saveIterator >= saveThreshold:
                 saveIterator = 0
                 # save progress every 10000 iterations
@@ -343,8 +351,17 @@ def trainNetwork(model,args):
                 model.save_weights("model.h5", overwrite=True)
                 with open("model.json", "w") as outfile:
                     json.dump(model.to_json(), outfile)
+    
+            with open("log.txt", "a+") as outf:
+                outf.write('%d,%.10f,%.10f,%.10f\n' % (run_count, np.max(Q_sa), loss, survival_time))
+                
+            graphHelper.graphSimple([np.arange(run_count+1),np.arange(run_count+1),np.arange(run_count+1)], [survival_times, survival_times_last_10, survival_times_full_mean], ['DQN', 'DQN_Last_10_Mean', 'DQN_Full_Mean'], 'DQN on Open Hexagon', 'Time(s)', 'Run', savefigName="DQN_graph")
         
+        with open("DQN.txt", "a+") as outf:
+            outf.write('%d,%.10f,%.10f,%.10f\n' % (run_count, survival_times[-1], survival_times_last_10[-1], survival_times_full_mean[-1]))    
             
+        #print(np.arange(run_count))
+        #print(survival_times)
         # Prep for next round
         time.sleep(0.2)
             
