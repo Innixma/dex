@@ -164,10 +164,10 @@ def gameState(inKey):
     if terminal_detection.terminal_state(state):
         release(inKey)
         terminal = 1
-        reward = -1
+        reward = -1.
     else:
         terminal = 0
-        reward = .1
+        reward = 1.
 
     return(state, reward, terminal)
 #==============================================================================

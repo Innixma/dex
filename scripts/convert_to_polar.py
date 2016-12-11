@@ -9,11 +9,11 @@ def main():
 
     img = OpenHexagonEmulator.captureIm()
 
-    print(np.sum(np.abs(img[:,:,0]-img[:,:,1]) + np.abs(img[:,:,0]-img[:,:,2]) + np.abs(img[:,:,1]-img[:,:,2])))
-    print(np.sum(img-img[::-1]))
+    # print(np.sum(np.abs(img[:,:,0]-img[:,:,1]) + np.abs(img[:,:,0]-img[:,:,2]) + np.abs(img[:,:,1]-img[:,:,2])))
+    # print(np.sum(img-img[::-1]))
 
-    # plot_cart_image(img)
-    # plot_polar_image(img)
+    plot_cart_image(img)
+    plot_polar_image(img)
 
 def plot_polar_image(data, origin=None):
     """Plots an image reprojected into polar coordinages with the origin
