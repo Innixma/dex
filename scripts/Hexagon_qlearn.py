@@ -39,13 +39,13 @@ t = 0
 GAME = 'bird' # the name of the game being played for log files
 CONFIG = 'nothreshold'
 ACTIONS = 3 # number of valid actions
-GAMMA = 0.9 # decay rate of past observations
-OBSERVATION = 1000. # timesteps to observe before training
-EXPLORE = 12000. # frames over which to anneal epsilon
+GAMMA = 0.999 # decay rate of past observations
+OBSERVATION = 3000. # timesteps to observe before training
+EXPLORE = 21000. # frames over which to anneal epsilon
 FINAL_EPSILON = 0.1 # final value of epsilon
 INITIAL_EPSILON = 1 # starting value of epsilon
 REPLAY_MEMORY = 10000 # number of previous transitions to remember
-BATCH = 16 #32 # size of minibatch
+BATCH = 32 #32 # size of minibatch
 FRAME_PER_ACTION = 1
 
 NEG_REGRET_FRAMES = 10
@@ -102,7 +102,7 @@ def buildmodel():
     model.add(Activation('relu'))
     #model.add(Dropout(0.1))
     model.add(Dense(ACTIONS,init=lambda shape, name: normal(shape, scale=0.01, name=name)))
-    
+    model.add(Activation('softmax'))
     adam = Adam(lr=1e-6)
     model.compile(loss='mse',optimizer=adam)
     print("We finish building the model")
@@ -193,7 +193,7 @@ def trainNetwork(model,args):
     run_count = -1
     saveIterator = 0
     saveThreshold = 10000
-    framerate = 60 # Temp
+    framerate = 30 # Temp
     survival_times = []
     survival_times_last_10 = []
     survival_times_full_mean = []
@@ -210,8 +210,8 @@ def trainNetwork(model,args):
         prev_time = 0
         while alive == True:
             step_time = time.time()
-            if step_time - prev_time < 1/60: # Cap to 30 FPS
-                time.sleep(1/60 - (step_time - prev_time))
+            if step_time - prev_time < 1/30: # Cap to 30 FPS
+                time.sleep(1/30 - (step_time - prev_time))
             #print(s_t.shape)
             action_index = 0
             r_t = 0
@@ -311,8 +311,8 @@ def trainNetwork(model,args):
             Q_sa = 0
             #sample a minibatch to train on
             minibatch = random.sample(D, BATCH)
-            for frame in range(NEG_REGRET_FRAMES):
-                minibatch.append(D[-frame-1])
+            #for frame in range(NEG_REGRET_FRAMES):
+            #    minibatch.append(D[-frame-1])
 
             inputs = np.zeros([len(minibatch), s_t.shape[1], s_t.shape[2], s_t.shape[3]])   #32, 80, 80, 4
             targets = np.zeros([inputs.shape[0], ACTIONS])                        #32, 2
