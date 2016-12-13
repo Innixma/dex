@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 
 # Import datasets, classifiers and performance metrics
 from sklearn import datasets, svm, metrics
+from sklearn.linear_model import LogisticRegression
+
 
 # The digits dataset
 # digits = datasets.load_digits()
@@ -30,11 +32,12 @@ from sklearn import datasets, svm, metrics
 # turn the data in a (samples, feature) matrix:
 data = np.load('training.npy')
 target = np.load('target.npy')
-n_samples = np.shape(target)
+n_samples = np.shape(target)[0]
+print(n_samples)
 
 
 # Create a classifier: a support vector classifier
-classifier = svm.SVC(gamma=0.001)
+classifier = LogisticRegression(C=1.0)
 
 # We learn the digits on the first half of the digits
 classifier.fit(data[:n_samples / 2], target[:n_samples / 2])

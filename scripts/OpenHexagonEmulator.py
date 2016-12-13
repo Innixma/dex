@@ -167,7 +167,7 @@ def gameState(inKey):
         reward = -1.
     else:
         terminal = 0
-        reward = 1.
+        reward = .1
 
     return(state, reward, terminal)
 #==============================================================================

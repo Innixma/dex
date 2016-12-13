@@ -24,7 +24,7 @@ from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.optimizers import SGD , Adam
 
-from convert_to_polar import reproject_image_into_polar
+from convert_to_polar import reproject_image_into_polar, plot_cart_image
 #%%
 import importlib
 import OpenHexagonEmulator
@@ -38,15 +38,15 @@ keys = np.array(['none', 'left_arrow', 'right_arrow'])
 GAME = 'bird' # the name of the game being played for log files
 CONFIG = 'nothreshold'
 ACTIONS = 3 # number of valid actions
-GAMMA = 0.9 # decay rate of past observations
-OBSERVATION = 720. # timesteps to observe before training
-EXPLORE = 100000. # frames over which to anneal epsilon
-FINAL_EPSILON = 0.01 # final value of epsilon
+GAMMA = 0.99 # decay rate of past observations
+OBSERVATION = 10000. # timesteps to observe before training
+EXPLORE = 1000000. # epochs over which to anneal epsilon
+FINAL_EPSILON = 0.1 # final value of epsilon
 INITIAL_EPSILON = 1.0 # starting value of epsilon
-REPLAY_MEMORY = 2048. # number of previous transitions to remember
-BATCH = 256 #32 # size of minibatch
-FRAME_PER_ACTION = 4
-EPOCHS = 1000
+REPLAY_MEMORY = 50000. # number of previous transitions to remember
+BATCH = 32 #32 # size of minibatch
+FRAME_PER_ACTION = 24
+EPOCHS = 10000000
 
 #OpenHexagonEmulator.configure()
 
@@ -82,10 +82,10 @@ def buildmodel():
 def prepare_img(image):
     image = reproject_image_into_polar(image)[0]
     tmpImage = skimage.color.rgb2grey(image)
-    thresh = skimage.filters.threshold_otsu(tmpImage)
-    tmpImage = tmpImage > thresh
+    tmpImage = tmpImage > 0
     tmpImage = skimage.transform.resize(tmpImage, (img_rows, img_cols))
     tmpImage = tmpImage.reshape(1, 1, tmpImage.shape[0], tmpImage.shape[1])
+    tmpImage = tmpImage.astype(int)
     return tmpImage
 
 #==============================================================================
@@ -129,40 +129,22 @@ def trainNetwork(model,args):
         survival_times = []
         num_epochs = 0
         epochs_flag = True
+        action_index = 0
+
 
         alive = False
         while (epochs_flag):
             if not alive:
+                num_actions = 0
                 print('Resetting Game')
                 OpenHexagonEmulator.press('enter')
                 time.sleep(0.2)
                 OpenHexagonEmulator.release('enter')
-                time.sleep(3.5)
+                time.sleep(3.2)
 
             run_count += 1
             run_start_t = t
-
             start_time = time.time()
-            current_run_frames = 0
-            useRate = np.zeros([ACTIONS])
-            #print(s_t.shape)
-            action_index = 0
-            r_t = 0
-            a_t = np.zeros([ACTIONS])
-            #choose an action epsilon greedy
-            if t % FRAME_PER_ACTION == 0:
-                if random.random() <= epsilon:
-                    #print("----------Random Action----------")
-                    action_index = random.randrange(ACTIONS)
-                else:
-                    q = model.predict(s_t)       #input a stack of 4 images, get the prediction
-                    action_index = np.argmax(q)
-
-                a_t[action_index] = 1
-                useRate = useRate + a_t
-            #We reduced the epsilon gradually
-            if epsilon > FINAL_EPSILON and t > OBSERVE:
-                epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 
             #run the selected action and observed next state and reward
             x_t1_colored, r_t, terminal = gameState(keys[action_index])
@@ -170,91 +152,85 @@ def trainNetwork(model,args):
             alive = terminal == 0
 
             x_t1 = prepare_img(x_t1_colored)
-            # print(x_t1.shape)
-            # print(x_t.shape)
             s_t1 = np.append(x_t1, s_t[:, :img_channels-1, :, :], axis=1)
 
-            # store the transition in D
-            D.append([s_t, action_index, r_t, s_t1, terminal])
-            t = t + 1
-            if len(D) > REPLAY_MEMORY:
-                D.popleft()
-            #elif current_run_frames > framerate*4 - 1:
-
             s_t = s_t1
+            t = t + 1
 
-            current_run_frames += 1
+            if t % FRAME_PER_ACTION == 0:
+                if random.random() <= epsilon:
+                    #print("----------Random Action----------")
+                    action_index = random.randrange(ACTIONS)
+                else:
+                    q = model.predict(s_t)       #input a stack of 4 images, get the prediction
+                    action_index = np.argmax(q)
+                num_actions += 1
+
+                # store the transition in D
+                D.append([s_t, action_index, r_t, s_t1, terminal])
+                if len(D) > REPLAY_MEMORY:
+                    D.popleft()
+
             saveIterator += 1
-
-            # print info
-            state = ""
-            if t <= OBSERVE:
-                state = "observe"
-            elif t > OBSERVE and t <= OBSERVE + EXPLORE:
-                state = "explore"
-            else:
-                state = "train"
-
-            if t % 1000 == 0:
-                print("TS", t, "/ S", state, \
-                        "/ E", epsilon, " / A", action_index, "/ R", r_t)
 
             # Now Train!
             #only train if done observing
-            if t > OBSERVE:
-                if alive == False:
-                    loss = 0
-                    Q_sa = 0
-                    #sample a minibatch to train on
-                    minibatch = random.sample(D, BATCH)
-                    minibatch[-1] = D[-1]
+            if len(D) > OBSERVE:
+                if not alive:
+                    for i in range(num_actions):
+                        loss = 0
+                        Q_sa = 0
+                        #sample a minibatch to train on
+                        minibatch = random.sample(D, BATCH)
+                        # minibatch[-1] = D[-1]
 
-                    inputs = np.zeros((BATCH, s_t.shape[1], s_t.shape[2], s_t.shape[3]))   #32, 80, 80, 4
-                    targets = np.zeros((inputs.shape[0], ACTIONS))                         #32, 2
+                        inputs = np.zeros((BATCH, s_t.shape[1], s_t.shape[2], s_t.shape[3]))   #32, 80, 80, 4
+                        targets = np.zeros((inputs.shape[0], ACTIONS))                         #32, 2
 
-                    #Now we do the experience replay
-                    for i in range(0, len(minibatch)):
-                        state_t = minibatch[i][0]
-                        action_t = minibatch[i][1]   #This is action index
-                        reward_t = minibatch[i][2]
-                        state_t1 = minibatch[i][3]
-                        terminal = minibatch[i][4]
-                        # if terminated, only equals reward
+                        #Now we do the experience replay
+                        for i in range(0, len(minibatch)):
+                            state_t = minibatch[i][0]
+                            action_t = minibatch[i][1]   #This is action index
+                            reward_t = minibatch[i][2]
+                            state_t1 = minibatch[i][3]
+                            terminal = minibatch[i][4]
+                            # if terminated, only equals reward
 
-                        inputs[i:i + 1] = state_t    #I saved down s_t
+                            inputs[i:i + 1] = state_t    #I saved down s_t
 
-                        # Don't train on what we didn't observe
-                        targets[i] = model.predict(state_t)
-                        Q_sa = model.predict(state_t1)
+                            # Don't train on what we didn't observe
+                            targets[i] = model.predict(state_t)
+                            Q_sa = model.predict(state_t1)
 
-                        if terminal:
-                            targets[i, action_t] = reward_t
-                        else:
-                            targets[i, action_t] = reward_t + GAMMA * np.max(Q_sa)
+                            if terminal:
+                                targets[i, action_t] = reward_t
+                            else:
+                                targets[i, action_t] = reward_t + GAMMA * np.max(Q_sa)
 
-                    # targets2 = normalize(targets)
-                    loss += model.train_on_batch(inputs, targets)
+                        # targets2 = normalize(targets)
+                        loss += model.train_on_batch(inputs, targets)
 
-                    if saveIterator >= saveThreshold:
-                        saveIterator = 0
-                        # save progress every 10000 iterations
-                        print("Saving Model...")
-                        model.save_weights("model.h5", overwrite=True)
-                        with open("model.json", "w") as outfile:
-                            json.dump(model.to_json(), outfile)
+                        if saveIterator >= saveThreshold:
+                            saveIterator = 0
+                            # save progress every 10000 iterations
+                            print("Saving Model...")
+                            model.save_weights("model.h5", overwrite=True)
+                            with open("model.json", "w") as outfile:
+                                json.dump(model.to_json(), outfile)
 
-                    print("Q_MAX " , np.max(Q_sa), "/ L ", loss)
-                    out_log.write('%.5f,%.5f\n' % (np.mean(Q_sa), loss))
+                        print("Q_MAX " , np.max(Q_sa), "/ L ", loss)
+                        out_log.write('%.5f,%.5f\n' % (np.mean(Q_sa), loss))
+                        epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
+                        num_epochs += 1
+                        epochs_flag = num_epochs <= EPOCHS
+                        with open("log.txt", "a+") as outf:
+                            outf.write('%d,%.10f,%.10f,%.10f\n' % (num_epochs, np.max(Q_sa), loss, time.time()-start_time))
                     print('Game terminated')
                     OpenHexagonEmulator.release(G.curKey)
                     time.sleep(0.1)
                     OpenHexagonEmulator.press('esc')
                     time.sleep(0.1)
                     OpenHexagonEmulator.release('esc')
-                    num_epochs += 1
-                    epochs_flag = num_epochs <= EPOCHS
-                    with open("log.txt", "a+") as outf:
-                        outf.write('%d,%.10f,%.10f,%.10f\n' % (num_epochs, np.max(Q_sa), loss, time.time()-start_time))
 
     model.save_weights("model.h5", overwrite=True)
     with open("model.json", "w") as outfile:

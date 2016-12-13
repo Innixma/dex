@@ -30,7 +30,7 @@ def plot_cart_image(data, origin=None):
     """Plots an image reprojected into polar coordinages with the origin
     at "origin" (a tuple of (x0, y0), defaults to the center of the image)"""
     plt.figure()
-    ny, nx = data.shape[:2]
+    data = data.reshape((120, 99))
     plt.imshow(data)
     plt.xlabel('Width')
     plt.ylabel('Height')
