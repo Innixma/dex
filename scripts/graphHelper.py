@@ -28,7 +28,7 @@ def graphSimple(xList, yList, namesList, title, ylabel, xlabel, savefigName=""):
         
         plt.plot(x, y, c=color, label=name)
     
-    plt.legend(loc=1)
+    plt.legend(loc=2)
     plt.xlim(minX, maxX)  
     plt.ylim(minY, maxY)
     plt.grid(True)

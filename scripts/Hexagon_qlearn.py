@@ -9,10 +9,10 @@ from skimage.transform import rotate
 from skimage.viewer import ImageViewer
 import scipy.misc as smp
 import sys
-#sys.path.append("game/")
-#import wrapped_flappy_bird as game
+
 import random
 import numpy as np
+import datetime
 import time
 from collections import deque
 
@@ -31,24 +31,34 @@ import terminal_detection
 import graphHelper
 #importlib.reload(OpenHexagonEmulator)
 from OpenHexagonEmulator import gameState
+
+import os
+RESULT_FOLDER = '/../results'
+dir = os.path.dirname(__file__)
+os.makedirs(dir + RESULT_FOLDER,exist_ok=True) # Generates results folder
+RESULT_FOLDER_FULL = dir + RESULT_FOLDER
+CUR_FOLDER = datetime.datetime.now().strftime('%G-%m-%d-%H-%M-%S')
+
+
+
+
 keys = np.array(['none', 'left_arrow', 'right_arrow'])
 
 t = 0
 
 #%%
-GAME = 'bird' # the name of the game being played for log files
-CONFIG = 'nothreshold'
+GAME = 'open_hexagon' # the name of the game being played for log files
 ACTIONS = 3 # number of valid actions
-GAMMA = 0.999 # decay rate of past observations
-OBSERVATION = 3000. # timesteps to observe before training
-EXPLORE = 21000. # frames over which to anneal epsilon
-FINAL_EPSILON = 0.1 # final value of epsilon
+GAMMA = 0.99 # decay rate of past observations
+OBSERVATION = 10000. # timesteps to observe before training
+EXPLORE = 40000. # frames over which to anneal epsilon
 INITIAL_EPSILON = 1 # starting value of epsilon
-REPLAY_MEMORY = 10000 # number of previous transitions to remember
-BATCH = 32 #32 # size of minibatch
-FRAME_PER_ACTION = 1
-
-NEG_REGRET_FRAMES = 10
+FINAL_EPSILON = 0.1 # final value of epsilon
+REPLAY_MEMORY = 100000 # number of previous transitions to remember
+BATCH = 32 # 32 base # size of minibatch
+FRAME_PER_ACTION = 1 # Number of frames inbetween actions
+INITIAL_SAVE_THRESHOLD = 10000 # Number of frames between saving the network
+NEG_REGRET_FRAMES = 12 # Number of past frames to add regret to
 #OpenHexagonEmulator.configure()
 
 img_rows , img_cols = G.x_size_final, G.y_size_final
@@ -68,8 +78,14 @@ def buildmodel():
     
     model = Sequential()
     
+    
     model.add(Convolution2D(16, 8, 8, subsample=(4,4),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same',input_shape=(img_channels,img_rows,img_cols)))
     model.add(Activation('relu'))
+    model.add(Convolution2D(32, 4, 4, subsample=(2,2),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
+    model.add(Activation('relu'))
+    
+    
+    
     
     #model.add(Convolution2D(64, 5, 5, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
     #model.add(Activation('relu'))
@@ -78,8 +94,7 @@ def buildmodel():
     #model.add(Activation('relu'))
     
     #model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Convolution2D(32, 4, 4, subsample=(2,2),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-    model.add(Activation('relu'))
+    
     
     #model.add(Convolution2D(64, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
     #model.add(Activation('relu'))
@@ -97,7 +112,8 @@ def buildmodel():
     #model.add(Activation('relu'))
     #model.add(Convolution2D(64, 16, 16, subsample=(4,4),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
     #model.add(Activation('relu'))
-    model.add(Flatten())
+    model.add(Flatten(input_shape=(img_channels,img_rows,img_cols)))
+    #model.add(Dense(256, init=lambda shape, name: normal(shape, scale=0.01, name=name)))
     model.add(Dense(256, init=lambda shape, name: normal(shape, scale=0.01, name=name)))
     model.add(Activation('relu'))
     #model.add(Dropout(0.1))
@@ -167,11 +183,19 @@ def trainNetwork(model,args):
     s_t = s_t.reshape(1, s_t.shape[0], s_t.shape[3], s_t.shape[4])
     #print(s_t.shape)
     #print(s_t.shape)
+    
+    if args['directory'] == 'default':
+        results_location = RESULT_FOLDER_FULL + '/' + CUR_FOLDER
+    else:
+        results_location = RESULT_FOLDER_FULL + '/' + args['directory']
+    os.makedirs(results_location,exist_ok=True) # Generates results folder
+    results_location = results_location + '/'
+    
     if args['mode'] == 'Run':
         OBSERVE = 999999999    #We keep observe, never trai
         epsilon = FINAL_EPSILON
         print ("Now we load weight")
-        model.load_weights("model.h5")
+        model.load_weights(results_location + 'model.h5')
         adam = Adam(lr=1e-6)
         model.compile(loss='mse',optimizer=adam)
         print ("Weight load successfully")
@@ -179,7 +203,7 @@ def trainNetwork(model,args):
         OBSERVE = OBSERVATION
         epsilon = INITIAL_EPSILON
         print ("Now we load weight")
-        model.load_weights("model.h5")
+        model.load_weights(results_location + 'model.h5')
         adam = Adam(lr=1e-6)
         model.compile(loss='mse',optimizer=adam)
         print ("Weight load successfully")
@@ -190,10 +214,12 @@ def trainNetwork(model,args):
     global t
     t = 0
     t_saved = 0
+    cur_saved = 0
     run_count = -1
     saveIterator = 0
-    saveThreshold = 10000
-    framerate = 30 # Temp
+    saveThreshold = INITIAL_SAVE_THRESHOLD
+    capped_framerate = 40 # Cap to this value
+    framerate = capped_framerate # Temp
     survival_times = []
     survival_times_last_10 = []
     survival_times_full_mean = []
@@ -208,10 +234,11 @@ def trainNetwork(model,args):
         current_run_frames = 0
         useRate = np.zeros([ACTIONS])
         prev_time = 0
+        cur_saved = 0
         while alive == True:
             step_time = time.time()
-            if step_time - prev_time < 1/30: # Cap to 30 FPS
-                time.sleep(1/30 - (step_time - prev_time))
+            if step_time - prev_time < 1/capped_framerate: # Cap framerate
+                time.sleep(1/capped_framerate - (step_time - prev_time))
             #print(s_t.shape)
             action_index = 0
             r_t = 0
@@ -227,9 +254,7 @@ def trainNetwork(model,args):
                     
                 a_t[action_index] = 1
                 
-            #We reduced the epsilon gradually
-            if epsilon > FINAL_EPSILON and t > OBSERVE:
-                epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
+            
     
             #run the selected action and observed next state and reward        
             x_t1_colored, r_t, terminal = gameState(keys[action_index])
@@ -242,11 +267,16 @@ def trainNetwork(model,args):
             # store the transition in D
             if current_run_frames > framerate*4: # Don't store early useless frames
                 t_saved += 1
+                cur_saved += 1
                 D.append([s_t, action_index, r_t, s_t1, terminal])
                 if terminal == 1:
                     for i in range(NEG_REGRET_FRAMES):
                         D[-2-i][2] = G.REWARD_TERMINAL/(i+2)
                     #D[-(NEG_REGRET_FRAMES+1):-1][3] += G.REWARD_TERMINAL
+                #We reduced the epsilon gradually
+                if epsilon > FINAL_EPSILON and t_saved > OBSERVE:
+                    epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
+
                 if len(D) > REPLAY_MEMORY:
                     D.popleft()
             else:
@@ -287,7 +317,8 @@ def trainNetwork(model,args):
                 
             prev_time = step_time
             
-        
+        # -----------------------------------
+        # Reset keys and gamestate after loss
         end_time = time.time()
         OpenHexagonEmulator.release(G.curKey)
         time.sleep(0.1)
@@ -295,7 +326,10 @@ def trainNetwork(model,args):
         time.sleep(0.1)
         OpenHexagonEmulator.release('esc')
         terminal_detection.reset_globs()
+        # -----------------------------------
         
+        # -----------------------------------
+        # Metrics Gathering
         useRate = useRate/np.sum(useRate)
         survival_time = end_time - start_time
         framerate = (t - run_start_t)/survival_time
@@ -303,61 +337,65 @@ def trainNetwork(model,args):
         survival_times_last_10.append(np.mean(survival_times[-10:]))
         survival_times_full_mean.append(np.mean(survival_times))
         print('Run ' + str(run_count) + ' survived ' + "%.2f" % survival_time + 's' + ', %.2f fps' % framerate + ', key: ', ['%.2f' % k for k in useRate])
-        print('\tMean: %.2f' % np.mean(survival_times), 'Last 10: %.2f' % survival_times_last_10[-1], 'Max: %.2f' % np.max(survival_times), "TS", t, "E %.2f" % epsilon)
+        print('\tMean: %.2f' % np.mean(survival_times), 'Last 10: %.2f' % survival_times_last_10[-1], 'Max: %.2f' % np.max(survival_times), "Std: %.2f" % np.std(survival_times), "TS", t_saved, "E %.2f" % epsilon)
+        # -----------------------------------
+        
         # Now Train!
-        #only train if done observing
+        # Only train if done observing
         if t_saved > OBSERVE:
-            loss = 0
-            Q_sa = 0
+            
             #sample a minibatch to train on
-            minibatch = random.sample(D, BATCH)
-            #for frame in range(NEG_REGRET_FRAMES):
-            #    minibatch.append(D[-frame-1])
-
-            inputs = np.zeros([len(minibatch), s_t.shape[1], s_t.shape[2], s_t.shape[3]])   #32, 80, 80, 4
-            targets = np.zeros([inputs.shape[0], ACTIONS])                        #32, 2
-            
-            
-            
-            #Now we do the experience replay
-            for i in range(0, len(minibatch)):
-                state_t = minibatch[i][0]
-                action_t = minibatch[i][1]   #This is action index
-                reward_t = minibatch[i][2]
-                state_t1 = minibatch[i][3]
-                terminal = minibatch[i][4]
-                # if terminated, only equals reward
-                
-                inputs[i:i + 1] = state_t    #I saved down s_t
-
-                targets[i] = model.predict(state_t)  # Hitting each buttom probability
-                Q_sa = model.predict(state_t1)
-
-                if terminal:
-                    targets[i, action_t] = reward_t
-                else:
-                    targets[i, action_t] = reward_t + GAMMA * np.max(Q_sa)
-
-            print("\tQ_MAX " , np.max(Q_sa), "/ L ", loss)
-            #print(targets)
-                    
-            # targets2 = normalize(targets)
-            loss += model.train_on_batch(inputs, targets)        
+            for replay in range(1):
+                loss = 0
+                Q_sa = 0
+                minibatch = random.sample(D, BATCH)
+                #for frame in range(NEG_REGRET_FRAMES):
+                #    minibatch.append(D[-frame-1])
     
+                inputs = np.zeros([len(minibatch), s_t.shape[1], s_t.shape[2], s_t.shape[3]])   #32, 80, 80, 4
+                targets = np.zeros([inputs.shape[0], ACTIONS])                        #32, 2
+                
+                
+                
+                #Now we do the experience replay
+                
+                for i in range(0, len(minibatch)):
+                    state_t = minibatch[i][0]
+                    action_t = minibatch[i][1]   #This is action index
+                    reward_t = minibatch[i][2]
+                    state_t1 = minibatch[i][3]
+                    terminal = minibatch[i][4]
+                    # if terminated, only equals reward
+                    
+                    inputs[i:i + 1] = state_t    #I saved down s_t
+    
+                    targets[i] = model.predict(state_t)  # Hitting each buttom probability
+                    Q_sa = model.predict(state_t1)
+    
+                    if terminal:
+                        targets[i, action_t] = reward_t
+                    else:
+                        targets[i, action_t] = reward_t + GAMMA * np.max(Q_sa)
+    
+                
+                #print(targets)
+                        
+                # targets2 = normalize(targets)
+                loss += model.train_on_batch(inputs, targets)        
+                print("\tQ_MAX " , np.max(Q_sa), "/ L ", loss)
             if saveIterator >= saveThreshold:
                 saveIterator = 0
                 # save progress every 10000 iterations
                 print("Saving Model...")
-                model.save_weights("model.h5", overwrite=True)
-                with open("model.json", "w") as outfile:
+                model.save_weights(results_location + 'model.h5', overwrite=True)
+                with open(results_location + 'model.json', "w") as outfile:
                     json.dump(model.to_json(), outfile)
     
-            with open("log.txt", "a+") as outf:
+            with open(results_location + 'log.txt', "a+") as outf:
                 outf.write('%d,%.10f,%.10f,%.10f\n' % (run_count, np.max(Q_sa), loss, survival_time))
                 
-            graphHelper.graphSimple([np.arange(run_count+1),np.arange(run_count+1),np.arange(run_count+1)], [survival_times, survival_times_last_10, survival_times_full_mean], ['DQN', 'DQN_Last_10_Mean', 'DQN_Full_Mean'], 'DQN on Open Hexagon', 'Time(s)', 'Run', savefigName="DQN_graph")
-        
-        with open("DQN.txt", "a+") as outf:
+            graphHelper.graphSimple([np.arange(run_count+1),np.arange(run_count+1),np.arange(run_count+1)], [survival_times, survival_times_last_10, survival_times_full_mean], ['DQN', 'DQN_Last_10_Mean', 'DQN_Full_Mean'], 'DQN on Open Hexagon', 'Time(s)', 'Run', savefigName=results_location + 'DQN_graph')
+        with open(results_location + 'DQN.txt', "a+") as outf:
             outf.write('%d,%.10f,%.10f,%.10f\n' % (run_count, survival_times[-1], survival_times_last_10[-1], survival_times_full_mean[-1]))    
             
         #print(np.arange(run_count))
@@ -386,8 +424,13 @@ def main():
     #parser.add_argument('-m','--mode', help='Train / Run', required=True)    
     #args = vars(parser.parse_args())
     
-    args = {'mode' : 'Train'}
-    #args = {'mode' : 'Run'}
+    args = {}
+    args['mode'] = 'Train'
+    args['directory'] = 'default'
+    
+    #args['mode'] = 'Run'
+    #args['directory'] = 'name_of_file'
+    
     playGame(args)    
 #==============================================================================
 

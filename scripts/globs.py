@@ -3,6 +3,7 @@
 import numpy as np
 
 application = 'Open Hexagon 1.92 - by vittorio romeo'
+#application = 'Untitled - Notepad'
 keys = np.array(['none', 'left_arrow', 'right_arrow', 'enter', 'esc'])
 
 model = None
