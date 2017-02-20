@@ -50,13 +50,14 @@ t = 0
 GAME = 'open_hexagon' # the name of the game being played for log files
 ACTIONS = 3 # number of valid actions
 GAMMA = 0.99 # decay rate of past observations
+CAPPED_FRAMERATE = 20 # Frames per second to process and act
 OBSERVATION = 10000. # timesteps to observe before training
 EXPLORE = 40000. # frames over which to anneal epsilon
 INITIAL_EPSILON = 1 # starting value of epsilon
 FINAL_EPSILON = 0.1 # final value of epsilon
 REPLAY_MEMORY = 100000 # number of previous transitions to remember
 BATCH = 32 # 32 base # size of minibatch
-FRAME_PER_ACTION = 1 # Number of frames inbetween actions
+FRAME_PER_ACTION = 1 # Number of frames inbetween actions, KEEP AT 1
 INITIAL_SAVE_THRESHOLD = 10000 # Number of frames between saving the network
 NEG_REGRET_FRAMES = 12 # Number of past frames to add regret to
 #OpenHexagonEmulator.configure()
@@ -65,7 +66,7 @@ img_rows , img_cols = G.x_size_final, G.y_size_final
 
 print('Resolution: ', img_rows, img_cols)
 #Convert image into Black and white
-img_channels = 4 #We stack 4 frames
+img_channels = 1 #We stack img_channels frames (Default 4)
 
 
 
@@ -191,8 +192,10 @@ def trainNetwork(model,args):
     os.makedirs(results_location,exist_ok=True) # Generates results folder
     results_location = results_location + '/'
     
+    # ------------------------------------------------------------
+    # Loading Info
     if args['mode'] == 'Run':
-        OBSERVE = 999999999    #We keep observe, never trai
+        OBSERVE = 999999999    #We keep observe, never train
         epsilon = FINAL_EPSILON
         print ("Now we load weight")
         model.load_weights(results_location + 'model.h5')
@@ -207,10 +210,12 @@ def trainNetwork(model,args):
         adam = Adam(lr=1e-6)
         model.compile(loss='mse',optimizer=adam)
         print ("Weight load successfully")
-    else:                       #We go to training mode
+    else:                       # We go to training mode
         print('Training new network!')
         OBSERVE = OBSERVATION
         epsilon = INITIAL_EPSILON
+    # ------------------------------------------------------------
+    
     global t
     t = 0
     t_saved = 0
@@ -218,8 +223,7 @@ def trainNetwork(model,args):
     run_count = -1
     saveIterator = 0
     saveThreshold = INITIAL_SAVE_THRESHOLD
-    capped_framerate = 40 # Cap to this value
-    framerate = capped_framerate # Temp
+    timelapse = 1/CAPPED_FRAMERATE
     survival_times = []
     survival_times_last_10 = []
     survival_times_full_mean = []
@@ -233,16 +237,15 @@ def trainNetwork(model,args):
         start_time = time.time()
         current_run_frames = 0
         useRate = np.zeros([ACTIONS])
-        prev_time = 0
         cur_saved = 0
         while alive == True:
-            step_time = time.time()
-            if step_time - prev_time < 1/capped_framerate: # Cap framerate
-                time.sleep(1/capped_framerate - (step_time - prev_time))
+            if time.time() - start_time < (timelapse * current_run_frames): # Cap framerate
+                time.sleep(timelapse - (time.time() % timelapse))
             #print(s_t.shape)
             action_index = 0
             r_t = 0
             a_t = np.zeros([ACTIONS])
+            
             #choose an action epsilon greedy
             if t % FRAME_PER_ACTION == 0:
                 if random.random() <= epsilon:
@@ -254,8 +257,6 @@ def trainNetwork(model,args):
                     
                 a_t[action_index] = 1
                 
-            
-    
             #run the selected action and observed next state and reward        
             x_t1_colored, r_t, terminal = gameState(keys[action_index])
             
@@ -265,7 +266,7 @@ def trainNetwork(model,args):
             #s_t1 = x_t1
             
             # store the transition in D
-            if current_run_frames > framerate*4: # Don't store early useless frames
+            if current_run_frames > CAPPED_FRAMERATE*4: # Don't store early useless frames
                 t_saved += 1
                 cur_saved += 1
                 D.append([s_t, action_index, r_t, s_t1, terminal])
@@ -281,10 +282,6 @@ def trainNetwork(model,args):
                     D.popleft()
             else:
                 useRate = useRate + a_t
-            #elif current_run_frames > framerate*4 - 1:
-                #print('hi')
-    
-            
     
             s_t = s_t1
             t = t + 1
@@ -310,12 +307,10 @@ def trainNetwork(model,args):
                 # Lost!
                 alive = 0
                 
-            if current_run_frames > 50000:
+            if current_run_frames > 10000:
                 # Likely stuck, just go to new level
                 print('Stuck! Moving on...')
                 alive = 0
-                
-            prev_time = step_time
             
         # -----------------------------------
         # Reset keys and gamestate after loss
