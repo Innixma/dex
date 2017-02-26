@@ -128,16 +128,16 @@ def captureIm():
     #print(np.frombuffer(dataBitMap.GetBitmapBits(True), dtype=np.uint8).shape)
     image = np.frombuffer(dataBitMap.GetBitmapBits(True), dtype=np.uint8).reshape((G.y_size, G.x_size, 4))[:,:,:-1][:,:,::-1]       
     #print(image.shape)
-    image = convert_to_polar.reproject_image_into_polar(image)[0].reshape((G.y_size, G.x_size, 3))
     
-    image = image[14:][:]
-
+    # ----------------------------------------------------
+    # Polar Conversion
+    #image = convert_to_polar.reproject_image_into_polar(image)[0].reshape((G.y_size, G.x_size, 3))
+    #image = image[14:][:]
+    # ----------------------------------------------------
     
-    
-    #print(image.shape)
-    #img = smp.toimage(image)
+    #img = smp.toimage(state)
     #img.show()
-    #time.sleep(10)
+    #smp.imsave('outfile.png', img)
 
     return image
 #==============================================================================
@@ -186,14 +186,6 @@ def gameState(inKey):
     press(inKey)
     
     state = captureIm()
-    
-    #print(state.shape)
-    #img = convert_to_polar.reproject_image_into_polar(state)[0]
-    #print(img.shape)
-    #img = smp.toimage(img)
-    #img.show()
-    #smp.imsave('outfile.png', img)
-    #exit(1)
     
     optimal_move = terminal_detection.get_move(state, G.keys)
     if optimal_move == 'esc':

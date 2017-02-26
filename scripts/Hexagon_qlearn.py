@@ -50,23 +50,24 @@ t = 0
 GAME = 'open_hexagon' # the name of the game being played for log files
 ACTIONS = 3 # number of valid actions
 GAMMA = 0.99 # decay rate of past observations
-CAPPED_FRAMERATE = 20 # Frames per second to process and act
-OBSERVATION = 10000. # timesteps to observe before training
-EXPLORE = 40000. # frames over which to anneal epsilon
+CAPPED_FRAMERATE = 36 # Frames per second to process and act
+OBSERVATION = CAPPED_FRAMERATE*30. # timesteps to observe before training
+EXPLORE = CAPPED_FRAMERATE*200. # frames over which to anneal epsilon
 INITIAL_EPSILON = 1 # starting value of epsilon
 FINAL_EPSILON = 0.1 # final value of epsilon
-REPLAY_MEMORY = 100000 # number of previous transitions to remember
-BATCH = 32 # 32 base # size of minibatch
+REPLAY_MEMORY = CAPPED_FRAMERATE*50. # number of previous transitions to remember
+BATCH = CAPPED_FRAMERATE*10 # 32 base # size of minibatch
 FRAME_PER_ACTION = 1 # Number of frames inbetween actions, KEEP AT 1
 INITIAL_SAVE_THRESHOLD = 10000 # Number of frames between saving the network
-NEG_REGRET_FRAMES = 12 # Number of past frames to add regret to
+NEG_REGRET_FRAMES = 1 #int(CAPPED_FRAMERATE/3) # Number of past frames to add regret to
+img_channels = 4 #We stack img_channels frames (Default 4)
 #OpenHexagonEmulator.configure()
 
 img_rows , img_cols = G.x_size_final, G.y_size_final
 
 print('Resolution: ', img_rows, img_cols)
 #Convert image into Black and white
-img_channels = 1 #We stack img_channels frames (Default 4)
+
 
 
 
@@ -74,7 +75,7 @@ img_channels = 1 #We stack img_channels frames (Default 4)
 #==============================================================================
 # CNN model structure (Unmodified)
 #==============================================================================
-def buildmodel():
+def buildmodel_CNN_feb25():
     print("Now we build the model")
     
     model = Sequential()
@@ -122,12 +123,42 @@ def buildmodel():
     model.add(Activation('softmax'))
     adam = Adam(lr=1e-6)
     model.compile(loss='mse',optimizer=adam)
-    print("We finish building the model")
+    print("Finished building the model")
     print(model.summary())
-    G.model = model
+    #G.model = model
     #print(model.layers)
     return model
 #==============================================================================
+
+#==============================================================================
+# CNN model structure (Unmodified)
+#==============================================================================
+def buildmodel_CNN():
+    print("Now we build the model")
+    
+    model = Sequential()
+    
+    
+    model.add(Convolution2D(16, 8, 8, subsample=(4,4),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same',input_shape=(img_channels,img_rows,img_cols)))
+    model.add(Activation('relu'))
+    model.add(Convolution2D(32, 4, 4, subsample=(2,2),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
+    model.add(Activation('relu'))
+    
+    model.add(Flatten(input_shape=(img_channels,img_rows,img_cols)))
+    
+    model.add(Dense(256, init=lambda shape, name: normal(shape, scale=0.01, name=name)))
+    model.add(Activation('relu'))
+
+    model.add(Dense(ACTIONS,init=lambda shape, name: normal(shape, scale=0.01, name=name)))
+    model.add(Activation('softmax'))
+    adam = Adam(lr=1e-6)
+    model.compile(loss='mse',optimizer=adam)
+    print("Finished building the model")
+    print(model.summary())
+
+    return model
+#==============================================================================
+
 
 def prepareImage(image):
     tmpImage = skimage.color.rgb2gray(image)
@@ -136,7 +167,8 @@ def prepareImage(image):
     tmpImage = skimage.transform.resize(tmpImage,(img_rows , img_cols))
             
     
-    tmpImage = skimage.exposure.rescale_intensity(tmpImage, out_range=(0, 255))
+    # Following line commented out Feb 25 2017, due to potential issues caused.
+    #tmpImage = skimage.exposure.rescale_intensity(tmpImage, out_range=(0, 255))
     
     #print(tmpImage)
     #if t % 100 == 0:
@@ -242,8 +274,8 @@ def trainNetwork(model,args):
             if time.time() - start_time < (timelapse * current_run_frames): # Cap framerate
                 time.sleep(timelapse - (time.time() % timelapse))
             #print(s_t.shape)
-            action_index = 0
-            r_t = 0
+            #action_index = 0
+            #r_t = 0
             a_t = np.zeros([ACTIONS])
             
             #choose an action epsilon greedy
@@ -260,33 +292,37 @@ def trainNetwork(model,args):
             #run the selected action and observed next state and reward        
             x_t1_colored, r_t, terminal = gameState(keys[action_index])
             
-            x_t1 = prepareImage(x_t1_colored)
-            
-            s_t1 = np.append(x_t1, s_t[:, :img_channels-1, :, :], axis=1)
+            if terminal == 1: # Don't save terminal state itself, since it is pure white
+                for i in range(NEG_REGRET_FRAMES):
+                    D[-1-i][2] = G.REWARD_TERMINAL/(i+1)
+                D[-1][4] = 1 # Terminal State
+            else:
+                x_t1 = prepareImage(x_t1_colored)
+                s_t1 = np.append(x_t1, s_t[:, :img_channels-1, :, :], axis=1)
             #s_t1 = x_t1
             
-            # store the transition in D
-            if current_run_frames > CAPPED_FRAMERATE*4: # Don't store early useless frames
-                t_saved += 1
-                cur_saved += 1
-                D.append([s_t, action_index, r_t, s_t1, terminal])
-                if terminal == 1:
-                    for i in range(NEG_REGRET_FRAMES):
-                        D[-2-i][2] = G.REWARD_TERMINAL/(i+2)
-                    #D[-(NEG_REGRET_FRAMES+1):-1][3] += G.REWARD_TERMINAL
-                #We reduced the epsilon gradually
-                if epsilon > FINAL_EPSILON and t_saved > OBSERVE:
-                    epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
-
-                if len(D) > REPLAY_MEMORY:
-                    D.popleft()
-            else:
-                useRate = useRate + a_t
+                # store the transition in D
+                if current_run_frames > CAPPED_FRAMERATE*4: # Don't store early useless frames
+                    t_saved += 1
+                    cur_saved += 1
+                    D.append([s_t, action_index, r_t, s_t1, terminal])
+                    #if terminal == 1:
+                    #    for i in range(NEG_REGRET_FRAMES):
+                    #        D[-2-i][2] = G.REWARD_TERMINAL/(i+2)
+                        #D[-(NEG_REGRET_FRAMES+1):-1][3] += G.REWARD_TERMINAL
+                    #We reduced the epsilon gradually
+                    if epsilon > FINAL_EPSILON and t_saved > OBSERVE:
+                        epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
     
-            s_t = s_t1
-            t = t + 1
-            current_run_frames += 1
-            saveIterator += 1
+                    if len(D) > REPLAY_MEMORY:
+                        D.popleft()
+                else:
+                    useRate = useRate + a_t
+        
+                s_t = s_t1
+                t = t + 1
+                current_run_frames += 1
+                saveIterator += 1
     
             
     
@@ -298,11 +334,7 @@ def trainNetwork(model,args):
                 state = "explore"
             else:
                 state = "train"
-            """
-            if t % 1000 == 0:
-                print("TS", t, "/ S", state, \
-                    "/ E %.2f" % epsilon + " / A", action_index, "/ R", r_t)
-            """
+
             if terminal == 1:
                 # Lost!
                 alive = 0
@@ -347,13 +379,14 @@ def trainNetwork(model,args):
                 #for frame in range(NEG_REGRET_FRAMES):
                 #    minibatch.append(D[-frame-1])
     
-                inputs = np.zeros([len(minibatch), s_t.shape[1], s_t.shape[2], s_t.shape[3]])   #32, 80, 80, 4
-                targets = np.zeros([inputs.shape[0], ACTIONS])                        #32, 2
+                inputs = np.zeros([len(minibatch), s_t.shape[1], s_t.shape[2], s_t.shape[3]])   #N, 80, 80, 4
+                targets = np.zeros([inputs.shape[0], ACTIONS])                        #N, 3
                 
                 
                 
                 #Now we do the experience replay
                 
+                # Gamma is wrong!!! Remove softmax????
                 for i in range(0, len(minibatch)):
                     state_t = minibatch[i][0]
                     action_t = minibatch[i][1]   #This is action index
@@ -364,12 +397,13 @@ def trainNetwork(model,args):
                     
                     inputs[i:i + 1] = state_t    #I saved down s_t
     
-                    targets[i] = model.predict(state_t)  # Hitting each buttom probability
-                    Q_sa = model.predict(state_t1)
+                    targets[i] = model.predict(state_t)  # Hitting each button probability
+                    Q_sa = model.predict(state_t1) # This line!!!!!!!!!!!! IT IS WRONG
     
                     if terminal:
                         targets[i, action_t] = reward_t
                     else:
+                        # Not scaled by reward value!!!
                         targets[i, action_t] = reward_t + GAMMA * np.max(Q_sa)
     
                 
@@ -378,6 +412,7 @@ def trainNetwork(model,args):
                 # targets2 = normalize(targets)
                 loss += model.train_on_batch(inputs, targets)        
                 print("\tQ_MAX " , np.max(Q_sa), "/ L ", loss)
+                
             if saveIterator >= saveThreshold:
                 saveIterator = 0
                 # save progress every 10000 iterations
@@ -406,7 +441,7 @@ def trainNetwork(model,args):
 # Unmodified
 #==============================================================================
 def playGame(args):
-    model = buildmodel()
+    model = buildmodel_CNN()
     trainNetwork(model,args)
 #==============================================================================
     
