@@ -8,6 +8,10 @@ keys = np.array(['none', 'left_arrow', 'right_arrow', 'enter', 'esc'])
 
 model = None
 
+image_mode = 'standard'
+#image_mode = 'polar'  #  for polar representation
+
+
 x_zoom = 28
 y_zoom = 18
 
@@ -25,8 +29,8 @@ num_tries = 1
 num_classes = 3
 memory_size = 100
 
-REWARD_TERMINAL = -10
-REWARD_ALIVE = 0.1
+REWARD_TERMINAL = -1
+REWARD_ALIVE = 0.01
 
 curKey = 'enter'
 prevKey = 'enter'

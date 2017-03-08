@@ -70,7 +70,10 @@ def configure():
         G.x_size += 1
 
     G.x_size_final = G.x_size
-    G.y_size_final = G.y_size - 14
+    if G.image_mode == 'polar':
+        G.y_size_final = G.y_size - 14
+    else:
+        G.y_size_final = G.y_size
         
 #==============================================================================
 # 
@@ -131,13 +134,20 @@ def captureIm():
     
     # ----------------------------------------------------
     # Polar Conversion
-    #image = convert_to_polar.reproject_image_into_polar(image)[0].reshape((G.y_size, G.x_size, 3))
-    #image = image[14:][:]
+    if G.image_mode == 'polar':
+        image = convert_to_polar.reproject_image_into_polar(image)[0].reshape((G.y_size, G.x_size, 3))
+        image = image[14:][:]
     # ----------------------------------------------------
     
-    #img = smp.toimage(state)
-    #img.show()
+    
+    
+    # ----
+    # Testing
+    #img = smp.toimage(image)
     #smp.imsave('outfile.png', img)
+    #img.show()
+    #exit()
+    # ----
 
     return image
 #==============================================================================
