@@ -181,14 +181,6 @@ def prepareImage(image):
     
     tmpImage = skimage.color.rgb2gray(image)
     
-    #img = smp.toimage(tmpImage)
-    #smp.imsave('outfile1.png', img)
-    
-    # ----
-    # Marked for deletion, image should already be in correct dimensions, else we have a problem.
-    #tmpImage = skimage.transform.resize(tmpImage,(img_cols,img_rows)) 
-    # ----
-    
     #global ZZ
     #ZZ += 1
     #if ZZ > 300:
@@ -207,7 +199,24 @@ def prepareImage(image):
     
     return tmpImage
     
-
+class Memory:
+    def __init__(self, max_size):
+        self.D = deque()
+        self.max_size = max_size
+        self.size = 0
+        self.total_saved = 0
+    
+    def add(self, x):
+        self.D.append(x)
+        if self.size >= self.max_size:
+            self.D.popleft()
+        else:
+            self.size += 1
+        self.total_saved += 1
+        
+    def sample(self, batch_size):
+        return random.sample(self.D, batch_size)
+    
 #==============================================================================
 # CNN model based Q-learning - adapted for openhexagon
 #==============================================================================
@@ -216,12 +225,10 @@ def trainNetwork(model,args):
     #game_state = game.GameState()
     
     # store the previous observations in replay memory
-    D = deque()
+    memory = Memory(REPLAY_MEMORY)
 
-    # get the first state by doing nothing and preprocess the image to 80x80x4
-    do_nothing = np.zeros(ACTIONS)
-    do_nothing[0] = 1
-    x_t, r_0, terminal = emulator.gameState('enter')#game_state.frame_step(do_nothing)
+    # get the first state by doing nothing and preprocess the image
+    x_t, r_0, terminal = emulator.gameState()
 
     x_t = prepareImage(x_t)
 
@@ -265,7 +272,6 @@ def trainNetwork(model,args):
     mode = 'observe'
     global t
     t = 0
-    t_saved = 0
     cur_saved = 0
     run_count = -1
     saveIterator = 0
@@ -277,15 +283,12 @@ def trainNetwork(model,args):
     while (True):
         run_count += 1
         run_start_t = t
-        alive = True
-        emulator.press('enter')
-        time.sleep(0.1)
-        emulator.release('enter')
+        emulator.start_game()
         start_time = time.time()
         current_run_frames = 0
         useRate = np.zeros([ACTIONS])
         cur_saved = 0
-        while alive == True:
+        while emulator.alive:
             if time.time() - start_time < (timelapse * current_run_frames): # Cap framerate
                 time.sleep(timelapse - (time.time() % timelapse))
                 
@@ -307,26 +310,23 @@ def trainNetwork(model,args):
             
             if terminal: # Don't save terminal state itself, since it is pure white
                 for i in range(NEG_REGRET_FRAMES):
-                    if len(D) > i:
-                        D[-1-i][2] = G.REWARD_TERMINAL/(i+1)
-                if len(D) > 0:
-                    D[-1][4] = 1 # Terminal State
+                    if memory.size > i:
+                        memory.D[-1-i][2] = emulator.reward_terminal/(i+1)
+                if memory.size > 0:
+                    memory.D[-1][4] = 1 # Terminal State
             else:
                 x_t1 = prepareImage(x_t1_colored)
                 s_t1 = np.append(x_t1, s_t[:, :img_channels-1, :, :], axis=1)
             
                 # Store the transition in D
                 if current_run_frames > CAPPED_FRAMERATE*4: # Don't store early useless frames
-                    t_saved += 1
                     cur_saved += 1
-                    D.append([s_t, action_index, r_t, s_t1, terminal])
+                    memory.add([s_t, action_index, r_t, s_t1, terminal])
                         
                     # Reduce the epsilon gradually
-                    if epsilon > FINAL_EPSILON and t_saved > OBSERVE:
+                    if epsilon > FINAL_EPSILON and memory.total_saved > OBSERVE:
                         epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
     
-                    if len(D) > REPLAY_MEMORY:
-                        D.popleft()
                         
                     useRate = useRate + a_t 
         
@@ -335,22 +335,17 @@ def trainNetwork(model,args):
                 current_run_frames += 1
                 saveIterator += 1
 
-            if terminal == 1:
-                # Lost!
-                alive = 0    
-            elif current_run_frames > 10000:
+            if current_run_frames > 10000:
                 # Likely stuck, just go to new level
                 print('Stuck! Moving on...')
-                alive = 0
+                emulator.alive = False
             
         # -----------------------------------
         # Reset keys and gamestate after loss
         end_time = time.time()
-        #emulator.release(G.curKey) # Already done in emulator
+
         time.sleep(0.1)
-        emulator.press('esc')
-        time.sleep(0.1)
-        emulator.release('esc')
+        emulator.end_game()
         # -----------------------------------
         
         # -----------------------------------
@@ -363,12 +358,12 @@ def trainNetwork(model,args):
         survival_times_last_10.append(np.mean(survival_times[-10:]))
         survival_times_full_mean.append(np.mean(survival_times))
         print('Run ' + str(run_count) + ' survived ' + "%.2f" % survival_time + 's' + ', %.2f fps' % framerate + ', key: ', ['%.2f' % k for k in useRate])
-        print('\tMean: %.2f' % np.mean(survival_times), 'Last 10: %.2f' % survival_times_last_10[-1], 'Max: %.2f' % np.max(survival_times), "Std: %.2f" % np.std(survival_times), "TS", t_saved, "E %.2f" % epsilon)
+        print('\tMean: %.2f' % np.mean(survival_times), 'Last 10: %.2f' % survival_times_last_10[-1], 'Max: %.2f' % np.max(survival_times), "Std: %.2f" % np.std(survival_times), "TS", memory.total_saved, "E %.2f" % epsilon)
         # -----------------------------------
         
         # Now Train!
         # Only train if done observing
-        if t_saved > OBSERVE:
+        if memory.total_saved > OBSERVE:
             if mode == 'observe':
                 mode = 'train'
                 time.sleep(0.5)
@@ -377,12 +372,12 @@ def trainNetwork(model,args):
                 loss = 0
                 Q_sa = 0
                 Q_sa_total = 0
-                minibatch = random.sample(D, BATCH)
+                minibatch = memory.sample(BATCH)
                 
                 # ---------------------------------------------------
                 # Potential boost to performance, force learn terminal states
                 for frame in range(NEG_REGRET_FRAMES):
-                    minibatch.append(D[-frame-1])
+                    minibatch.append(memory.D[-frame-1])
                 # ---------------------------------------------------
                 
                 inputs = np.zeros([len(minibatch), s_t.shape[1], s_t.shape[2], s_t.shape[3]])   #N, 80, 80, 4

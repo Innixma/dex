@@ -19,7 +19,8 @@ class HexagonEmulator:
         self.capture_zoom = capture_zoom
         self.reward_alive = rewards[0]
         self.reward_terminal = rewards[1]
-        self.mode = mode        
+        self.mode = mode
+        self.alive = False
 
         self.get_application_focus()
         
@@ -38,6 +39,18 @@ class HexagonEmulator:
         
     #==============================================================================
     
+    def start_game(self):
+        self.press('enter')
+        time.sleep(0.1)
+        self.release('enter')
+        self.alive = True
+        
+    def end_game(self):
+        self.press('esc')
+        time.sleep(0.1)
+        self.release('esc')
+        self.alive = False
+        
     def get_application_focus(self):
         hwnd = win32gui.FindWindow(None, self.application)
         shell = win32com.client.Dispatch("WScript.Shell")
@@ -153,12 +166,14 @@ class HexagonEmulator:
         return(terminal)
     
     # Game state function
-    def gameState(self, inKey):
+    def gameState(self, inKey='none'):
+        
+        self.release(self.curKey)
+        self.press(inKey)
         
         self.prevKey = self.curKey
         self.curKey = inKey
-        self.release(self.prevKey)
-        self.press(inKey)
+        
         
         state = self.captureIm()
         
@@ -168,6 +183,7 @@ class HexagonEmulator:
         if terminal:
             self.release(inKey)
             reward = self.reward_terminal
+            self.alive = False
         else:
             reward = self.reward_alive
             
