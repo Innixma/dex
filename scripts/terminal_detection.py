@@ -21,8 +21,8 @@ def reset_globs():
     prevMean = 0
     c = 0
     
-# Gets the optimal move
-def get_move(data, moves):
+# Checks for terminal
+def check_terminal(data):
     global prevMean, meanDiff, meanLight, c, maxDiff, maxMean
     c += 1
     
@@ -46,13 +46,8 @@ def get_move(data, moves):
         #print(diff, threshold)
 
         if diff > threshold:
-            return 'esc' # Lost!
+            reset_globs()
+            return 1 # Lost!
     prevMean = curMean
-    
-    ##############################################################
-    # Compute the optimal move
-    optimal_move = moves[np.random.randint(0,3)]
-    ##############################################################
-    
-    return optimal_move
+    return 0
     

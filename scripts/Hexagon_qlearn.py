@@ -26,14 +26,11 @@ from keras.models import model_from_json
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
-from keras.optimizers import SGD , Adam
+from keras.optimizers import SGD , Adam , RMSprop
 #%%
 import importlib
 import OpenHexagonEmulator
-import terminal_detection
 import graphHelper
-#importlib.reload(OpenHexagonEmulator)
-from OpenHexagonEmulator import gameState
 
 import os
 RESULT_FOLDER = '/../results'
@@ -64,75 +61,56 @@ FRAME_PER_ACTION = 1 # Number of frames inbetween actions, KEEP AT 1
 INITIAL_SAVE_THRESHOLD = 10000 # Number of frames between saving the network
 NEG_REGRET_FRAMES = 1 #int(CAPPED_FRAMERATE/6) # Number of past frames to add regret to
 img_channels = 2 #We stack img_channels frames (Default 4)
-#ZZ = 0
-#OpenHexagonEmulator.configure()
 
-img_rows , img_cols = G.x_size_final, G.y_size_final
+emulator = OpenHexagonEmulator.HexagonEmulator(G.application, [G.x_size, G.y_size], [G.x_zoom, G.y_zoom], [G.REWARD_ALIVE, G.REWARD_TERMINAL])
+
+#ZZ = 0
+
+"""
+# Brain class concept from Jaromir Janisch, 2016
+# https://jaromiru.com/2016/09/27/lets-make-a-dqn-theory/
+class Brain:
+    def __init__(self, stateCnt, actionCnt, modelFunc=None):
+        self.stateCnt = stateCnt
+        self.actionCnt = actionCnt
+
+        self.model = self._createModel(modelFunc)
+        self.model_ = self._createModel(modelFunc) 
+
+    def _createModel(self, modelFunc=None):
+        if modelFunc:
+            model = modelFunc(self.stateCnt, self.actionCnt)
+        else:
+            model = Sequential()
+    
+            model.add(Dense(output_dim=64, activation='relu', input_dim=self.stateCnt))
+            model.add(Dense(output_dim=self.actionCnt, activation='linear'))
+    
+            opt = RMSprop(lr=0.00025)
+            model.compile(loss=hubert_loss, optimizer=opt)
+
+        return model
+
+    def train(self, x, y, epoch=1, verbose=0):
+        self.model.fit(x, y, batch_size=64, nb_epoch=epoch, verbose=verbose)
+
+    def predict(self, s, target=False):
+        if target:
+            return self.model_.predict(s)
+        else:
+            return self.model.predict(s)
+
+    def predictOne(self, s, target=False):
+        return self.predict(s.reshape(1, self.stateCnt), target=target).flatten()
+
+    def updateTargetModel(self):
+        self.model_.set_weights(self.model.get_weights())
+"""
+
+img_rows , img_cols = emulator.capture_size[0], emulator.capture_size[1]
 
 print('Resolution: ', img_rows, 'x,',img_cols, 'y')
 #Convert image into Black and white
-
-
-
-
-
-#==============================================================================
-# CNN model structure (Unmodified)
-#==============================================================================
-def buildmodel_CNN_feb25():
-    print("Now we build the model")
-    
-    model = Sequential()
-    
-    
-    model.add(Convolution2D(16, 8, 8, subsample=(4,4),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same',input_shape=(img_channels,img_cols,img_rows)))
-    model.add(Activation('relu'))
-    model.add(Convolution2D(32, 4, 4, subsample=(2,2),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-    model.add(Activation('relu'))
-    
-    
-    
-    
-    #model.add(Convolution2D(64, 5, 5, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-    #model.add(Activation('relu'))
-    
-    #model.add(Convolution2D(64, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-    #model.add(Activation('relu'))
-    
-    #model.add(MaxPooling2D(pool_size=(2, 2)))
-    
-    
-    #model.add(Convolution2D(64, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-    #model.add(Activation('relu'))
-    
-    #model.add(Convolution2D(64, 4, 4, subsample=(2,2),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-    #model.add(Activation('relu'))
-    
-    #model.add(MaxPooling2D(pool_size=(2, 2)))
-    #model.add(Convolution2D(16, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-    #model.add(Activation('relu'))
-    #model.add(MaxPooling2D(pool_size=(2, 2)))
-    #model.add(Convolution2D(16, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-    #model.add(Activation('relu'))
-    #model.add(MaxPooling2D(pool_size=(2, 2)))
-    #model.add(Activation('relu'))
-    #model.add(Convolution2D(64, 16, 16, subsample=(4,4),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-    #model.add(Activation('relu'))
-    model.add(Flatten(input_shape=(img_channels,img_cols,img_rows))) # Why input_shape???? TODO
-    #model.add(Dense(256, init=lambda shape, name: normal(shape, scale=0.01, name=name)))
-    model.add(Dense(256, init=lambda shape, name: normal(shape, scale=0.01, name=name)))
-    model.add(Activation('relu'))
-    #model.add(Dropout(0.1))
-    model.add(Dense(ACTIONS,init=lambda shape, name: normal(shape, scale=0.01, name=name)))
-    model.add(Activation('softmax')) # <--- THIS CAUSED THE HUGE PROBLEMS!
-    adam = Adam(lr=1e-6)
-    model.compile(loss='mse',optimizer=adam)
-    print("Finished building the model")
-    print(model.summary())
-    #G.model = model
-    #print(model.layers)
-    return model
-#==============================================================================
 
 #==============================================================================
 # CNN model structure (Base), Feb 27
@@ -200,8 +178,7 @@ def buildmodel_CNN_v2():
 
 # Converts image to grayscale, and forces image to proper dimensions
 def prepareImage(image):
-    #global ZZ
-    #ZZ += 1
+    
     tmpImage = skimage.color.rgb2gray(image)
     
     #img = smp.toimage(tmpImage)
@@ -211,7 +188,9 @@ def prepareImage(image):
     # Marked for deletion, image should already be in correct dimensions, else we have a problem.
     #tmpImage = skimage.transform.resize(tmpImage,(img_cols,img_rows)) 
     # ----
-
+    
+    #global ZZ
+    #ZZ += 1
     #if ZZ > 300:
     #    img = smp.toimage(tmpImage)
     #    smp.imsave('outfile' + str(ZZ % 36) + '.png', img)    
@@ -220,7 +199,7 @@ def prepareImage(image):
     #tmpImage = skimage.exposure.rescale_intensity(tmpImage, out_range=(0, 255))
     
     # ----
-    # NEW!!! Feb 28: Normalize pixels TODO
+    # NEW!!! Feb 28: Normalize pixels
     tmpImage = tmpImage.astype('float32') / 128 - 1
     # ----
     
@@ -242,7 +221,7 @@ def trainNetwork(model,args):
     # get the first state by doing nothing and preprocess the image to 80x80x4
     do_nothing = np.zeros(ACTIONS)
     do_nothing[0] = 1
-    x_t, r_0, terminal = gameState('enter')#game_state.frame_step(do_nothing)
+    x_t, r_0, terminal = emulator.gameState('enter')#game_state.frame_step(do_nothing)
 
     x_t = prepareImage(x_t)
 
@@ -299,9 +278,9 @@ def trainNetwork(model,args):
         run_count += 1
         run_start_t = t
         alive = True
-        OpenHexagonEmulator.press('enter')
+        emulator.press('enter')
         time.sleep(0.1)
-        OpenHexagonEmulator.release('enter')
+        emulator.release('enter')
         start_time = time.time()
         current_run_frames = 0
         useRate = np.zeros([ACTIONS])
@@ -324,9 +303,9 @@ def trainNetwork(model,args):
                 a_t[action_index] = 1
                 
             #run the selected action and observed next state and reward        
-            x_t1_colored, r_t, terminal = gameState(keys[action_index])
+            x_t1_colored, r_t, terminal = emulator.gameState(keys[action_index])
             
-            if terminal == 1: # Don't save terminal state itself, since it is pure white
+            if terminal: # Don't save terminal state itself, since it is pure white
                 for i in range(NEG_REGRET_FRAMES):
                     if len(D) > i:
                         D[-1-i][2] = G.REWARD_TERMINAL/(i+1)
@@ -367,12 +346,11 @@ def trainNetwork(model,args):
         # -----------------------------------
         # Reset keys and gamestate after loss
         end_time = time.time()
-        OpenHexagonEmulator.release(G.curKey)
+        #emulator.release(G.curKey) # Already done in emulator
         time.sleep(0.1)
-        OpenHexagonEmulator.press('esc')
+        emulator.press('esc')
         time.sleep(0.1)
-        OpenHexagonEmulator.release('esc')
-        terminal_detection.reset_globs()
+        emulator.release('esc')
         # -----------------------------------
         
         # -----------------------------------
