@@ -11,6 +11,7 @@ import scipy.misc as smp
 class HexagonEmulator:
 
     def __init__(self, application, window_size=[140,140], capture_zoom=[0,0], rewards=[1,-1], mode='standard'): # window_size = x,y
+        self.action_dim = 3
         self.application = application
         self.window_size = window_size
         self.window_offset = [0,0]
@@ -41,15 +42,18 @@ class HexagonEmulator:
     
     def start_game(self):
         self.press('enter')
-        time.sleep(0.1)
+        time.sleep(0.01)
         self.release('enter')
         self.alive = True
         
     def end_game(self):
-        self.press('esc')
+        self.release(self.curKey)
         time.sleep(0.1)
+        self.press('esc')
+        time.sleep(0.01)
         self.release('esc')
         self.alive = False
+        time.sleep(0.03)
         
     def get_application_focus(self):
         hwnd = win32gui.FindWindow(None, self.application)
