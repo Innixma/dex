@@ -7,12 +7,16 @@ import time
 import terminal_detection          
 import convert_to_polar
 import scipy.misc as smp
+import skimage as skimage
 
 class HexagonEmulator:
 
     def __init__(self, application, window_size=[140,140], capture_zoom=[0,0], rewards=[1,-1], mode='standard'): # window_size = x,y
+        self.keys = np.array(['none', 'left_arrow', 'right_arrow'])
         self.action_dim = 3
         self.application = application
+        self.shell = win32com.client.Dispatch("WScript.Shell")
+        self.game_window = win32gui.FindWindow(None, self.application)
         self.window_size = window_size
         self.window_offset = [0,0]
         self.capture_size = [0,0]
@@ -26,6 +30,7 @@ class HexagonEmulator:
         self.get_application_focus()
         
         self.configure()
+        
         
         self.hwnd = win32gui.GetDesktopWindow()
         self.wDC = win32gui.GetWindowDC(self.hwnd)
@@ -41,28 +46,43 @@ class HexagonEmulator:
     #==============================================================================
     
     def start_game(self):
+        self.get_focus_light()
+        #time.sleep(0.05)
         self.press('enter')
-        time.sleep(0.01)
+        time.sleep(0.05)
+        #self.get_focus_light()
         self.release('enter')
         self.alive = True
         
     def end_game(self):
+        self.get_focus_light()
         self.release(self.curKey)
-        time.sleep(0.1)
+        time.sleep(0.2)
+        #self.get_focus_light()
         self.press('esc')
-        time.sleep(0.01)
+        time.sleep(0.05)
+        #self.get_focus_light()
         self.release('esc')
         self.alive = False
         time.sleep(0.03)
-        
+    
+    def get_focus_light(self):
+        #hwnd = win32gui.FindWindow(None, self.application)
+        #shell = win32com.client.Dispatch("WScript.Shell")
+        #self.shell.SendKeys('%')
+        try:
+            win32gui.SetForegroundWindow(self.game_window) 
+        except Exception as e:
+            print(str(e))
+
     def get_application_focus(self):
-        hwnd = win32gui.FindWindow(None, self.application)
-        shell = win32com.client.Dispatch("WScript.Shell")
-        shell.SendKeys('%')
-        win32gui.SetForegroundWindow(hwnd)
-        win32gui.MoveWindow(hwnd, self.window_offset[0], self.window_offset[1], self.window_size[0], self.window_size[1], True)
+        #hwnd = win32gui.FindWindow(None, self.application)
+        #shell = win32com.client.Dispatch("WScript.Shell")
+        self.shell.SendKeys('%')
+        win32gui.SetForegroundWindow(self.game_window)
+        win32gui.MoveWindow(self.game_window, self.window_offset[0], self.window_offset[1], self.window_size[0], self.window_size[1], True)
         
-        if hwnd == 0:
+        if self.game_window == 0:
             print('ERROR: Can\'t find window')
             exit(1)
             
@@ -153,6 +173,30 @@ class HexagonEmulator:
     
         return image
         
+    # Converts image to grayscale, and forces image to proper dimensions
+    def prepareImage(self, image):
+        
+        tmpImage = skimage.color.rgb2gray(image)
+        
+        #global ZZ
+        #ZZ += 1
+        #if ZZ > 300:
+        #    img = smp.toimage(tmpImage)
+        #    smp.imsave('outfile' + str(ZZ % 36) + '.png', img)    
+        
+        # Following line commented out Feb 25 2017, due to potential issues caused.
+        #tmpImage = skimage.exposure.rescale_intensity(tmpImage, out_range=(0, 255))
+        
+        # ----
+        # NEW!!! Feb 28: Normalize pixels
+        #print(np.mean(tmpImage))
+        #tmpImage = tmpImage.astype('float32') / 128 - 1
+        # ----
+        tmpImage = tmpImage.astype('float16')
+        #tmpImage = tmpImage.reshape(1, 1, tmpImage.shape[0], tmpImage.shape[1])
+        tmpImage = tmpImage.reshape(1, tmpImage.shape[0], tmpImage.shape[1])
+        return tmpImage
+        
     # Free resources
     def freeResources(self):
     
@@ -170,8 +214,11 @@ class HexagonEmulator:
         return(terminal)
     
     # Game state function
-    def gameState(self, inKey='none'):
+    def gameState(self, inKey=0):
         
+
+        inKey = self.keys[inKey]
+        #self.get_focus_light()
         self.release(self.curKey)
         self.press(inKey)
         
@@ -181,8 +228,11 @@ class HexagonEmulator:
         
         state = self.captureIm()
         
+        # TODO: Replace this in future to check the prepared image state,
+        # Much faster that way
         terminal = terminal_detection.check_terminal(state)
-        #terminal = termination(state)
+        
+        state = self.prepareImage(state)
 
         if terminal:
             self.release(inKey)

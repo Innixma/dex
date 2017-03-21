@@ -1,6 +1,7 @@
 # By Nick Erickson, Benjamin Hillmann, Sivaraman Rajaganapathy
 # Contains main functions for detecting a game loss
 
+# TODO: Remake this to be better, use preparedImage instead of raw
 import numpy as np
 
 meanLight = 0
@@ -41,13 +42,13 @@ def check_terminal(data):
         maxDiff = max(maxDiff, abs(diff))
         maxMean = max(curMean, maxMean)
         #print(meanDiff, diff)
-        threshold = (160 - meanLight) / 2
+        threshold = (120 - meanLight) / 2
         #print(threshold, diff, maxDiff)
         #print(diff, threshold)
-
         if diff > threshold:
             reset_globs()
             return 1 # Lost!
+            
     prevMean = curMean
     return 0
     

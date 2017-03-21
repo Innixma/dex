@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
-# TODO: Target Network https://jaromiru.com/2016/10/21/lets-make-a-dqn-full-dqn/
-
+# Done: Target Network https://jaromiru.com/2016/10/21/lets-make-a-dqn-full-dqn/
+# TODO: Prioritized Experience Replay
+# TODO: Random agent saving memory/loading memory (Mostly done)
+    
 from __future__ import print_function
 
 import globs as G
 import argparse
-import skimage as skimage
 from skimage import transform, color, exposure
 from skimage.transform import rotate
 from skimage.viewer import ImageViewer
@@ -19,6 +20,7 @@ import datetime
 import time
 from collections import deque
 
+import pickle
 import json
 from keras import initializations
 from keras.initializations import normal, identity
@@ -42,36 +44,14 @@ os.makedirs(dir + RESULT_FOLDER,exist_ok=True) # Generates results folder
 RESULT_FOLDER_FULL = dir + RESULT_FOLDER
 CUR_FOLDER = datetime.datetime.now().strftime('%G-%m-%d-%H-%M-%S')
 
-keys = np.array(['none', 'left_arrow', 'right_arrow'])
+DATA_FOLDER = '/../data'
+dir = os.path.dirname(__file__)
+os.makedirs(dir + DATA_FOLDER,exist_ok=True) # Generates results folder
+DATA_FOLDER_FULL = dir + DATA_FOLDER
 
 #%%
-GAME = 'open_hexagon' # the name of the game being played for log files
-ACTIONS = 3 # number of valid actions
-GAMMA = 0.99 # decay rate of past observations
-CAPPED_FRAMERATE = 18 # Frames per second to process and act
-OBSERVATION = CAPPED_FRAMERATE*600 # timesteps to observe before training
-EXPLORE = CAPPED_FRAMERATE*2000 # frames over which to anneal epsilon
-INITIAL_EPSILON = 1 # starting value of epsilon
-FINAL_EPSILON = 0.05 # final value of epsilon
-REPLAY_MEMORY = CAPPED_FRAMERATE*1000 # number of previous transitions to remember
-BATCH = CAPPED_FRAMERATE*5 # 32 base # size of minibatch
-FRAME_PER_ACTION = 1 # Number of frames inbetween actions, KEEP AT 1
-INITIAL_SAVE_THRESHOLD = 10000 # Number of frames between saving the network
-NEG_REGRET_FRAMES = 1 #int(CAPPED_FRAMERATE/6) # Number of past frames to add regret to
-img_channels = 2 #We stack img_channels frames (Default 4)
-
-
-#ZZ = 0
-
-
-#emulator = OpenHexagonEmulator.HexagonEmulator(G.application, [G.x_size, G.y_size], [G.x_zoom, G.y_zoom], [G.REWARD_ALIVE, G.REWARD_TERMINAL])
-#img_rows , img_cols = emulator.capture_size[0], emulator.capture_size[1]
-#print('Resolution: ', img_rows, 'x,',img_cols, 'y')
-
-
-#hyperparams = Hyperparam()
     
-class Metrics:
+class Metrics: # TODO: Save this to a pickle file?
     def __init__(self):
         self.survival_times = []
         self.survival_times_last_10 = []
@@ -84,7 +64,7 @@ class Metrics:
         self.survival_times_last_10.append(np.mean(self.survival_times[-10:]))
         self.survival_times_full_mean.append(np.mean(self.survival_times))
 
-def hubert_loss(y_true, y_pred):    # sqrt(1+a^2)-1
+def hubert_loss(y_true, y_pred): # sqrt(1+a^2)-1
     err = y_pred - y_true
     return np.sqrt(1+np.square(err))-1
 
@@ -107,38 +87,13 @@ def buildmodel_CNN_v3(state_dim, action_dim):
     model.add(Activation('linear'))
     
 
-    adam = Adam(lr=0.00025) # Base lr=1e-6
+    adam = Adam(lr=0.00025)
     model.compile(loss=hubert_loss,optimizer=adam) # Maybe try huber or mae??
 
     return model
-#==============================================================================
+#==============================================================================  
 
-
-# Converts image to grayscale, and forces image to proper dimensions
-def prepareImage(image):
-    
-    tmpImage = skimage.color.rgb2gray(image)
-    
-    #global ZZ
-    #ZZ += 1
-    #if ZZ > 300:
-    #    img = smp.toimage(tmpImage)
-    #    smp.imsave('outfile' + str(ZZ % 36) + '.png', img)    
-    
-    # Following line commented out Feb 25 2017, due to potential issues caused.
-    #tmpImage = skimage.exposure.rescale_intensity(tmpImage, out_range=(0, 255))
-    
-    # ----
-    # NEW!!! Feb 28: Normalize pixels
-    tmpImage = tmpImage.astype('float32') / 128 - 1
-    # ----
-    
-    tmpImage = tmpImage.reshape(1, 1, tmpImage.shape[0], tmpImage.shape[1])
-    
-    return tmpImage
-    
-
-# Brain class concept from Jaromir Janisch, 2016
+# Class concept from Jaromir Janisch, 2016
 # https://jaromiru.com/2016/09/27/lets-make-a-dqn-theory/
 class Brain:
     def __init__(self, state_dim, action_dim, modelFunc=None):
@@ -156,12 +111,12 @@ class Brain:
         else:
             model = Sequential()
     
-            model.add(Dense(output_dim=64, activation='relu', input_dim=self.state_dim))
+            model.add(Dense(output_dim=64, activation='relu', input_shape=self.state_dim))
             model.add(Dense(output_dim=self.action_dim, activation='linear'))
     
             opt = RMSprop(lr=0.00025)
             model.compile(loss=hubert_loss, optimizer=opt)
-
+            #model.compile(loss='mse', optimizer=opt)
         print("Finished building the model")
         #print(model.summary())
         return model
@@ -176,30 +131,76 @@ class Brain:
             return self.model.predict(s)
 
     def predictOne(self, s, target=False):
-        return self.predict(s.reshape(1, self.stateCnt), target=target).flatten()
-
+        dim = [1] + self.state_dim
+        return self.predict(s.reshape(dim), target=target).flatten()
+        #return self.predict(s, target=target).flatten()
+        
     def updateTargetModel(self):
         self.model_.set_weights(self.model.get_weights())
 
-    
-class Memory:
+# TODO: Implement sum tree for prioritized learning
+class Memory: # TODO: use maxlen argument in Deque?
     def __init__(self, max_size):
         self.D = deque()
         self.max_size = max_size
         self.size = 0
         self.total_saved = 0
+        self.isFull = False
     
     def add(self, x):
         self.D.append(x)
         if self.size >= self.max_size:
             self.D.popleft()
+            self.isFull = True
         else:
             self.size += 1
         self.total_saved += 1
         
+    def removeLastN(self, n): # Remove last n instances
+        if n > self.size:
+            n = self.size
+        for i in range(n):
+            self.D.pop()
+        self.size -= n
+        self.total_saved -= n
+        self.isFull = False
+        
     def sample(self, batch_size):
         return random.sample(self.D, batch_size)
-    
+
+class RandomAgent:
+    def __init__(self, hyperparams, args, state_dim, action_dim):
+        self.h = hyperparams
+        self.mode = 'observe'
+        self.args = args
+        self.metrics = Metrics()
+        self.action_dim = action_dim
+        self.state_dim = state_dim
+        self.memory = Memory(self.h.memory_size)
+        self.run_count = -1
+        self.replay_count = -1
+        self.save_iterator = -1
+        self.update_iterator = -1
+        
+        if self.args['directory'] == 'default':
+            self.args['directory'] = CUR_FOLDER
+
+        results_location = RESULT_FOLDER_FULL + '/' + self.args['directory']
+        data_location = DATA_FOLDER_FULL + '/' + self.args['directory']
+        os.makedirs(results_location,exist_ok=True) # Generates results folder
+        os.makedirs(data_location,exist_ok=True) # Generates data folder
+        self.results_location = results_location + '/'
+        self.data_location = data_location + '/'
+                
+    def act(self, s):
+        return random.randrange(0, self.action_dim)
+
+    def observe(self, sample):
+        self.memory.add(sample)
+
+    def replay(self):
+        pass
+        
 class Agent:
     def __init__(self, hyperparams, args, state_dim, action_dim, modelFunc=None):
         self.h = hyperparams
@@ -211,23 +212,30 @@ class Agent:
         self.action_dim = action_dim
         self.state_dim = state_dim        
         self.run_count = -1
-        self.save_iterator = 0
+        self.replay_count = -1
+        self.save_iterator = -1
+        self.update_iterator = -1
         self.mode = 'observe'
         
         self.load_weights()
+        self.brain.updateTargetModel()
         
-    def load_weights(self):
+    def load_weights(self): # TODO: Update this function
         if self.args['directory'] == 'default':
-            results_location = RESULT_FOLDER_FULL + '/' + CUR_FOLDER
-        else:
-            results_location = RESULT_FOLDER_FULL + '/' + self.args['directory']
+            self.args['directory'] = CUR_FOLDER
+
+        results_location = RESULT_FOLDER_FULL + '/' + self.args['directory']
+        data_location = DATA_FOLDER_FULL + '/' + self.args['directory']
         os.makedirs(results_location,exist_ok=True) # Generates results folder
-        results_location = results_location + '/'
+        os.makedirs(data_location,exist_ok=True) # Generates data folder
+        self.results_location = results_location + '/'
+        self.data_location = data_location + '/'
+        
         if self.args['mode'] == 'Run':
             self.h.observe = 999999999    #We keep observe, never train
             self.epsilon = 0
             print ("Now we load weight")
-            self.brain.model.load_weights(results_location + 'model.h5')
+            self.brain.model.load_weights(self.results_location + 'model.h5')
             #adam = Adam(lr=1e-6)
             #self.model.compile(loss='mse',optimizer=adam)
             print ("Weights loaded successfully")
@@ -235,15 +243,14 @@ class Agent:
             self.h.observe = self.h.observe
             self.epsilon = self.h.epsilon_init
             print ("Now we load weight")
-            self.brain.model.load_weights(results_location + 'model.h5')
+            self.brain.model.load_weights(self.results_location + 'model.h5')
             #adam = Adam(lr=1e-6)
             #self.model.compile(loss='mse',optimizer=adam)
             print ("Weights loaded successfully")
         else:                       # We go to training mode
             print('Training new network!')
             self.h.observe = self.h.observe
-            self.epsilon = INITIAL_EPSILON
-        self.results_location = results_location
+            self.epsilon = self.h.epsilon_init
      
     def save_weights(self):
         print("Saving Model...")
@@ -255,65 +262,75 @@ class Agent:
         if self.epsilon > self.h.epsilon_final and self.memory.total_saved > self.h.observe:
             self.epsilon -= (self.h.epsilon_init - self.h.epsilon_final) / self.h.explore
         
+    def update_agent(self):
+        if self.update_iterator >= self.h.update_rate:
+            self.update_iterator -= self.h.update_rate
+            print('Updating Target Network')
+            self.brain.updateTargetModel()
+            
     def act(self, s):
         if random.random() < self.epsilon:
-            return random.randint(0, self.action_dim)
+            return random.randrange(0, self.action_dim)
         else:
             return np.argmax(self.brain.predictOne(s))
     
     def observe(self, sample):
-        pass
-    
-    def replay(self):
-        #sample a minibatch to train on
-        loss = 0
-        Q_sa = 0
+        self.memory.add(sample)
+        self.update_epsilon()
+        self.save_iterator += 1
+        #self.update_iterator += 1
+        
+    def replay(self, debug=True):
+        self.replay_count += 1
+        self.update_iterator += 1
         Q_sa_total = 0
-        minibatch = self.memory.sample(self.h.batch)
+        
+        batch = self.memory.sample(self.h.batch)
+        batchLen = len(batch)
         
         # ---------------------------------------------------
         # Potential boost to performance, force learn terminal states
-        for frame in range(self.h.neg_regret_frames):
-            minibatch.append(self.memory.D[-frame-1])
+        #for frame in range(self.h.neg_regret_frames):
+        #    batch.append(self.memory.D[-frame-1])
         # ---------------------------------------------------
         
-        inputs = np.zeros([len(minibatch), self.state_dim[0], self.state_dim[1],self.state_dim[2]])   #N, 80, 80, 4
-        targets = np.zeros([inputs.shape[0], self.action_dim])                        #N, 3
+        states = np.array([x[0] for x in batch])
+        states_ = np.array([x[3] for x in batch])
         
+        targets = self.brain.predict(states)
+        targets_ = self.brain.predict(states_, target=False) # Target Network!              
+        pTarget_ = self.brain.predict(states_, target=True)                    
+        Q_size = batchLen
         
         # TODO: Prioritized experience replay
-        #Now we do the experience replay
-        for i in range(0, len(minibatch)):
-            state_t = minibatch[i][0]
-            action_t = minibatch[i][1]   #This is action index
-            reward_t = minibatch[i][2]
-            state_t1 = minibatch[i][3]
-            terminal = minibatch[i][4]
-            # if terminated, only equals reward
+        for i in range(0, batchLen):
+            #state_t = batch[i][0]
+            action_t = batch[i][1]
+            reward_t = batch[i][2]
+            #state_t1 = batch[i][3]
+            terminal = batch[i][4]
             
-            inputs[i:i + 1] = state_t
-
-            targets[i] = self.brain.model.predict(state_t)  # Hitting each button Q value
-            Q_sa = self.brain.model.predict(state_t1)
-
-            Q_sa_total += np.max(Q_sa)
-
             if terminal:
+                Q_size -= 1
                 targets[i, action_t] = reward_t
             else:
-                targets[i, action_t] = reward_t + self.h.gamma * np.max(Q_sa)
+                Q_sa_total += np.max(targets_[i])
+                #targets[i, action_t] = reward_t + self.h.gamma * np.max(targets_[i]) # Full DQN (Worse than double DQN)
+                targets[i, action_t] = reward_t + self.h.gamma * pTarget_[i][np.argmax(targets_[i])]  # double DQN
 
+        loss = self.brain.model.train_on_batch(states, targets) # Maybe do fit in future
+        if Q_size == 0:
+            Q_size = 1
+        Q_sa_total = Q_sa_total/Q_size
         
-        #print(targets)
-                
-        # targets2 = normalize(targets)
-        loss += self.brain.model.train_on_batch(inputs, targets)
-        Q_sa_total = Q_sa_total/len(minibatch)
-        print("\tQ_MAX " , Q_sa_total, "/ L ", loss)
+        if debug:
+            print("\tQ_MAX " , Q_sa_total, "/ L ", loss)
         
-        self.metrics.Q.append(Q_sa_total)
-        self.metrics.loss.append(loss)
-        
+        if self.replay_count % 100 == 0:
+            self.metrics.Q.append(Q_sa_total) # TODO: Save these better
+            self.metrics.loss.append(loss)
+            self.save_metrics_training() # TODO: move this
+            
     def display_metrics(self, frame, useRate):
         if np.sum(useRate) != 0:
             useRate = useRate/np.sum(useRate)
@@ -321,11 +338,15 @@ class Agent:
         print('Run ' + str(self.run_count) + ' survived ' + "%.2f" % self.metrics.survival_times[-1] + 's' + ', %.2f fps' % framerate + ', key: ', ['%.2f' % k for k in useRate])
         print('\tMean: %.2f' % np.mean(self.metrics.survival_times), 'Last 10: %.2f' % self.metrics.survival_times_last_10[-1], 'Max: %.2f' % np.max(self.metrics.survival_times), "Std: %.2f" % np.std(self.metrics.survival_times), "TS", self.memory.total_saved, "E %.2f" % self.epsilon)
 
+    def save_metrics_training(self):
+        graphHelper.graphSimple([np.arange(len(self.metrics.Q))], [self.metrics.Q], ['Q Value'], 'Q Value', 'Q Value', 'Run', savefigName=self.results_location + 'Q_graph')
+        graphHelper.graphSimple([np.arange(len(self.metrics.loss))], [self.metrics.loss], ['Loss'], 'Loss', 'Loss', 'Run', savefigName=self.results_location + 'Loss_graph')        
+        
     def save_metrics(self):
         with open(self.results_location + 'log.txt', "a+") as outf:
             outf.write('%d,%.10f,%.10f,%.10f\n' % (self.run_count, self.metrics.Q[-1], self.metrics.loss[-1], self.metrics.survival_times[-1]))
-                
-        graphHelper.graphSimple([np.arange(self.run_count+1),np.arange(self.run_count+1),np.arange(self.run_count+1)], [self.metrics.survival_times, self.metrics.survival_times_last_10, self.metrics.survival_times_full_mean], ['DQN', 'DQN_Last_10_Mean', 'DQN_Full_Mean'], 'DQN on Open Hexagon', 'Time(s)', 'Run', savefigName=self.results_location + 'DQN_graph')
+        # TODO: Remove these logs, just export the data directly
+        graphHelper.graphSimple([np.arange(self.run_count+1),np.arange(self.run_count+1),np.arange(self.run_count+1)], [self.metrics.survival_times, self.metrics.survival_times_last_10, self.metrics.survival_times_full_mean], ['DQN', 'DQN_Last_10_Mean', 'DQN_Full_Mean'], 'DQN', 'Time(s)', 'Run', savefigName=self.results_location + 'DQN_graph')
         with open(self.results_location + 'DQN.txt', "a+") as outf:
             outf.write('%d,%.10f,%.10f,%.10f\n' % (self.run_count, self.metrics.survival_times[-1], self.metrics.survival_times_last_10[-1], self.metrics.survival_times_full_mean[-1]))    
             
@@ -337,26 +358,36 @@ class Environment_gym:
         
     def run(self, agent):
         s = self.env.reset()
+        #print('hi')
+        #print('there')
+        #print('sir')
+        #s = s.reshape([1] + list(s.shape))
+        #s = s.reshape(1, 1, s.shape[0], s.shape[1])
         R = 0 
-
-        while True:            
-            # self.env.render()
-
+        
+        while True:         
+            #self.env.render()
+            
             a = agent.act(s)
-
+            #print('ok', a)
             s_, r, done, info = self.env.step(a)
-
-            if done: # terminal state
-                s_ = None
-
+            #s_ = s_.reshape([1] + list(s_.shape))
+            #if done: # terminal state
+                #print('done 2')
+                #s_ = None
+            #print('ok then')
             agent.observe( (s, a, r, s_, done) )
-            agent.replay()            
+            if agent.mode == 'train':
+                agent.replay(debug=False)
+            #if agent.memory.size > agent.h.batch:
+            #    agent.replay()            
 
             s = s_
             R += r
-
+            #print('hi')
             if done:
-                break
+                #print('done')
+                return R, 1
 
 class Environment_realtime:
     def __init__(self, emulator): # emulator is a working emulator class object
@@ -374,19 +405,20 @@ class Environment_realtime:
         # get the first state by doing nothing and preprocess the image
         x_t, r_0, terminal = self.env.gameState()
     
-        x_t = prepareImage(x_t)
+        #x_t = prepareImage(x_t)
     
         stacking = [x_t for i in range(img_channels)]
         s_t = np.stack(stacking, axis=0)
     
         #In Keras, need to reshape
-        s_t = s_t.reshape(1, s_t.shape[0], s_t.shape[3], s_t.shape[4])
-
+        #s_t = s_t.reshape(1, s_t.shape[0], s_t.shape[3], s_t.shape[4])
+        s_t = s_t.reshape(img_channels, s_t.shape[2], s_t.shape[3])
         return(s_t)
             
     def run(self, agent):
         frame = 0
-        useRate = np.zeros([agent.brain.action_dim])
+        frame_saved = 0
+        useRate = np.zeros([agent.action_dim])
         
         self.timelapse = 1/agent.h.framerate
         
@@ -394,17 +426,11 @@ class Environment_realtime:
         start_time = time.time()
         s_t = self.init_run(agent.h.img_channels)
 
+        
         while self.env.alive:
             self.framerate_check(start_time, frame)
-            
-            if random.random() <= agent.epsilon: # Choose an action epsilon greedy
-                action_index = random.randrange(agent.brain.action_dim)
-            else:
-                q = agent.brain.model.predict(s_t)
-                action_index = np.argmax(q)
-                
-            #run the selected action and observed next state and reward        
-            x_t1_colored, r_t, terminal = self.env.gameState(keys[action_index])
+            action_index = agent.act(s_t)      
+            x_t1, r_t, terminal = self.env.gameState(action_index)
             
             if terminal: # Don't save terminal state itself, since it is pure white
                 for i in range(agent.h.neg_regret_frames):
@@ -413,19 +439,21 @@ class Environment_realtime:
                 if agent.memory.size > 0:
                     agent.memory.D[-1][4] = 1 # Terminal State
             else:
-                x_t1 = prepareImage(x_t1_colored)
-                s_t1 = np.append(x_t1, s_t[:, :agent.h.img_channels-1, :, :], axis=1)
+                s_t1 = np.append(x_t1, s_t[:agent.h.img_channels-1, :, :], axis=0)
                 if frame > agent.h.framerate*4: # Don't store early useless frames
-                    agent.memory.add([s_t, action_index, r_t, s_t1, terminal])
-                    agent.update_epsilon() # Reduce the epsilon gradually
-                    agent.save_iterator += 1
-                    useRate[action_index] += 1 
+                    agent.observe([s_t, action_index, r_t, s_t1, terminal])
+                    useRate[action_index] += 1
+                    frame_saved += 1
         
                 s_t = s_t1
                 frame += 1
+                
             if frame > 10000: # Likely stuck, just go to new level
                 print('Stuck! Moving on...')
+                frame_saved = 0 # TODO: Still have to delete bad memories
                 self.env.alive = False
+                print('Deleting invalid memory...')
+                agent.memory.removeLastN(10000)
         
         end_time = time.time()
         self.env.end_game()
@@ -436,14 +464,14 @@ class Environment_realtime:
         if agent.memory.total_saved > agent.h.observe:
             if agent.mode == 'observe':
                 agent.mode = 'train'
-                time.sleep(0.5)
+                time.sleep(1)
         
-        return frame, useRate # Metrics
+        return frame, useRate, frame_saved # Metrics
 
 class Hyperparam:
     def __init__(
                  self,
-                 framerate=30,
+                 framerate=40,
                  gamma=0.99,
                  batch=16,
                  observe=100,
@@ -453,7 +481,8 @@ class Hyperparam:
                  memory_size=20000,
                  save_rate=10000,
                  neg_regret_frames=1,
-                 img_channels=2
+                 img_channels=2,
+                 update_rate=1000
                  ):
         
         self.framerate = framerate
@@ -467,7 +496,7 @@ class Hyperparam:
         self.save_rate = save_rate
         self.neg_regret_frames = neg_regret_frames
         self.img_channels = img_channels
-        
+        self.update_rate = update_rate
         
 class Screenparam:
     def __init__(self,
@@ -479,16 +508,53 @@ class Screenparam:
         self.size = size
         self.zoom = zoom
 
-
-#==============================================================================
-# Unmodified
-#==============================================================================
-#def playGame(args):
-#    model = buildmodel_CNN_v2()
-#    trainNetwork(model,args)
-#==============================================================================
+def playGameGym(args, game, hyperparams=Hyperparam()):
+    env = Environment_gym(game)
+    state_dim  = env.env.observation_space.shape[0]
+    action_dim = env.env.action_space.n
+    hyperparams.img_channels = 1
+    state_dim = [state_dim]
+    agent = Agent(hyperparams, args, state_dim, action_dim)
     
-def playGame2(args, screen=Screenparam(), hyperparams=Hyperparam()):
+    iteration = 0
+    while (True):
+        iteration += 1
+        
+        R, useRate = env.run(agent)
+        
+        agent.update_agent()
+        
+        if agent.memory.total_saved > agent.h.observe:
+            if agent.mode == 'observe':
+                agent.mode = 'train'
+                print('training')
+                time.sleep(0.5)
+                
+        if agent.mode == 'train':
+            if iteration % 10 == 0:
+                agent.replay(debug=True)
+            else:
+                agent.replay(debug=False)
+            
+            if iteration % 10 == 0:
+                S = np.array([-0.01335408, -0.04600273, -0.00677248, 0.01517507])
+                S = S.reshape([1] + list(S.shape))
+                pred = agent.brain.predictOne(S)
+                print(pred[0])
+                sys.stdout.flush()
+                print("Step:", agent.memory.total_saved)
+                print("Total reward:", R)
+            
+        #agent.display_metrics(frame, useRate)
+        
+        #if agent.mode == 'train': # Fix this later, not correct
+        #    agent.save_metrics()
+        
+        if agent.h.save_rate < agent.save_iterator:
+            agent.save_iterator -= agent.h.save_rate
+            agent.save_weights()
+  
+def playGameReal(args, screen=Screenparam(), hyperparams=Hyperparam()):
     emulator = OpenHexagonEmulator.HexagonEmulator(
                                                    screen.app,
                                                    screen.size,
@@ -501,34 +567,165 @@ def playGame2(args, screen=Screenparam(), hyperparams=Hyperparam()):
     
     agent = Agent(hyperparams, args, state_dim, action_dim, buildmodel_CNN_v3)
     
+    if args['data'] != 'default':
+        # Load Memory
+        loadMemory(agent, args['data'])
+        
+        agent.mode = 'train'
+        loaded_replays = int(agent.memory.size/2)
+        print('Running', loaded_replays, 'replays')
+        # Train on loaded memory
+        for i in range(loaded_replays):
+            agent.update_agent()
+            if i % 5000 == 0:
+                print(i, '/', loaded_replays)
+            if i % 100 == 0:
+                agent.replay(debug=True)
+            else:
+                agent.replay(debug=False)
+    
+    time.sleep(1)
+    
     env = Environment_realtime(emulator)
     while (True):
-        frame, useRate = env.run(agent)
+        frame, useRate, frame_saved = env.run(agent)
+        
+        
         
         if agent.mode == 'train':
-            agent.replay()
+            print('Running', frame_saved, 'replays')
+            for i in range(frame_saved):
+                agent.update_agent()
+                if i % 100 == 0:
+                    agent.replay(debug=True)
+                else:
+                    agent.replay(debug=False)
             
         agent.display_metrics(frame, useRate)
         
         if agent.mode == 'train': # Fix this later, not correct
             agent.save_metrics()
-        
+            agent.save_metrics_training()
+            
         if agent.h.save_rate < agent.save_iterator:
             agent.save_iterator -= agent.h.save_rate
             agent.save_weights()
 
+# Saves memory, hyperparams, and screen info
+def saveAll(agent, screen):
+    saveMemory(agent)
+    hyperfile = agent.data_location + 'hyper'
+    screenfile = agent.data_location + 'screen'
+    saveClass(agent.h, hyperfile)
+    saveClass(screen, screenfile)
+            
+# Saves memory, hyperparameters, and screen parameters
+def saveMemory(agent):
+    
+    d = np.array(agent.memory.D)
+    dLen = d.shape[0]
+
+    statesShape  = list(d[0][0].shape)
+    states_Shape = list(d[0][3].shape)
+
+    states  = np.zeros([dLen] + statesShape, dtype='float16')
+    actions = np.zeros(dLen, dtype='int_')
+    rewards = np.zeros(dLen, dtype='float64')
+    states_ = np.zeros([dLen] + states_Shape, dtype='float16')
+    terminals = np.zeros(dLen, dtype='bool_')
+    
+    for i in range(dLen):
+        states[i]    = d[i][0]
+        actions[i]   = d[i][1]
+        rewards[i]   = d[i][2]
+        states_[i]   = d[i][3]
+        terminals[i] = d[i][4]
+    
+        #print(np.mean(states[i]))
+
+    np.savez_compressed(
+                        agent.data_location+'memory.npz',
+                        states=states,
+                        actions=actions,
+                        rewards=rewards,
+                        states_=states_,
+                        terminals=terminals
+                        )
+    #a = np.load(agent.results_location+'memory.npz')
+    #return #a
+
+
+    
+# Saves class info
+def saveClass(object_, location):
+    with open(location,"wb") as file:
+        pickle.dump(object_, file)
+    
+def loadClass(location):
+    with open(location,"rb") as file:
+        return pickle.load(file)
+    
+def loadMemory(agent, memory_location):
+    memory = np.load(memory_location+'memory.npz')
+    
+    states    = memory['states']
+    actions   = memory['actions']
+    rewards   = memory['rewards']
+    states_   = memory['states_']
+    terminals = memory['terminals']
+
+    memoryLen = states.shape[0]
+
+    print('Importing', memoryLen, 'states:')
+    for i in range(memoryLen):
+        if i % 10000 == 0:
+            print(i,'/',memoryLen)
+        agent.memory.add([states[i], actions[i], rewards[i], states_[i], terminals[i]])
+    print('Import complete!')
+        
+            
+def gatherMemory(args, screen=Screenparam(), hyperparams=Hyperparam()):
+    emulator = OpenHexagonEmulator.HexagonEmulator(
+                                                   screen.app,
+                                                   screen.size,
+                                                   screen.zoom
+                                                  )
+    img_rows , img_cols = emulator.capture_size[0], emulator.capture_size[1]
+    img_channels = hyperparams.img_channels
+    state_dim = [img_channels, img_rows, img_cols]
+    action_dim = emulator.action_dim
+    
+    agent = RandomAgent(hyperparams, args, state_dim, action_dim)
+    
+    env = Environment_realtime(emulator)
+    print('Gathering', agent.memory.max_size, 'states:')
+    while (True):
+        frame, useRate, frame_saved = env.run(agent)
+        
+        #agent.display_metrics(frame, useRate)
+        print(agent.memory.size, '/', agent.memory.max_size)
+        
+        
+        if agent.memory.isFull:
+            return saveAll(agent, screen)
+            
+            
+
+    
+        
 hexagonHyper1 = Hyperparam(
-                             framerate=30,
+                             framerate=40,
                              gamma=0.99,
-                             batch=16,
-                             observe=1000,
-                             explore=3000,
+                             batch=64,
+                             observe=2000,
+                             explore=2000,
                              epsilon_init=1.0,
-                             epsilon_final=0.05,
-                             memory_size=20000,
+                             epsilon_final=0.01,
+                             memory_size=50000,
                              save_rate=10000,
                              neg_regret_frames=1,
-                             img_channels=2
+                             img_channels=2,
+                             update_rate=1000
                            )
         
 hexagonScreen1 = Screenparam(
@@ -536,7 +733,81 @@ hexagonScreen1 = Screenparam(
                              size=[140,140],
                              zoom=[28,18]
                              )
+
+cartHyper1 = Hyperparam(
+                             framerate=40,
+                             gamma=0.99,
+                             batch=64,
+                             observe=100000,
+                             explore=30000,
+                             epsilon_init=1.0,
+                             epsilon_final=0.01,
+                             memory_size=100000,
+                             save_rate=100000,
+                             neg_regret_frames=0,
+                             img_channels=1,
+                             update_rate=1000
+                           )
+
+gatherHyper1 = Hyperparam(
+                             framerate=40,
+                             gamma=0.99,
+                             batch=64,
+                             observe=0,
+                             explore=10000,
+                             epsilon_init=1.0,
+                             epsilon_final=0.01,
+                             memory_size=50000,
+                             save_rate=10000,
+                             neg_regret_frames=1,
+                             img_channels=2,
+                             update_rate=1000
+                           )
+
+def runSimulation(args):
+     
+    if args['type'] == 'real':
+        hyper = hexagonHyper1
+        screen = hexagonScreen1
+        
+        if args['hyper'] != 'default':
+            hyper = loadClass(args['hyper'])
             
+        if args['screen'] != 'default':
+            screen = loadClass(args['screen'])
+            
+        playGameReal(args, screen, hyper)
+        
+    elif args['type'] == 'gym':
+        hyper = cartHyper1
+        game = 'CartPole-v0'
+        
+        if args['hyper'] != 'default':
+            hyper = loadClass(args['hyper'])
+        if args['game'] != 'default':
+            game = args['game']
+
+        playGameGym(args, game, hyper)
+        
+    elif args['type'] == 'memory':
+        hyper = gatherHyper1
+        screen = hexagonScreen1
+        
+        if args['hyper'] != 'default':
+            hyper = loadClass(args['hyper'])
+            
+        if args['screen'] != 'default':
+            screen = loadClass(args['screen'])
+            
+        gatherMemory(args, screen, hyper)
+    
+    else:
+        pass
+    
+    
+    #gatherMemory(args, hexagonScreen1, gatherHyper1)
+    #loadMemory()
+
 #==============================================================================
 # Modified to run from Spyder Command window
 #==============================================================================
@@ -545,15 +816,25 @@ def main():
     #parser.add_argument('-m','--mode', help='Train / Run', required=True)    
     #args = vars(parser.parse_args())
     
+    hex_base_data = 'hex_base_40fps_50k'
+    
     args = {}
+    
     args['mode'] = 'Train'
+    args['game'] = 'default'
+    args['type'] = 'real' # gym, real, memory
+    #args['data'] = 'default'
+    args['data'] = DATA_FOLDER_FULL + '/' + hex_base_data + '/'
+    args['screen'] = 'default'
+    args['hyper'] = 'default'
     args['directory'] = 'default'
     
+    runSimulation(args)
+
     #args['mode'] = 'Run'
     #args['directory'] = 'name_of_file'
     
-    #playGame(args)
-    playGame2(args, hexagonScreen1, hexagonHyper1)    
+    # TODO: Use finally clause to save stuff
 #==============================================================================
 
 

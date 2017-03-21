@@ -1,5 +1,6 @@
 # Global variables for simulator
 
+# TODO: Clean this up since it is now largely unused except for key codes
 import numpy as np
 
 application = 'Open Hexagon 1.92 - by vittorio romeo'
