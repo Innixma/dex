@@ -182,11 +182,11 @@ class RandomAgent:
         self.save_iterator = -1
         self.update_iterator = -1
         
-        if self.args['directory'] == 'default':
-            self.args['directory'] = CUR_FOLDER
+        if self.args.directory == 'default':
+            self.args.directory = CUR_FOLDER
 
-        results_location = RESULT_FOLDER_FULL + '/' + self.args['directory']
-        data_location = DATA_FOLDER_FULL + '/' + self.args['directory']
+        results_location = RESULT_FOLDER_FULL + '/' + self.args.directory
+        data_location = DATA_FOLDER_FULL + '/' + self.args.directory
         os.makedirs(results_location,exist_ok=True) # Generates results folder
         os.makedirs(data_location,exist_ok=True) # Generates data folder
         self.results_location = results_location + '/'
@@ -221,32 +221,33 @@ class Agent:
         self.brain.updateTargetModel()
         
     def load_weights(self): # TODO: Update this function
-        if self.args['directory'] == 'default':
-            self.args['directory'] = CUR_FOLDER
+        if self.args.directory == 'default':
+            self.args.directory = CUR_FOLDER
 
-        results_location = RESULT_FOLDER_FULL + '/' + self.args['directory']
-        data_location = DATA_FOLDER_FULL + '/' + self.args['directory']
+        results_location = RESULT_FOLDER_FULL + '/' + self.args.directory
+        data_location = DATA_FOLDER_FULL + '/' + self.args.directory
         os.makedirs(results_location,exist_ok=True) # Generates results folder
         os.makedirs(data_location,exist_ok=True) # Generates data folder
         self.results_location = results_location + '/'
         self.data_location = data_location + '/'
         
-        if self.args['mode'] == 'Run':
+        if self.args.mode == 'run':
             self.h.observe = 999999999    #We keep observe, never train
             self.epsilon = 0
-            print ("Now we load weight")
+            print ("Now we load weight from " + self.results_location + 'model.h5')
             self.brain.model.load_weights(self.results_location + 'model.h5')
             #adam = Adam(lr=1e-6)
             #self.model.compile(loss='mse',optimizer=adam)
             print ("Weights loaded successfully")
-        elif self.args['mode'] == 'Train_old': # Continue training old network
+        elif self.args.mode == 'train_old': # Continue training old network
             self.h.observe = self.h.observe
             self.epsilon = self.h.epsilon_init
-            print ("Now we load weight")
+            print ("Now we load weight from " + self.results_location + 'model.h5')
             self.brain.model.load_weights(self.results_location + 'model.h5')
             #adam = Adam(lr=1e-6)
-            #self.model.compile(loss='mse',optimizer=adam)
-            print ("Weights loaded successfully")
+            #adam = Adam(lr=0.00025)
+            #self.brain.model.compile(loss=hubert_loss,optimizer=adam)
+            print ("Weights loaded successfully, training")
         else:                       # We go to training mode
             print('Training new network!')
             self.h.observe = self.h.observe
@@ -324,31 +325,31 @@ class Agent:
         Q_sa_total = Q_sa_total/Q_size
         
         if debug:
-            print("\tQ_MAX " , Q_sa_total, "/ L ", loss)
+            print("\tQ %.2f" % Q_sa_total, "/ L %.2f" % loss)
         
         if self.replay_count % 100 == 0:
             self.metrics.Q.append(Q_sa_total) # TODO: Save these better
             self.metrics.loss.append(loss)
-            self.save_metrics_training() # TODO: move this
+            #self.save_metrics_training() # TODO: move this
             
     def display_metrics(self, frame, useRate):
         if np.sum(useRate) != 0:
             useRate = useRate/np.sum(useRate)
         framerate = frame/self.metrics.survival_times[-1]
-        print('Run ' + str(self.run_count) + ' survived ' + "%.2f" % self.metrics.survival_times[-1] + 's' + ', %.2f fps' % framerate + ', key: ', ['%.2f' % k for k in useRate])
-        print('\tMean: %.2f' % np.mean(self.metrics.survival_times), 'Last 10: %.2f' % self.metrics.survival_times_last_10[-1], 'Max: %.2f' % np.max(self.metrics.survival_times), "Std: %.2f" % np.std(self.metrics.survival_times), "TS", self.memory.total_saved, "E %.2f" % self.epsilon)
+        print('R' + str(self.run_count) + ': ' + "%.2f" % self.metrics.survival_times[-1] + 's' + ', %.2f fps' % framerate + ', key: ', ['%.2f' % k for k in useRate], end='')
+        print(' Mean: %.2f' % np.mean(self.metrics.survival_times), 'Last 10: %.2f' % self.metrics.survival_times_last_10[-1], 'Max: %.2f' % np.max(self.metrics.survival_times), "TS", self.memory.total_saved, "E %.2f" % self.epsilon)
 
     def save_metrics_training(self):
-        graphHelper.graphSimple([np.arange(len(self.metrics.Q))], [self.metrics.Q], ['Q Value'], 'Q Value', 'Q Value', 'Run', savefigName=self.results_location + 'Q_graph')
-        graphHelper.graphSimple([np.arange(len(self.metrics.loss))], [self.metrics.loss], ['Loss'], 'Loss', 'Loss', 'Run', savefigName=self.results_location + 'Loss_graph')        
+        graphHelper.graphSimple([np.arange(len(self.metrics.Q))], [self.metrics.Q], ['Q Value'], 'Q Value', 'Q Value', 'Replay (10^2)', savefigName=self.results_location + 'Q_graph')
+        graphHelper.graphSimple([np.arange(len(self.metrics.loss))], [self.metrics.loss], ['Loss'], 'Loss', 'Loss', 'Replay (10^2)', savefigName=self.results_location + 'Loss_graph')        
         
     def save_metrics(self):
-        with open(self.results_location + 'log.txt', "a+") as outf:
-            outf.write('%d,%.10f,%.10f,%.10f\n' % (self.run_count, self.metrics.Q[-1], self.metrics.loss[-1], self.metrics.survival_times[-1]))
+        #with open(self.results_location + 'log.txt', "a+") as outf:
+        #    outf.write('%d,%.10f,%.10f,%.10f\n' % (self.run_count, self.metrics.Q[-1], self.metrics.loss[-1], self.metrics.survival_times[-1]))
         # TODO: Remove these logs, just export the data directly
         graphHelper.graphSimple([np.arange(self.run_count+1),np.arange(self.run_count+1),np.arange(self.run_count+1)], [self.metrics.survival_times, self.metrics.survival_times_last_10, self.metrics.survival_times_full_mean], ['DQN', 'DQN_Last_10_Mean', 'DQN_Full_Mean'], 'DQN', 'Time(s)', 'Run', savefigName=self.results_location + 'DQN_graph')
-        with open(self.results_location + 'DQN.txt', "a+") as outf:
-            outf.write('%d,%.10f,%.10f,%.10f\n' % (self.run_count, self.metrics.survival_times[-1], self.metrics.survival_times_last_10[-1], self.metrics.survival_times_full_mean[-1]))    
+        #with open(self.results_location + 'DQN.txt', "a+") as outf:
+        #    outf.write('%d,%.10f,%.10f,%.10f\n' % (self.run_count, self.metrics.survival_times[-1], self.metrics.survival_times_last_10[-1], self.metrics.survival_times_full_mean[-1]))    
             
         
 class Environment_gym:
@@ -440,7 +441,7 @@ class Environment_realtime:
                     agent.memory.D[-1][4] = 1 # Terminal State
             else:
                 s_t1 = np.append(x_t1, s_t[:agent.h.img_channels-1, :, :], axis=0)
-                if frame > agent.h.framerate*4: # Don't store early useless frames
+                if frame > agent.h.framerate*agent.args.memory_delay: # Don't store early useless frames
                     agent.observe([s_t, action_index, r_t, s_t1, terminal])
                     useRate[action_index] += 1
                     frame_saved += 1
@@ -448,12 +449,12 @@ class Environment_realtime:
                 s_t = s_t1
                 frame += 1
                 
-            if frame > 10000: # Likely stuck, just go to new level
+            if frame > 20000: # Likely stuck, just go to new level
                 print('Stuck! Moving on...')
                 frame_saved = 0 # TODO: Still have to delete bad memories
                 self.env.alive = False
                 print('Deleting invalid memory...')
-                agent.memory.removeLastN(10000)
+                agent.memory.removeLastN(20000)
         
         end_time = time.time()
         self.env.end_game()
@@ -477,12 +478,12 @@ class Hyperparam:
                  observe=100,
                  explore=300,
                  epsilon_init=1.0,
-                 epsilon_final=0.05,
+                 epsilon_final=0.01,
                  memory_size=20000,
                  save_rate=10000,
                  neg_regret_frames=1,
                  img_channels=2,
-                 update_rate=1000
+                 update_rate=1000,
                  ):
         
         self.framerate = framerate
@@ -567,28 +568,32 @@ def playGameReal(args, screen=Screenparam(), hyperparams=Hyperparam()):
     
     agent = Agent(hyperparams, args, state_dim, action_dim, buildmodel_CNN_v3)
     
-    if args['data'] != 'default':
+    if args.data != 'default':
         # Load Memory
-        loadMemory(agent, args['data'])
+        loadMemory(agent, args.data)
         
         agent.mode = 'train'
-        loaded_replays = int(agent.memory.size/2)
+        loaded_replays = int(agent.memory.size)
         print('Running', loaded_replays, 'replays')
         # Train on loaded memory
         for i in range(loaded_replays):
             agent.update_agent()
-            if i % 5000 == 0:
-                print(i, '/', loaded_replays)
+            if i % 1000 == 0:
+                print(i, '/', loaded_replays, 'replays learned')
             if i % 100 == 0:
                 agent.replay(debug=True)
             else:
                 agent.replay(debug=False)
-    
+        
+        agent.save_weights()
+        
     time.sleep(1)
     
     env = Environment_realtime(emulator)
     while (True):
         frame, useRate, frame_saved = env.run(agent)
+        
+        agent.display_metrics(frame, useRate)
         
         
         
@@ -600,16 +605,17 @@ def playGameReal(args, screen=Screenparam(), hyperparams=Hyperparam()):
                     agent.replay(debug=True)
                 else:
                     agent.replay(debug=False)
-            
-        agent.display_metrics(frame, useRate)
-        
-        if agent.mode == 'train': # Fix this later, not correct
-            agent.save_metrics()
-            agent.save_metrics_training()
+                    
+        #if agent.mode == 'train': # Fix this later, not correct
+        #    agent.save_metrics()
+        #    agent.save_metrics_training()
             
         if agent.h.save_rate < agent.save_iterator:
             agent.save_iterator -= agent.h.save_rate
             agent.save_weights()
+            if agent.mode == 'train': # Fix this later, not correct
+                agent.save_metrics()
+                agent.save_metrics_training()
 
 # Saves memory, hyperparams, and screen info
 def saveAll(agent, screen):
@@ -717,8 +723,8 @@ hexagonHyper1 = Hyperparam(
                              framerate=40,
                              gamma=0.99,
                              batch=64,
-                             observe=2000,
-                             explore=2000,
+                             observe=10000,
+                             explore=10000,
                              epsilon_init=1.0,
                              epsilon_final=0.01,
                              memory_size=50000,
@@ -766,38 +772,38 @@ gatherHyper1 = Hyperparam(
 
 def runSimulation(args):
      
-    if args['type'] == 'real':
+    if args.env == 'real':
         hyper = hexagonHyper1
         screen = hexagonScreen1
         
-        if args['hyper'] != 'default':
-            hyper = loadClass(args['hyper'])
+        if args.hyper != 'default':
+            hyper = loadClass(args.hyper)
             
-        if args['screen'] != 'default':
-            screen = loadClass(args['screen'])
+        if args.screen != 'default':
+            screen = loadClass(args.screen)
             
         playGameReal(args, screen, hyper)
         
-    elif args['type'] == 'gym':
+    elif args.env == 'gym':
         hyper = cartHyper1
         game = 'CartPole-v0'
         
-        if args['hyper'] != 'default':
-            hyper = loadClass(args['hyper'])
-        if args['game'] != 'default':
-            game = args['game']
+        if args.hyper != 'default':
+            hyper = loadClass(args.hyper)
+        if args.game != 'default':
+            game = args.game
 
         playGameGym(args, game, hyper)
         
-    elif args['type'] == 'memory':
+    elif args.env == 'memory':
         hyper = gatherHyper1
         screen = hexagonScreen1
         
-        if args['hyper'] != 'default':
-            hyper = loadClass(args['hyper'])
+        if args.hyper != 'default':
+            hyper = loadClass(args.hyper)
             
-        if args['screen'] != 'default':
-            screen = loadClass(args['screen'])
+        if args.screen != 'default':
+            screen = loadClass(args.screen)
             
         gatherMemory(args, screen, hyper)
     
@@ -808,6 +814,44 @@ def runSimulation(args):
     #gatherMemory(args, hexagonScreen1, gatherHyper1)
     #loadMemory()
 
+class Args:
+    def __init__(self,
+                 mode='train',
+                 game='default',
+                 env='real',
+                 data='default',
+                 screen='default',
+                 hyper='default',
+                 directory='default',
+                 memory_delay=4
+                 ):
+        self.mode = mode
+        self.game = game
+        self.env = env
+        self.data = data
+        self.screen = screen
+        self.hyper = hyper
+        self.directory = directory
+        self.memory_delay = memory_delay
+        
+hex_train_args = Args(
+                     mode='train',
+                     game='default',
+                     env='real',
+                     data='default',
+                     screen='default',
+                     hyper='default',
+                     directory='default'
+                     )
+        
+hex_memory_args = Args(env='memory')
+incongruence = 'incongruence'
+incongruence_args = Args(directory=incongruence, memory_delay=0.5, mode='train_old')
+hex_base_data = 'hex_base_40fps_50k'
+hex_load_args = Args(data=DATA_FOLDER_FULL + '/' + hex_base_data + '/')
+
+gym_train_args = Args(env='gym')
+
 #==============================================================================
 # Modified to run from Spyder Command window
 #==============================================================================
@@ -816,21 +860,26 @@ def main():
     #parser.add_argument('-m','--mode', help='Train / Run', required=True)    
     #args = vars(parser.parse_args())
     
-    hex_base_data = 'hex_base_40fps_50k'
+    #hex_base_data = 'hex_base_40fps_50k'
+    #hex_base_save = 'OpenHexagon/DDQN_200s_base_2017-03-21'
+    #args = {}
     
-    args = {}
-    
-    args['mode'] = 'Train'
-    args['game'] = 'default'
-    args['type'] = 'real' # gym, real, memory
+    #args['mode'] = 'train'
+    #args['mode'] = 'run'
+    #args['game'] = 'default'
+    #args['type'] = 'real' # gym, real, memory
     #args['data'] = 'default'
-    args['data'] = DATA_FOLDER_FULL + '/' + hex_base_data + '/'
-    args['screen'] = 'default'
-    args['hyper'] = 'default'
-    args['directory'] = 'default'
-    
-    runSimulation(args)
-
+    #args['data'] = DATA_FOLDER_FULL + '/' + hex_base_data + '/'
+    #args['screen'] = 'default'
+    #args['hyper'] = 'default'
+    #args['directory'] = 'default'
+    #args['directory'] = hex_base_save
+    #hex_memory_args2 = Args(env='memory', memory_delay=0.5)
+    #runSimulation(hex_memory_args2)
+    #data_ = DATA_FOLDER_FULL + '/' + 'incongruence' + '/'
+    #hex_load_args2 = Args(data=data_, memory_delay=0.5)
+    runSimulation(incongruence_args)
+    #runSimulation(hex_load_args2)
     #args['mode'] = 'Run'
     #args['directory'] = 'name_of_file'
     

@@ -30,11 +30,11 @@ def check_terminal(data):
     ##############################################################
     # Check if you lost, screen goes white when you lose, so check
     curMean = np.mean(data)
-    if c <= 60:
+    if c <= 20:
         maxDiff = 0
         meanLight += curMean
-        if c == 60:
-            meanLight = meanLight / 60
+        if c == 20:
+            meanLight = meanLight / 20
     else:
         meanLight = meanLight * (9/10) + curMean * (1/10)
         diff = curMean - prevMean
