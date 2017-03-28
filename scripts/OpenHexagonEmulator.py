@@ -11,14 +11,20 @@ import skimage as skimage
 
 class HexagonEmulator:
 
-    def __init__(self, application, window_size=[140,140], capture_zoom=[0,0], rewards=[1,-1], mode='standard'): # window_size = x,y
+    def __init__(self, application, window_size=[140,140], capture_zoom=[0,0], screen_id=-1, screen_number=0, rewards=[1,-1], mode='standard'): # window_size = x,y
         self.keys = np.array(['none', 'left_arrow', 'right_arrow'])
         self.action_dim = 3
         self.application = application
+        self.screen_id = screen_id
+        self.screen_number = screen_number
         self.shell = win32com.client.Dispatch("WScript.Shell")
-        self.game_window = win32gui.FindWindow(None, self.application)
+        if screen_id == -1:
+            self.game_window = win32gui.FindWindow(None, self.application)
+        else:
+            self.game_window = self.screen_id
+        
         self.window_size = window_size
-        self.window_offset = [0,0]
+        self.window_offset = [(window_size[0]+10)*self.screen_number,0] # [0, 0]
         self.capture_size = [0,0]
         self.capture_offset = [0,0]
         self.capture_zoom = capture_zoom
@@ -126,6 +132,10 @@ class HexagonEmulator:
         self.capture_size[1] = self.window_size[1] - self.capture_offset[1] - 10
         
         
+        # Center on image
+        self.capture_offset[0] += self.window_offset[0]
+        self.capture_offset[1] += self.window_offset[1]
+
         # Zoom in:
         self.capture_offset[0] += self.capture_zoom[0]
         self.capture_offset[1] += self.capture_zoom[1]
@@ -194,7 +204,8 @@ class HexagonEmulator:
         # ----
         tmpImage = tmpImage.astype('float16')
         #tmpImage = tmpImage.reshape(1, 1, tmpImage.shape[0], tmpImage.shape[1])
-        tmpImage = tmpImage.reshape(1, tmpImage.shape[0], tmpImage.shape[1])
+        #tmpImage = tmpImage.reshape(1, tmpImage.shape[0], tmpImage.shape[1]) # Theano
+        tmpImage = tmpImage.reshape(tmpImage.shape[0], tmpImage.shape[1], 1) # Tensorflow
         return tmpImage
         
     # Free resources

@@ -8,13 +8,15 @@ import win32api
 import win32gui
 import win32process
 
+hwnds = []
 def enumWindowsProc(hwnd, lParam):
     if (lParam is None) or ((lParam is not None) and (win32process.GetWindowThreadProcessId(hwnd)[1] == lParam)):
         text = win32gui.GetWindowText(hwnd)
         if text:
             wStyle = win32api.GetWindowLong(hwnd, win32con.GWL_STYLE)
             if wStyle & win32con.WS_VISIBLE:
-                print("%08X - %s" % (hwnd, text))
+                hwnds.append(hwnd)
+                
 
 
 def enumProcWnds(pid=None):
@@ -55,15 +57,27 @@ def enumProcs(procName=None):
     else:
         return pids
 
+def eval_hwnds(hwnds, name): # By Nick, will create list of all apps with given name
+    valid_hwnds = []
+    for hwnd in hwnds:
+        text = win32gui.GetWindowText(hwnd)
+        if text == name:
+            valid_hwnds.append(hwnd)
+            
+    return valid_hwnds
+
+
+        
 def main(args):
     if args:
         procName = args[0]
     else:
         procName = None
     pids = enumProcs(procName)
-    print(pids)
+    #print(pids)
     for pid in pids:
         enumProcWnds(pid)
+        #print(pid)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
