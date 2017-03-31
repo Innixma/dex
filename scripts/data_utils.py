@@ -4,6 +4,19 @@
 import numpy as np
 import pickle
 
+class Metrics: # TODO: Save this to a pickle file?
+    def __init__(self):
+        self.survival_times = []
+        self.survival_times_last_10 = []
+        self.survival_times_full_mean = []
+        self.Q = []
+        self.loss = []
+   
+    def update(self, survival_time):
+        self.survival_times.append(survival_time)
+        self.survival_times_last_10.append(np.mean(self.survival_times[-10:]))
+        self.survival_times_full_mean.append(np.mean(self.survival_times))
+
 # Saves memory, hyperparams, and screen info
 def saveAll(agent, screen):
     saveMemory(agent)

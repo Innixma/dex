@@ -1,0 +1,45 @@
+# By Nick Erickson
+# Brain Classes
+
+from models import default_model
+
+
+# Class concept from Jaromir Janisch, 2016
+# https://jaromiru.com/2016/09/27/lets-make-a-dqn-theory/
+class Brain:
+    def __init__(self, state_dim, action_dim, modelFunc=None):
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+
+        self.model = self._createModel(modelFunc)
+        self.model_ = self._createModel(modelFunc)
+        
+        self.updateTargetModel()
+        
+    def _createModel(self, modelFunc=None):
+        if modelFunc:
+            model = modelFunc(self.state_dim, self.action_dim)
+        else:
+            model = default_model(self.state_dim, self.action_dim)
+        print("Finished building the model")
+        #print(model.summary())
+        return model
+
+    def train(self, x, y, epoch=1, verbose=0):
+        self.model.fit(x, y, batch_size=64, nb_epoch=epoch, verbose=verbose)
+
+    def predict(self, s, target=False):
+        if target:
+            return self.model_.predict(s)
+        else:
+            return self.model.predict(s)
+
+    def predictOne(self, s, target=False):
+        dim = [1] + self.state_dim
+        return self.predict(s.reshape(dim), target=target).flatten()
+        #return self.predict(s, target=target).flatten()
+        
+    def updateTargetModel(self):
+        self.model_.set_weights(self.model.get_weights())
+
+
