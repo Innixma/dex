@@ -48,7 +48,7 @@ hex_base = Args(
                         memory_delay=4
                         )
 
-cart_hyperparams = Hyperparam(
+gym_cart_hyperparams = Hyperparam(
                              framerate=40,
                              gamma=0.99,
                              batch=64,
@@ -62,6 +62,17 @@ cart_hyperparams = Hyperparam(
                              img_channels=1,
                              update_rate=1000
                            )
+
+gym_cart = Args(
+                        mode='train',
+                        game='CartPole-v0',
+                        env='gym',
+                        data='default',
+                        screen='default',
+                        hyper=gym_cart_hyperparams,
+                        directory='default',
+                        memory_delay=4
+                        )
 
 hex_gather_hyperparams = Hyperparam(
                              framerate=40,

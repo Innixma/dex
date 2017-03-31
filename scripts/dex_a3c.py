@@ -70,7 +70,7 @@ class Metrics: # TODO: Save this to a pickle file?
 
 def hubert_loss(y_true, y_pred): # sqrt(1+a^2)-1
     err = y_pred - y_true
-    return np.sqrt(1+np.square(err))-1
+    return K.sqrt(1+K.square(err))-1
 
 #==============================================================================
 # CNN model structure (Base v3), Mar 18
@@ -92,7 +92,7 @@ def buildmodel_CNN_v3(state_dim, action_dim):
     
 
     adam = Adam(lr=0.00025)
-    model.compile(loss='mse',optimizer=adam) # Maybe try huber or mae??
+    model.compile(loss=hubert_loss,optimizer=adam) # Maybe try huber or mae??
 
     return model
 #==============================================================================  
@@ -381,8 +381,7 @@ def playGameGym(args, game, hyperparams):
                 agent.replay(debug=False)
             
             if iteration % 10 == 0:
-                print("Step:", agent.memory.total_saved)
-                print("Total reward:", R)
+                print("Step:", agent.memory.total_saved, ", Total reward:", R)
             
         #agent.display_metrics(frame, useRate)
         
@@ -517,6 +516,7 @@ def main(args):
     # TODO: Use finally clause to save stuff
 
 if __name__ == "__main__":
-    args = param_const.hex_base
+    #args = param_const.hex_base
+    args = param_const.gym_cart
     main(args) 
 
