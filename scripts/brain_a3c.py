@@ -25,9 +25,10 @@ class Brain:
         #print(model.summary())
         return model
 
-    def train(self, x, y, epoch=1, verbose=0):
-        self.model.fit(x, y, batch_size=64, nb_epoch=epoch, verbose=verbose)
-
+    def train(self, states, targets):
+        loss = self.model.train_on_batch(states, targets)
+        return loss
+        
     def predict(self, s, target=False):
         if target:
             return self.model_.predict(s)

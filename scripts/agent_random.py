@@ -4,12 +4,12 @@
 import globs as G
 import os
 import random
-from data_utils import Metrics
+from metrics import Metrics
 from memory import Memory
 
 class RandomAgent:
-    def __init__(self, hyperparams, args, state_dim, action_dim):
-        self.h = hyperparams
+    def __init__(self, args, state_dim, action_dim):
+        self.h = args.hyper
         self.mode = 'observe'
         self.args = args
         self.metrics = Metrics()

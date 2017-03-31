@@ -1,29 +1,55 @@
 # By Nick Erickson
 # Contains Save/Load Functions
 
+import globs as G
 import numpy as np
 import pickle
+import os
+import json
 
-class Metrics: # TODO: Save this to a pickle file?
-    def __init__(self):
-        self.survival_times = []
-        self.survival_times_last_10 = []
-        self.survival_times_full_mean = []
-        self.Q = []
-        self.loss = []
-   
-    def update(self, survival_time):
-        self.survival_times.append(survival_time)
-        self.survival_times_last_10.append(np.mean(self.survival_times[-10:]))
-        self.survival_times_full_mean.append(np.mean(self.survival_times))
+def load_weights(agent): # TODO: Update this function
+        if agent.args.directory == 'default':
+            agent.args.directory = G.CUR_FOLDER
 
+        results_location = G.RESULT_FOLDER_FULL + '/' + agent.args.directory
+        data_location = G.DATA_FOLDER_FULL + '/' + agent.args.directory
+        os.makedirs(results_location,exist_ok=True) # Generates results folder
+        os.makedirs(data_location,exist_ok=True) # Generates data folder
+        agent.results_location = results_location + '/'
+        agent.data_location = data_location + '/'
+        
+        if agent.args.mode == 'run':
+            agent.h.observe = 999999999    # Never train
+            agent.epsilon = 0
+            print ("Now we load weight from " + agent.results_location + 'model.h5')
+            agent.brain.model.load_weights(agent.results_location + 'model.h5')
+
+            print ("Weights loaded successfully")
+        elif agent.args.mode == 'train_old': # Continue training old network
+            agent.h.observe = agent.h.observe
+            agent.epsilon = agent.h.epsilon_init
+            print ("Now we load weight from " + agent.results_location + 'model.h5')
+            agent.brain.model.load_weights(agent.results_location + 'model.h5')
+
+            print ("Weights loaded successfully, training")
+        else: # Train new
+            print('Training new network!')
+            agent.h.observe = agent.h.observe
+            agent.epsilon = agent.h.epsilon_init
+     
+def save_weights(agent):
+    print("Saving Model...")
+    agent.brain.model.save_weights(agent.results_location + 'model.h5', overwrite=True)
+    with open(agent.results_location + 'model.json', "w") as outfile:
+        json.dump(agent.brain.model.to_json(), outfile)
+        
 # Saves memory, hyperparams, and screen info
-def saveAll(agent, screen):
+def saveAll(agent):
     saveMemory(agent)
     hyperfile = agent.data_location + 'hyper'
     screenfile = agent.data_location + 'screen'
     saveClass(agent.h, hyperfile)
-    saveClass(screen, screenfile)
+    saveClass(agent.args.screen, screenfile)
             
 # Saves memory, hyperparameters, and screen parameters
 def saveMemory(agent):
