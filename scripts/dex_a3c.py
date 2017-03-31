@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # By Nick Erickson
+# A3C Implementation
 
 # Run with Tensorflow v12 and Keras v2.02
 

@@ -1,5 +1,5 @@
 # By Nick Erickson
-# A3C Brain
+# DDQN Brain
 
 from models import default_model
 
