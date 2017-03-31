@@ -8,6 +8,7 @@ import terminal_detection
 import convert_to_polar
 import scipy.misc as smp
 import skimage as skimage
+from skimage import color
 
 class HexagonEmulator:
 
@@ -186,7 +187,7 @@ class HexagonEmulator:
     # Converts image to grayscale, and forces image to proper dimensions
     def prepareImage(self, image):
         
-        tmpImage = skimage.color.rgb2gray(image)
+        tmpImage = color.rgb2gray(image)
         
         #global ZZ
         #ZZ += 1
