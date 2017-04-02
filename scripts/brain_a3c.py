@@ -15,11 +15,6 @@ from models import default_model
 import numpy as np
 import time
 
-GAMMA = 0.99
-
-N_STEP_RETURN = 8 # TODO: Implement n-step return
-GAMMA_N = GAMMA ** N_STEP_RETURN
-
 LEARNING_RATE = 5e-3
 
 LOSS_V = .5            # v loss coefficient
@@ -32,10 +27,15 @@ MIN_BATCH = 8
 class Brain:
     train_queue = [ [], [], [], [], [] ]    # s, a, r, s', s' terminal mask
 
-    def __init__(self, state_dim, action_dim, modelFunc=None):
+    def __init__(self, state_dim, action_dim, gamma, n_step_return, modelFunc=None):
         
         self.state_dim = state_dim
         self.action_dim = action_dim
+        self.gamma = gamma
+        self.n_step_return = n_step_return
+        self.gamma_n = self.gamma ** self.n_step_return
+        
+        
         self.NONE_STATE = np.zeros(state_dim)
         self.session = tf.Session()
         K.set_session(self.session)
@@ -90,7 +90,6 @@ class Brain:
 
     def optimize(self):
         if len(self.train_queue[0]) < MIN_BATCH:
-            #time.sleep(0)    # yield
             return
 
         s, a, r, s_, s_mask = self.train_queue
@@ -102,18 +101,16 @@ class Brain:
             a_cat[a_] = 1
             a_cats.append(a_cat)
         
-        a = a_cats
+        #a = a_cats
             
         s = np.vstack(s)
-        a = np.vstack(a)
+        a = np.vstack(a_cats)
         r = np.vstack(r)
         s_ = np.vstack(s_)
         s_mask = np.vstack(s_mask)
 
-        #if len(s) > 5*MIN_BATCH: print("Optimizer alert! Minimizing batch of %d" % len(s))
-
         v = self.predict_v(s_)
-        r = r + GAMMA_N * v * s_mask    # set v to 0 where s_ is terminal state
+        r = r + self.gamma_n * v * s_mask    # set v to 0 where s_ is terminal state
         
         s_t, a_t, r_t, minimize = self.graph
 

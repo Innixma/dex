@@ -14,7 +14,7 @@ class Agent:
         self.h = args.hyper
         self.metrics = Metrics()
         self.memory = Memory(self.h.memory_size)
-        self.brain = Brain(state_dim, action_dim, modelFunc)
+        self.brain = Brain(state_dim, action_dim, self.h.gamma, self.h.n_step_return, modelFunc)
         self.args = args
         self.epsilon = self.h.epsilon_init
         self.action_dim = action_dim
@@ -40,70 +40,35 @@ class Agent:
             return np.argmax(self.brain.predict_p(s))
     
     def observe(self, sample):
-        #print(self.memory.size)
         self.memory.add(sample)
-        #print(self.memory.size)
         self.update_epsilon()
         self.save_iterator += 1
-        #self.update_iterator += 1
         
     def replay(self, debug=True):
         self.replay_count += 1
         self.update_iterator += 1
         
-        #batch = self.memory.sample(self.h.batch)
-        #batch = self.memory.sample(1)
-        #print(self.memory.size)
-        batch = self.memory.D[-1]
-        if batch[4]:
-            z = None
-        else:
-            z = batch[3]
-        self.train(batch[0], batch[1], batch[2], z)
-        #self.brain.train_push(batch[0], batch[1], batch[2], z)
-        #batchLen = len(batch)
-        #for x in batch:
-            #self.brain.train_push(x[0], x[1], x[2], x[3])
-        #self.brain.optimize()
+        _, _, r, s_, t = self.memory.D[-1]
+        if t:
+            s_ = None
+        
+        self.R = ( self.R + r * self.h.gamma_n ) / self.h.gamma
+
+        if s_ is None:
+            if self.memory.size < self.memory.max_size:
+                self.memory.removeFirstN(self.memory.size) # Don't train, R is inaccurate
+            while self.memory.size > 0:
+                s, a, r, _, _ = self.memory.D[0]
+                self.brain.train_push(s, a, self.R, None)
+                self.R = ( self.R - r ) / self.h.gamma
+                self.memory.removeFirstN(1)
+            self.R = 0
+        if self.memory.size >= self.h.n_step_return:
+            s, a, r, _, _ = self.memory.D[0]
+            self.brain.train_push(s, a, self.R, s_)
+            self.R = self.R - r
+            self.memory.removeFirstN(1)    
         
         if self.replay_count % 100 == 0:
             self.metrics.Q.append(0) # TODO: Save these better
             self.metrics.loss.append(0)
-            
-    def train(self, s, a, r, s_):
-        def get_sample(memory, n):
-            s, a, _, _, _  = memory[0]
-            _, _, _, s_, _ = memory[n-1]
-
-            return s, a, self.R, s_
-
-        #a_cats = np.zeros(self.action_dim)    # turn action into one-hot representation
-        #a_cats[a] = 1 
-
-        #self.memory.append( (s, a_cats, r, s_) )
-
-        self.R = ( self.R + r * self.h.gamma_n ) / self.h.gamma # Nick: Is this wrong?
-        #print(self.R)
-        if s_ is None:
-            #n = self.memory.size
-            while self.memory.size > 0:
-                #n = len(self.memory)
-                n = self.memory.size
-                s, a, r, s_ = get_sample(self.memory.D, n) # Possibly really slow # TODO: fix
-                
-                self.brain.train_push(s, a, r, None) # TODO: Fixed this by adding None
-                #print(self.R)
-                self.R = ( self.R - self.memory.D[0][2] ) / self.h.gamma
-                self.memory.removeFirstN(1)
-                #print(self.memory.size)
-                #print(self.R)
-            self.R = 0
-            #print('hi')
-        if self.memory.size >= self.h.n_step_return:
-            s, a, r, s_ = get_sample(self.memory.D, self.h.n_step_return)
-            self.brain.train_push(s, a, r, s_)
-            
-            self.R = self.R - self.memory.D[0][2]
-            self.memory.removeFirstN(1)    
-    
-    # possible edge case - if an episode ends in <N steps, the computation is incorrect
