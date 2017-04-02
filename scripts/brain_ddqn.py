@@ -22,7 +22,7 @@ class Brain:
         else:
             model = default_model(self.state_dim, self.action_dim)
         print("Finished building the model")
-        #print(model.summary())
+        print(model.summary())
         return model
 
     def train(self, states, targets):

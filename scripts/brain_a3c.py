@@ -57,11 +57,15 @@ class Brain:
             model = Model(inputs=[l_input], outputs=[out_actions, out_value])
         model._make_predict_function() # have to initialize before threading
         print("Finished building the model")
-        
+        print(model.summary())
         return model
         
     def create_graph(self, model):
-        s_t = tf.placeholder(tf.float32, shape=(None, self.state_dim[0]))
+        #print(self.state_dim)
+        #print(self.state_dim[0])
+        zzz = [None] + self.state_dim
+        print(zzz)
+        s_t = tf.placeholder(tf.float32, shape=(zzz))
         a_t = tf.placeholder(tf.float32, shape=(None, self.action_dim))
         r_t = tf.placeholder(tf.float32, shape=(None, 1)) # not immediate, but discounted n step reward
         
@@ -93,11 +97,16 @@ class Brain:
             a_cat = np.zeros(self.action_dim)
             a_cat[a_] = 1
             a_cats.append(a_cat)
-          
-        s = np.vstack(s)
+        #print(np.array(s[0]).shape)
+        #print(np.array(s).shape)
+        #s = np.vstack(s)
+        
+        s = np.array(s)
+        s_ = np.array(s_)
+        #print(s.shape)
         a = np.vstack(a_cats)
         r = np.vstack(r)
-        s_ = np.vstack(s_)
+        #s_ = np.vstack(s_)
         s_mask = np.vstack(s_mask)
 
         v = self.predict_v(s_)

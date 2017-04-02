@@ -27,6 +27,7 @@ hex_screen = Screenparam(
                          )
 
 hex_incongruence = Args(
+                        algorithm='ddqn',
                         mode='train',
                         game='default',
                         env='real',
@@ -38,6 +39,7 @@ hex_incongruence = Args(
                         )
 
 hex_base = Args(
+                        algorithm='ddqn',
                         mode='train',
                         game='default',
                         env='real',
@@ -65,6 +67,7 @@ gym_cart_ddqn_hyperparams = Hyperparam(
                            )
 
 gym_cart_ddqn = Args(
+                        algorithm='ddqn',
                         mode='train',
                         game='CartPole-v0',
                         env='gym',
@@ -97,9 +100,43 @@ gym_cart_a3c_hyperparams = Hyperparam(
                              extra=gym_cart_a3c_hyperspecific
                            )
 
+hex_base_a3c_hyperspecific = Hyper_a3c(
+                                       loss_v=0.5,
+                                       loss_entropy=0.01,
+                                       )
+
+hex_base_a3c_hyperparams = Hyperparam(
+                             framerate=40,
+                             gamma=0.99,
+                             batch=64,
+                             observe=0,
+                             explore=100000,
+                             epsilon_init=1,
+                             epsilon_final=0.05,
+                             memory_size=8,
+                             save_rate=5000,
+                             neg_regret_frames=0,
+                             img_channels=2,
+                             update_rate=1000,
+                             learning_rate=2.5e-3,
+                             extra=hex_base_a3c_hyperspecific
+                           )
+
+hex_base_a3c = Args(
+                        algorithm='a3c',
+                        mode='train',
+                        game='default',
+                        env='real',
+                        data='default',
+                        screen=hex_screen,
+                        hyper=hex_base_a3c_hyperparams,
+                        directory='default',
+                        memory_delay=4
+                        )
 
 
 gym_cart_a3c = Args(
+                        algorithm='a3c',
                         mode='train',
                         game='CartPole-v0',
                         env='gym',

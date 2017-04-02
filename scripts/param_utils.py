@@ -72,6 +72,7 @@ class Screenparam:
         
 class Args:
     def __init__(self,
+                 algorithm,
                  mode='train',
                  game='default',
                  env='real',
@@ -81,6 +82,7 @@ class Args:
                  directory='default',
                  memory_delay=4
                  ):
+        self.algorithm = algorithm
         self.mode = mode
         self.game = game
         self.env = env

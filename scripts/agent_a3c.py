@@ -44,7 +44,7 @@ class Agent:
         self.update_epsilon()
         self.save_iterator += 1
         
-    def replay(self, debug=True):
+    def replay(self, debug=True): # Can make this even faster by giving arguments for last memory
         self.replay_count += 1
         self.update_iterator += 1
         

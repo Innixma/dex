@@ -16,7 +16,7 @@ from __future__ import print_function
 #import threading
 
 # Utilities
-from param_const import hex_base, gym_cart_a3c
+from param_const import hex_base_a3c, gym_cart_a3c
 import play_game
 import agent_a3c
 
@@ -27,7 +27,7 @@ def main(args):
     # TODO: Use finally clause to save model weights
 
 if __name__ == "__main__":
-    #args = hex_base
-    args = gym_cart_a3c
+    args = hex_base_a3c
+    #args = gym_cart_a3c
     main(args) 
 

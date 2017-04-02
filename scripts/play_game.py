@@ -1,7 +1,7 @@
 # By Nick Erickson
 # Contains functions for game play loops
 
-from environment import Environment_gym, Environment_realtime
+from environment import Environment_gym, Environment_realtime, Environment_realtime_a3c
 from data_utils import saveAll, saveMemory, saveClass, loadClass, loadMemory, save_weights
 import time
 import OpenHexagonEmulator
@@ -9,7 +9,10 @@ import models
 
 def run(args, agent):   
     if args.env == 'real':
-        playGameReal(args, agent)
+        if args.algorithm == 'ddqn':
+            playGameReal(args, agent)
+        elif args.algorithm == 'a3c':
+            playGameReal_a3c(args, agent)
     elif args.env == 'gym':
         playGameGym(args, agent)
     elif args.env == 'memory': 
@@ -48,6 +51,35 @@ def playGameGym(args, agent_func):
             #if agent.mode == 'train': # Fix this later, not correct
                     #agent.metrics.save_metrics(agent.results_location)
                     #agent.metrics.save_metrics_training(agent.results_location)
+
+def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
+    
+    emulator = OpenHexagonEmulator.HexagonEmulator(
+                                                   args.screen.app,
+                                                   args.screen.size,
+                                                   args.screen.zoom,
+                                                   screen_id,
+                                                   screen_number
+                                                  )
+    img_rows , img_cols = emulator.capture_size[0], emulator.capture_size[1]
+    img_channels = args.hyper.img_channels
+    state_dim = [img_rows, img_cols, img_channels]
+    action_dim = emulator.action_dim
+    
+    agent = agent_func(args, state_dim, action_dim, models.CNN_a3c)
+    
+    env = Environment_realtime_a3c(emulator)
+    while (True):
+        frame, useRate, frame_saved = env.run(agent)
+        
+        agent.metrics.display_metrics(frame, useRate, agent.memory.total_saved, agent.epsilon)
+                    
+        if agent.h.save_rate < agent.save_iterator:
+            agent.save_iterator -= agent.h.save_rate
+            save_weights(agent)
+            agent.metrics.save_metrics(agent.results_location)
+            #agent.metrics.save_metrics_training(agent.results_location)
+
                     
 def playGameReal(args, agent_func, screen_number=0, screen_id=-1):
     

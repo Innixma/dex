@@ -27,7 +27,7 @@ def main(args):
     # TODO: Use finally clause to save model weights
 
 if __name__ == "__main__":
-    #args = hex_base
-    args = gym_cart_ddqn
+    args = hex_base
+    #args = gym_cart_ddqn
     main(args) 
 
