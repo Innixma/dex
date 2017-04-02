@@ -16,7 +16,7 @@ from __future__ import print_function
 #import threading
 
 # Utilities
-from param_const import gym_cart, hex_base
+from param_const import gym_cart_ddqn, hex_base
 import play_game
 import agent_ddqn
 
@@ -28,6 +28,6 @@ def main(args):
 
 if __name__ == "__main__":
     #args = hex_base
-    args = gym_cart
+    args = gym_cart_ddqn
     main(args) 
 

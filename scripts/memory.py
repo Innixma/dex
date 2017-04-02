@@ -5,6 +5,7 @@ from collections import deque
 import random
 
 # TODO: Implement sum tree for prioritized learning
+# TODO: Can make an optimized version for a3c, with no size checks.
 class Memory: # TODO: use maxlen argument in Deque?
     def __init__(self, max_size):
         self.D = deque()
@@ -39,6 +40,15 @@ class Memory: # TODO: use maxlen argument in Deque?
         self.size -= n
         #self.total_saved -= n
         self.isFull = False
+        
+    def popleft(self): # Note: Only call if you know an element exists
+        self.size -= 1
+        return self.D.popleft()
+        
+    def reset(self):
+        self.size = 0
+        self.isFull = False
+        self.D = deque()
         
     def sample(self, batch_size):
         return random.sample(self.D, batch_size)

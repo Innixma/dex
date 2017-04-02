@@ -1,40 +1,33 @@
 # By Nick Erickson
 # A3C Brain
+
 # Deep Learning Modules
 from keras import backend as K
 from keras.models import Model, Input
 from keras.models import model_from_json
-from keras.models import Sequential
-from keras.layers.core import Dense, Dropout, Activation, Flatten
-from keras.layers.convolutional import Convolution2D, MaxPooling2D
+from keras.layers.core import Dense
 from keras.optimizers import SGD , Adam , RMSprop
 
 import tensorflow as tf
 from models import default_model
 
 import numpy as np
-import time
-
-LEARNING_RATE = 5e-3
-
-LOSS_V = .5            # v loss coefficient
-LOSS_ENTROPY = .01     # entropy coefficient
-
-MIN_BATCH = 8
 
 # Class concept from Jaromir Janisch, 2017
 # https://jaromiru.com/2017/03/26/lets-make-an-a3c-implementation/
 class Brain:
     train_queue = [ [], [], [], [], [] ]    # s, a, r, s', s' terminal mask
 
-    def __init__(self, state_dim, action_dim, gamma, n_step_return, modelFunc=None):
-        
+    def __init__(self, state_dim, action_dim, hyper, modelFunc=None):
         self.state_dim = state_dim
         self.action_dim = action_dim
-        self.gamma = gamma
-        self.n_step_return = n_step_return
+        self.gamma = hyper.gamma
+        self.n_step_return = hyper.memory_size
         self.gamma_n = self.gamma ** self.n_step_return
-        
+        self.loss_v = hyper.extra.loss_v
+        self.loss_entropy = hyper.extra.loss_entropy
+        self.batch = hyper.batch
+        self.learning_rate = hyper.learning_rate
         
         self.NONE_STATE = np.zeros(state_dim)
         self.session = tf.Session()
@@ -78,18 +71,18 @@ class Brain:
         advantage = r_t - v
 
         loss_policy = - log_prob * tf.stop_gradient(advantage)                                    # maximize policy
-        loss_value  = LOSS_V * tf.square(advantage)                                                # minimize value error
-        entropy = LOSS_ENTROPY * tf.reduce_sum(p * tf.log(p + 1e-10), axis=1, keep_dims=True)    # maximize entropy (regularization)
+        loss_value  = self.loss_v * tf.square(advantage)                                                # minimize value error
+        entropy = self.loss_entropy * tf.reduce_sum(p * tf.log(p + 1e-10), axis=1, keep_dims=True)    # maximize entropy (regularization)
 
         loss_total = tf.reduce_mean(loss_policy + loss_value + entropy)
 
-        optimizer = tf.train.RMSPropOptimizer(LEARNING_RATE, decay=.99)
+        optimizer = tf.train.RMSPropOptimizer(self.learning_rate, decay=.99)
         minimize = optimizer.minimize(loss_total)
 
         return s_t, a_t, r_t, minimize
 
     def optimize(self):
-        if len(self.train_queue[0]) < MIN_BATCH:
+        if len(self.train_queue[0]) < self.batch:
             return
 
         s, a, r, s_, s_mask = self.train_queue
@@ -100,9 +93,7 @@ class Brain:
             a_cat = np.zeros(self.action_dim)
             a_cat[a_] = 1
             a_cats.append(a_cat)
-        
-        #a = a_cats
-            
+          
         s = np.vstack(s)
         a = np.vstack(a_cats)
         r = np.vstack(r)

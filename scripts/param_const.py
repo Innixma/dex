@@ -1,7 +1,7 @@
 # By Nick Erickson
 # Contains parameters for games and levels
 
-from param_utils import Args, Hyperparam, Screenparam
+from param_utils import Args, Hyperparam, Screenparam, Hyper_a3c
 
 
 
@@ -48,36 +48,42 @@ hex_base = Args(
                         memory_delay=4
                         )
 
-gym_cart_hyperparams = Hyperparam(
+gym_cart_ddqn_hyperparams = Hyperparam(
                              framerate=40,
                              gamma=0.99,
-                             batch=64,
-                             observe=100000,
+                             batch=8,
+                             observe=7500,
                              explore=30000,
-                             epsilon_init=1.0,
-                             epsilon_final=0.01,
-                             memory_size=100000,
+                             epsilon_init=0.4,
+                             epsilon_final=0.15,
+                             memory_size=7500,
                              save_rate=10000,
                              neg_regret_frames=0,
                              img_channels=1,
-                             update_rate=1000
+                             update_rate=1000,
+                             learning_rate=5e-3
                            )
 
-gym_cart = Args(
+gym_cart_ddqn = Args(
                         mode='train',
                         game='CartPole-v0',
                         env='gym',
                         data='default',
                         screen='default',
-                        hyper=gym_cart_hyperparams,
+                        hyper=gym_cart_ddqn_hyperparams,
                         directory='default',
                         memory_delay=4
                         )
 
+gym_cart_a3c_hyperspecific = Hyper_a3c(
+                                       loss_v=0.5,
+                                       loss_entropy=0.01,
+                                       )
+
 gym_cart_a3c_hyperparams = Hyperparam(
                              framerate=40,
                              gamma=0.99,
-                             batch=64,
+                             batch=8,
                              observe=0,
                              explore=75000,
                              epsilon_init=0.4,
@@ -87,8 +93,11 @@ gym_cart_a3c_hyperparams = Hyperparam(
                              neg_regret_frames=0,
                              img_channels=1,
                              update_rate=1000,
-                             n_step_return=8
+                             learning_rate=5e-3,
+                             extra=gym_cart_a3c_hyperspecific
                            )
+
+
 
 gym_cart_a3c = Args(
                         mode='train',

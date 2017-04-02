@@ -37,11 +37,6 @@ def playGameGym(args, agent_func):
                 time.sleep(0.5)
         
         if agent.mode == 'train':
-            #if iteration % 10 == 0:
-            #    agent.replay(debug=True)
-            #else:
-            #    agent.replay(debug=False)
-            
             if iteration % 10 == 0:
                 print("Step:", agent.memory.total_saved, ", Total reward:", R)
             

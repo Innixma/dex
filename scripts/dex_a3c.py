@@ -16,7 +16,7 @@ from __future__ import print_function
 #import threading
 
 # Utilities
-from param_const import gym_cart, hex_base, gym_cart_a3c
+from param_const import hex_base, gym_cart_a3c
 import play_game
 import agent_a3c
 
