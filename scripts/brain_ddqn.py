@@ -11,12 +11,12 @@ class Brain:
         self.state_dim = state_dim
         self.action_dim = action_dim
 
-        self.model = self._createModel(modelFunc)
-        self.model_ = self._createModel(modelFunc)
+        self.model = self.create_model(modelFunc)
+        self.model_ = self.create_model(modelFunc)
         
         self.updateTargetModel()
         
-    def _createModel(self, modelFunc=None):
+    def create_model(self, modelFunc=None):
         if modelFunc:
             model = modelFunc(self.state_dim, self.action_dim)
         else:

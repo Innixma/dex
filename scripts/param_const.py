@@ -74,6 +74,33 @@ gym_cart = Args(
                         memory_delay=4
                         )
 
+gym_cart_a3c_hyperparams = Hyperparam(
+                             framerate=40,
+                             gamma=0.99,
+                             batch=64,
+                             observe=0,
+                             explore=75000,
+                             epsilon_init=0.4,
+                             epsilon_final=0.15,
+                             memory_size=8,
+                             save_rate=100000,
+                             neg_regret_frames=0,
+                             img_channels=1,
+                             update_rate=1000,
+                             n_step_return=8
+                           )
+
+gym_cart_a3c = Args(
+                        mode='train',
+                        game='CartPole-v0',
+                        env='gym',
+                        data='default',
+                        screen='default',
+                        hyper=gym_cart_a3c_hyperparams,
+                        directory='default',
+                        memory_delay=4
+                        )
+
 hex_gather_hyperparams = Hyperparam(
                              framerate=40,
                              gamma=0.99,

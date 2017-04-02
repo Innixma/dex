@@ -17,6 +17,7 @@ class Hyperparam:
                  neg_regret_frames=1,
                  img_channels=2,
                  update_rate=1000,
+                 n_step_return=1
                  ):
         
         self.framerate = framerate
@@ -31,6 +32,8 @@ class Hyperparam:
         self.neg_regret_frames = neg_regret_frames
         self.img_channels = img_channels
         self.update_rate = update_rate
+        self.n_step_return = n_step_return
+        self.gamma_n = self.gamma ** self.n_step_return
         
 class Screenparam:
     def __init__(self,

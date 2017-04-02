@@ -31,5 +31,14 @@ class Memory: # TODO: use maxlen argument in Deque?
         self.total_saved -= n
         self.isFull = False
         
+    def removeFirstN(self, n): # Remove first n instances
+        if n > self.size:
+            n = self.size
+        for i in range(n):
+            self.D.popleft()
+        self.size -= n
+        #self.total_saved -= n
+        self.isFull = False
+        
     def sample(self, batch_size):
         return random.sample(self.D, batch_size)

@@ -14,6 +14,6 @@ Runs on Windows
 
 DDQN Implemented: dex_ddqn.py
 
-A3C is a WIP: dex_A3C.py
+A3C is a WIP: dex_a3c.py
 
 More complete README will be created upon A3C implementation
