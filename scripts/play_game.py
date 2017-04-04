@@ -68,7 +68,7 @@ def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
     
     agent = agent_func(args, state_dim, action_dim, models.CNN_a3c)
     
-    env = Environment_realtime_a3c(emulator)
+    env = Environment_realtime_a3c(emulator, img_channels)
     while (True):
         frame, useRate, frame_saved = env.run(agent)
         
@@ -76,8 +76,9 @@ def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
                     
         if agent.h.save_rate < agent.save_iterator:
             agent.save_iterator -= agent.h.save_rate
-            save_weights(agent)
+            save_weights(agent, agent.run_count)
             agent.metrics.save_metrics(agent.results_location)
+            agent.metrics.save_metrics_v(agent.results_location)
             #agent.metrics.save_metrics_training(agent.results_location)
 
                     

@@ -11,11 +11,14 @@ class Metrics: # TODO: Save this to a pickle file?
         self.survival_times_full_mean = []
         self.Q = []
         self.loss = []
+        self.total_size = 0 
         self.size = 0
         self.max_survival = -1
+        self.V = []
    
     def update(self, survival_time):
         self.size += 1
+        self.total_size += 1
         if survival_time > self.max_survival:
             self.max_survival = survival_time
         self.survival_times.append(survival_time)
@@ -26,12 +29,15 @@ class Metrics: # TODO: Save this to a pickle file?
             if np.sum(useRate) != 0:
                 useRate = useRate/np.sum(useRate)
             framerate = frame/self.survival_times[-1]
-            print('R' + str(self.size) + ': ' + "%.2f" % self.survival_times[-1] + 's' + ', %.2f fps' % framerate + ', key: ', ['%.2f' % k for k in useRate], end='')
+            print('R' + str(self.total_size) + ': ' + "%.2f" % self.survival_times[-1] + 's' + ', %.2f fps' % framerate + ', key: ', ['%.2f' % k for k in useRate], end='')
             print(' Mean: %.2f' % self.survival_times_full_mean[-1], 'Last 10: %.2f' % self.survival_times_last_10[-1], 'Max: %.2f' % self.max_survival, "TS", total_saved, "E %.2f" % epsilon)
     
     def save_metrics_training(self, save_location):
         graphHelper.graphSimple([np.arange(len(self.Q))], [self.Q], ['Q Value'], 'Q Value', 'Q Value', 'Replay (10^2)', savefigName=save_location + 'Q')
         graphHelper.graphSimple([np.arange(len(self.loss))], [self.loss], ['Loss'], 'Loss', 'Loss', 'Replay (10^2)', savefigName=save_location + 'loss')        
+    
+    def save_metrics_v(self, save_location):
+        graphHelper.graphSimple([np.arange(len(self.V))], [self.V], ['Value'], 'Value', 'Value', 'Run', savefigName=save_location + 'V')
         
     def save_metrics(self, save_location):
         # TODO: Remove these logs, just export the data directly

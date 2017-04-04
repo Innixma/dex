@@ -7,7 +7,7 @@ import random
 from metrics import Metrics
 from memory import Memory
 
-class RandomAgent:
+class Agent:
     def __init__(self, args, state_dim, action_dim):
         self.h = args.hyper
         self.mode = 'observe'

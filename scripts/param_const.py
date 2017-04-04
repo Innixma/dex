@@ -111,9 +111,9 @@ hex_base_a3c_hyperparams = Hyperparam(
                              batch=64,
                              observe=0,
                              explore=100000,
-                             epsilon_init=1,
-                             epsilon_final=0.05,
-                             memory_size=8,
+                             epsilon_init=0.4,
+                             epsilon_final=0.01,
+                             memory_size=4,
                              save_rate=5000,
                              neg_regret_frames=0,
                              img_channels=2,
@@ -134,6 +134,20 @@ hex_base_a3c = Args(
                         memory_delay=4
                         )
 
+hex_base_a3c_load = Args(
+                        algorithm='a3c',
+                        mode='train_old',
+                        game='default',
+                        env='real',
+                        data='default',
+                        screen=hex_screen,
+                        hyper=hex_base_a3c_hyperparams,
+                        directory='hex_a3c_base_v1',
+                        memory_delay=4,
+                        run_count_load=3365
+                        )
+
+
 
 gym_cart_a3c = Args(
                         algorithm='a3c',
@@ -151,13 +165,25 @@ hex_gather_hyperparams = Hyperparam(
                              framerate=40,
                              gamma=0.99,
                              batch=64,
-                             observe=0,
-                             explore=10000,
+                             observe=1000,
+                             explore=1000,
                              epsilon_init=1.0,
                              epsilon_final=0.01,
-                             memory_size=50000,
+                             memory_size=1000,
                              save_rate=10000,
                              neg_regret_frames=1,
                              img_channels=2,
                              update_rate=1000
                            )
+
+hex_base_gather = Args(
+                        algorithm='random',
+                        mode='train',
+                        game='default',
+                        env='memory',
+                        data='default',
+                        screen=hex_screen,
+                        hyper=hex_gather_hyperparams,
+                        directory='default',
+                        memory_delay=4
+                        )

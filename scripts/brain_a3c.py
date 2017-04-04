@@ -40,7 +40,7 @@ class Brain:
         self.session.run(tf.global_variables_initializer())
         self.default_graph = tf.get_default_graph()
 
-        self.default_graph.finalize()    # avoid modifications
+        #self.default_graph.finalize()    # avoid modifications
 
     def create_model(self, modelFunc=None):
         print(self.state_dim)

@@ -1,13 +1,16 @@
 # By Nick Erickson
 # Model Functions
 
+# TODO: Add lstm to initial layer???
+# TODO: Add lstm to final layer???
+
 # Deep Learning Modules
 from keras import backend as K
 from keras.models import model_from_json
 from keras.models import Sequential, Model
-from keras.layers import Input, Dense
-from keras.layers.core import Dense, Dropout, Activation, Flatten
-from keras.layers.convolutional import Convolution2D, MaxPooling2D
+from keras.layers import Input, Dense, LSTM, MaxPooling2D
+from keras.layers.core import Dropout, Activation, Flatten
+from keras.layers.convolutional import Convolution2D
 from keras.layers.convolutional import Conv2D
 from keras.optimizers import SGD , Adam , RMSprop
 
@@ -72,11 +75,66 @@ def buildmodel_CNN_v3(state_dim, action_dim):
     
     return model
 #==============================================================================
- 
+
 #==============================================================================
-# CNN a3c, Apr 1
+# CNN a3c v3, Apr 3
 #==============================================================================
 def CNN_a3c(state_dim, action_dim):
+    
+    inputs = Input(shape=state_dim, dtype='float32', name='input')
+    
+    maxpool = MaxPooling2D((2, 2))(inputs)
+    conv1 = Conv2D(16, (4, 4), strides=(2, 2), activation='relu', padding='same')(maxpool)
+    conv2 = Conv2D(32, (4, 4), strides=(2, 2), activation='relu', padding='same')(conv1)
+    conv3 = Conv2D(64, (4, 4), strides=(2, 2), activation='relu', padding='same')(conv2)
+    conv4 = Conv2D(64, (3, 3), strides=(1, 1), activation='relu', padding='same')(conv3)
+    flatten = Flatten()(conv4)
+    dense1 = Dense(256, activation='relu')(flatten)
+    #lstm1 = LSTM(256, activation='relu')(dense1)
+    
+    
+    output_actions = Dense(action_dim, activation='softmax')(dense1)
+    output_value = Dense(1, activation='linear')(dense1)
+    
+    model = Model(inputs=[inputs], outputs=[output_actions, output_value])
+    
+    
+    
+    return model
+#==============================================================================
+
+#==============================================================================
+# CNN a3c v2, Apr 2
+#==============================================================================
+def CNN_a3c_v2(state_dim, action_dim):
+    
+    inputs = Input(shape=state_dim, dtype='float32', name='input')
+    
+    maxpool = MaxPooling2D((2, 2))(inputs)
+    conv1 = Conv2D(16, (4, 4), strides=(2, 2), activation='relu', padding='same')(maxpool)
+    conv2 = Conv2D(32, (4, 4), strides=(2, 2), activation='relu', padding='same')(conv1)
+    conv3 = Conv2D(64, (4, 4), strides=(2, 2), activation='relu', padding='same')(conv2)
+    conv4 = Conv2D(64, (3, 3), strides=(1, 1), activation='relu', padding='same')(conv3)
+    flatten = Flatten()(conv4)
+    dense1 = Dense(256, activation='relu')(flatten)
+    #lstm1 = LSTM(256, activation='relu')(dense1)
+    
+    
+    output_actions = Dense(action_dim, activation='softmax')(dense1)
+    output_value = Dense(1, activation='linear')(dense1)
+    
+    model = Model(inputs=[inputs], outputs=[output_actions, output_value])
+    
+    
+    
+    return model
+#==============================================================================
+
+
+#==============================================================================
+# CNN a3c v1, Apr 1
+#==============================================================================
+def CNN_a3c_v1(state_dim, action_dim):
     
     inputs = Input(shape=state_dim, dtype='float32', name='input')
     
@@ -95,8 +153,6 @@ def CNN_a3c(state_dim, action_dim):
     
     return model
 #==============================================================================
-
-
 
 
 

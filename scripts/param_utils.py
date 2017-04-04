@@ -80,7 +80,8 @@ class Args:
                  screen='default',
                  hyper='default',
                  directory='default',
-                 memory_delay=4
+                 memory_delay=4,
+                 run_count_load=0 # Temp
                  ):
         self.algorithm = algorithm
         self.mode = mode
@@ -91,3 +92,4 @@ class Args:
         self.hyper = hyper
         self.directory = directory
         self.memory_delay = memory_delay
+        self.run_count_load = run_count_load

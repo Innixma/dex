@@ -31,10 +31,12 @@ class Environment_gym:
                 return R, 1
 
 class Environment_realtime_a3c:
-    def __init__(self, emulator):
+    def __init__(self, emulator, img_channels=1):
         self.env = emulator
         self.timelapse = 1
-        
+        self.base_frame = self.init_run(img_channels)
+        new_shape = [1] + list(self.base_frame.shape)
+        self.base_frame = self.base_frame.reshape(new_shape)
     def framerate_check(self, start_time, frame):
         if time.time() - start_time < (self.timelapse * frame): # Cap framerate
             time.sleep(self.timelapse - (time.time() % self.timelapse))
@@ -88,7 +90,9 @@ class Environment_realtime_a3c:
         agent.run_count += 1
         
         agent.metrics.update(end_time-start_time)
-        
+        v = agent.brain.predict_v(self.base_frame)
+        v = v[0][0]
+        agent.metrics.V.append(v)
         return frame, useRate, frame_saved # Metrics
 
 class Environment_realtime:

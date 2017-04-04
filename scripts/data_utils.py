@@ -18,18 +18,24 @@ def load_weights(agent): # TODO: Update this function
         agent.results_location = results_location + '/'
         agent.data_location = data_location + '/'
         
+        filename = 'model'
+        if agent.args.run_count_load > 0:
+            agent.run_count = agent.args.run_count_load
+            agent.metrics.total_size = agent.run_count
+            filename = filename + '_' + str(agent.args.run_count_load)
+        
         if agent.args.mode == 'run':
             agent.h.observe = 999999999    # Never train
             agent.epsilon = 0
-            print ("Now we load weight from " + agent.results_location + 'model.h5')
-            agent.brain.model.load_weights(agent.results_location + 'model.h5')
+            print ("Now we load weight from " + agent.results_location + filename + '.h5')
+            agent.brain.model.load_weights(agent.results_location + filename + '.h5')
 
             print ("Weights loaded successfully")
         elif agent.args.mode == 'train_old': # Continue training old network
             agent.h.observe = agent.h.observe
             agent.epsilon = agent.h.epsilon_init
-            print ("Now we load weight from " + agent.results_location + 'model.h5')
-            agent.brain.model.load_weights(agent.results_location + 'model.h5')
+            print ("Now we load weight from " + agent.results_location + filename + '.h5')
+            agent.brain.model.load_weights(agent.results_location + filename + '.h5')
 
             print ("Weights loaded successfully, training")
         else: # Train new
@@ -37,10 +43,13 @@ def load_weights(agent): # TODO: Update this function
             agent.h.observe = agent.h.observe
             agent.epsilon = agent.h.epsilon_init
      
-def save_weights(agent):
+def save_weights(agent, addon=None):
+    name = 'model'
+    if addon:
+        name = name + '_' + str(addon)
     print("Saving Model...")
-    agent.brain.model.save_weights(agent.results_location + 'model.h5', overwrite=True)
-    with open(agent.results_location + 'model.json', "w") as outfile:
+    agent.brain.model.save_weights(agent.results_location + name + '.h5', overwrite=True)
+    with open(agent.results_location + name + '.json', "w") as outfile:
         json.dump(agent.brain.model.to_json(), outfile)
         
 # Saves memory, hyperparams, and screen info
