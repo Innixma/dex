@@ -84,7 +84,7 @@ def CNN_a3c(state_dim, action_dim):
     inputs = Input(shape=state_dim, dtype='float32', name='input')
     
     maxpool = MaxPooling2D((2, 2))(inputs)
-    conv1 = Conv2D(16, (4, 4), strides=(2, 2), activation='relu', padding='same')(maxpool)
+    conv1 = Conv2D(32, (4, 4), strides=(2, 2), activation='relu', padding='same')(maxpool)
     conv2 = Conv2D(32, (4, 4), strides=(2, 2), activation='relu', padding='same')(conv1)
     conv3 = Conv2D(64, (4, 4), strides=(2, 2), activation='relu', padding='same')(conv2)
     conv4 = Conv2D(64, (3, 3), strides=(1, 1), activation='relu', padding='same')(conv3)

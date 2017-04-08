@@ -80,7 +80,7 @@ class Brain:
 
         loss_total = tf.reduce_mean(loss_policy + loss_value + entropy)
 
-        optimizer = tf.train.RMSPropOptimizer(self.learning_rate, decay=.99)
+        optimizer = tf.train.RMSPropOptimizer(self.learning_rate, decay=.9) # Previously .99
         minimize = optimizer.minimize(loss_total)
 
         return s_t, a_t, r_t, minimize

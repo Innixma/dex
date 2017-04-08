@@ -5,6 +5,8 @@ from data_utils import loadMemory
 from agent_random import Agent
 from param_const import hex_base_gather
 import numpy as np
+import data_aug
+import time
 
 state_dim = [64, 64, 2]
 action_dim = 3
@@ -31,10 +33,17 @@ processed_3 = np.rot90(processed_2)
 
 processed_4 = np.rot90(processed_3)
 
+data = data[0:1]
 
+start = time.time()
+for i in range(1000):
+    #total_data = data + data_aug.rotate4(data)
+    
+    #total_data = total_data + data_aug.flip(total_data)
+    total_data = data_aug.full_augment(data)
+end = time.time()
 
-
-
+print(end-start)
 
 
 

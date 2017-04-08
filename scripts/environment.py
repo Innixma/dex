@@ -34,9 +34,9 @@ class Environment_realtime_a3c:
     def __init__(self, emulator, img_channels=1):
         self.env = emulator
         self.timelapse = 1
-        self.base_frame = self.init_run(img_channels)
-        new_shape = [1] + list(self.base_frame.shape)
-        self.base_frame = self.base_frame.reshape(new_shape)
+        self.has_base_frame = False
+        self.base_frame = None
+        
     def framerate_check(self, start_time, frame):
         if time.time() - start_time < (self.timelapse * frame): # Cap framerate
             time.sleep(self.timelapse - (time.time() % self.timelapse))
@@ -60,7 +60,11 @@ class Environment_realtime_a3c:
         self.env.start_game()
         start_time = time.time()
         s_t = self.init_run(agent.h.img_channels)
-
+        
+        if not self.has_base_frame:
+            self.has_base_frame = True
+            new_shape = [1] + list(s_t.shape)
+            self.base_frame = s_t.reshape(new_shape)
         
         while self.env.alive:
             self.framerate_check(start_time, frame)

@@ -134,6 +134,40 @@ hex_base_a3c = Args(
                         memory_delay=4
                         )
 
+hex_incongruence_a3c_hyperspecific = Hyper_a3c(
+                                       loss_v=0.5,
+                                       loss_entropy=0.01,
+                                       )
+
+hex_incongruence_a3c_hyperparams = Hyperparam(
+                             framerate=40,
+                             gamma=0.99,
+                             batch=64,
+                             observe=0,
+                             explore=30000,
+                             epsilon_init=0.4,
+                             epsilon_final=0.01,
+                             memory_size=4,
+                             save_rate=5000,
+                             neg_regret_frames=0,
+                             img_channels=2,
+                             update_rate=1000,
+                             learning_rate=2.5e-3,
+                             extra=hex_incongruence_a3c_hyperspecific
+                           )
+
+hex_incongruence_a3c = Args(
+                        algorithm='a3c',
+                        mode='train',
+                        game='default',
+                        env='real',
+                        data='default',
+                        screen=hex_screen,
+                        hyper=hex_incongruence_a3c_hyperparams,
+                        directory='default',
+                        memory_delay=0.5
+                        )
+
 hex_base_a3c_load = Args(
                         algorithm='a3c',
                         mode='train_old',
@@ -147,7 +181,18 @@ hex_base_a3c_load = Args(
                         run_count_load=3365
                         )
 
-
+hex_incongruence_a3c_load = Args(
+                        algorithm='a3c',
+                        mode='train_old',
+                        game='default',
+                        env='real',
+                        data='default',
+                        screen=hex_screen,
+                        hyper=hex_incongruence_a3c_hyperparams,
+                        directory='hex_a3c_incongruence_v1',
+                        memory_delay=0.5,
+                        run_count_load=18070
+                        )
 
 gym_cart_a3c = Args(
                         algorithm='a3c',
