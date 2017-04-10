@@ -12,6 +12,7 @@ import tensorflow as tf
 from models import default_model
 
 import numpy as np
+import data_aug
 
 # Class concept from Jaromir Janisch, 2017
 # https://jaromiru.com/2017/03/26/lets-make-an-a3c-implementation/
@@ -80,7 +81,7 @@ class Brain:
 
         loss_total = tf.reduce_mean(loss_policy + loss_value + entropy)
 
-        optimizer = tf.train.RMSPropOptimizer(self.learning_rate, decay=.9) # Previously .99
+        optimizer = tf.train.RMSPropOptimizer(self.learning_rate, decay=.99) # Previously .99
         minimize = optimizer.minimize(loss_total)
 
         return s_t, a_t, r_t, minimize
@@ -88,7 +89,6 @@ class Brain:
     def optimize(self):
         if len(self.train_queue[0]) < self.batch:
             return
-
         s, a, r, s_, s_mask = self.train_queue
         self.train_queue = [ [], [], [], [], [] ]
 
@@ -116,6 +116,26 @@ class Brain:
 
         self.session.run(minimize, feed_dict={s_t: s, a_t: a, r_t: r})
 
+    def train_augmented(self, s, a, r, s_):
+        
+        if s_ is None:
+            self.train_push_all_augmented(data_aug.full_augment([[s, a, r, self.NONE_STATE, 0.]]))
+        else:    
+            self.train_push_all_augmented(data_aug.full_augment([[s, a, r, s_, 1.]]))
+        
+        
+    def train_push_all_augmented(self, frames):
+        for frame in frames:
+            self.train_push_augmented(frame)
+        self.optimize()
+        
+    def train_push_augmented(self, frame):
+        self.train_queue[0].append(frame[0])
+        self.train_queue[1].append(frame[1])
+        self.train_queue[2].append(frame[2])  
+        self.train_queue[3].append(frame[3])
+        self.train_queue[4].append(frame[4])
+        
     def train_push(self, s, a, r, s_):
         self.train_queue[0].append(s)
         self.train_queue[1].append(a)

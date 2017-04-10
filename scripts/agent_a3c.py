@@ -59,12 +59,14 @@ class Agent:
                 self.memory.reset() # Don't train, R is inaccurate
             while self.memory.size > 0:
                 s, a, r, _, _ = self.memory.popleft()
-                self.brain.train_push(s, a, self.R, None)
+                #self.brain.train_push(s, a, self.R, None)
+                self.brain.train_augmented(s, a, self.R, None)
                 self.R = ( self.R - r ) / self.h.gamma
             self.R = 0
         if self.memory.size >= self.memory.max_size:
             s, a, r, _, _ = self.memory.popleft()
-            self.brain.train_push(s, a, self.R, s_)
+            #self.brain.train_push(s, a, self.R, s_)
+            self.brain.train_augmented(s, a, self.R, s_)
             self.R = self.R - r  
         
         if self.replay_count % 100 == 0:

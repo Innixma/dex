@@ -108,7 +108,7 @@ hex_base_a3c_hyperspecific = Hyper_a3c(
 hex_base_a3c_hyperparams = Hyperparam(
                              framerate=40,
                              gamma=0.99,
-                             batch=64,
+                             batch=128,
                              observe=0,
                              explore=100000,
                              epsilon_init=0.4,
@@ -118,7 +118,7 @@ hex_base_a3c_hyperparams = Hyperparam(
                              neg_regret_frames=0,
                              img_channels=2,
                              update_rate=1000,
-                             learning_rate=2.5e-3,
+                             learning_rate=2.5e-4,
                              extra=hex_base_a3c_hyperspecific
                            )
 

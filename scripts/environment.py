@@ -96,6 +96,7 @@ class Environment_realtime_a3c:
         agent.metrics.update(end_time-start_time)
         v = agent.brain.predict_v(self.base_frame)
         v = v[0][0]
+        print('V:', str(v))
         agent.metrics.V.append(v)
         return frame, useRate, frame_saved # Metrics
 
