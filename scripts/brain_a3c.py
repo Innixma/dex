@@ -11,8 +11,11 @@ from keras.optimizers import SGD , Adam , RMSprop
 import tensorflow as tf
 from models import default_model
 
+from memory import Memory_v2
 import numpy as np
 import data_aug
+
+MEMORY_SIZE = 200000
 
 # Class concept from Jaromir Janisch, 2017
 # https://jaromiru.com/2017/03/26/lets-make-an-a3c-implementation/
@@ -28,6 +31,7 @@ class Brain:
         self.loss_v = hyper.extra.loss_v
         self.loss_entropy = hyper.extra.loss_entropy
         self.batch = hyper.batch
+        self.max_size = self.batch * 10
         self.learning_rate = hyper.learning_rate
         
         self.NONE_STATE = np.zeros(state_dim)
@@ -41,6 +45,16 @@ class Brain:
         self.session.run(tf.global_variables_initializer())
         self.default_graph = tf.get_default_graph()
 
+        self.cur_size = 0
+        self.s = np.zeros([self.max_size] + state_dim)
+        self.a = np.zeros([self.max_size] + [self.action_dim])
+        self.r = np.zeros((self.max_size, 1))
+        self.s_ = np.zeros([self.max_size] + state_dim)
+        self.s_mask = np.zeros((self.max_size, 1))
+        
+        #self.brain_memory = Memory_v2(self.state_dim, MEMORY_SIZE)
+        
+        
         #self.default_graph.finalize()    # avoid modifications
 
     def create_model(self, modelFunc=None):
@@ -87,6 +101,29 @@ class Brain:
         return s_t, a_t, r_t, minimize
 
     def optimize(self):
+        if self.cur_size < self.batch:
+            return
+
+        v = self.predict_v(self.s_[:self.cur_size])
+        #v = v.reshape(self.cur_size)
+        #print(v.shape)
+        #print(self.s_mask[:self.cur_size].shape)
+        #print((self.gamma_n * v.T * self.s_mask[:self.cur_size]).reshape(self.cur_size).shape)
+        r = self.r[:self.cur_size] + self.gamma_n * v * self.s_mask[:self.cur_size]    # set v to 0 where s_ is terminal state
+        
+        s_t, a_t, r_t, minimize = self.graph
+
+        
+        
+        #s = self.s[:self.cur_size]
+        #a = self.a[:self.cur_size]
+        #print(s.shape)
+        #print(a.shape)
+        #print(r.shape)
+        self.session.run(minimize, feed_dict={s_t: self.s[:self.cur_size], a_t: self.a[:self.cur_size], r_t: r})    
+        self.cur_size = 0
+        
+    def optimizeOld(self):
         if len(self.train_queue[0]) < self.batch:
             return
         s, a, r, s_, s_mask = self.train_queue
@@ -103,7 +140,6 @@ class Brain:
         
         s = np.array(s)
         s_ = np.array(s_)
-        #print(s.shape)
         a = np.vstack(a_cats)
         r = np.vstack(r)
         #s_ = np.vstack(s_)
@@ -130,12 +166,27 @@ class Brain:
         self.optimize()
         
     def train_push_augmented(self, frame):
+        self.s[self.cur_size] = frame[0]
+
+        a_cat = np.zeros(self.action_dim)
+        a_cat[frame[1]] = 1
+
+        self.a[self.cur_size] = a_cat
+        self.r[self.cur_size] = frame[2]
+        self.s_[self.cur_size] = frame[3]
+        self.s_mask[self.cur_size] = frame[4]
+
+
+        self.cur_size += 1
+        
+    def train_push_augmented_old(self, frame):
         self.train_queue[0].append(frame[0])
         self.train_queue[1].append(frame[1])
         self.train_queue[2].append(frame[2])  
         self.train_queue[3].append(frame[3])
         self.train_queue[4].append(frame[4])
         
+    """
     def train_push(self, s, a, r, s_):
         self.train_queue[0].append(s)
         self.train_queue[1].append(a)
@@ -148,7 +199,8 @@ class Brain:
             self.train_queue[4].append(1.)
 
         self.optimize()
-            
+    """
+       
     def predict(self, s):
         with self.default_graph.as_default():
             p, v = self.model.predict(s)

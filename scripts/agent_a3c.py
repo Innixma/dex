@@ -2,7 +2,7 @@
 # A3C Agent
 
 import numpy as np
-from memory import Memory
+from memory import Memory, Memory_v2
 from metrics import Metrics
 from brain_a3c import Brain
 from data_utils import load_weights

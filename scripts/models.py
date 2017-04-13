@@ -77,9 +77,87 @@ def buildmodel_CNN_v3(state_dim, action_dim):
 #==============================================================================
 
 #==============================================================================
-# CNN a3c v3, Apr 3
+# CNN a3c v6, Apr 11
 #==============================================================================
 def CNN_a3c(state_dim, action_dim):
+    
+    inputs = Input(shape=state_dim, dtype='float32', name='input')
+    
+    conv1 = Conv2D(32, (4, 4), strides=(2, 2), activation='relu', padding='valid')(inputs)
+    conv2 = Conv2D(32, (4, 4), strides=(2, 2), activation='relu', padding='valid')(conv1)
+    conv3 = Conv2D(64, (4, 4), strides=(2, 2), activation='relu', padding='valid')(conv2)
+    conv4 = Conv2D(64, (4, 4), strides=(2, 2), activation='relu', padding='same')(conv3)
+    conv5 = Conv2D(64, (3, 3), strides=(1, 1), activation='relu', padding='same')(conv4)
+    flatten = Flatten()(conv5)
+    dense1 = Dense(512, activation='relu')(flatten)
+    #lstm1 = LSTM(256, activation='relu')(dense1)
+    
+    output_actions = Dense(action_dim, activation='softmax')(dense1)
+    output_value = Dense(1, activation='linear')(dense1)
+    
+    model = Model(inputs=[inputs], outputs=[output_actions, output_value])
+    
+    return model
+#==============================================================================
+
+
+
+#==============================================================================
+# CNN a3c v5, Apr 10, TOO SIMPLE, did not learn at all
+#==============================================================================
+def CNN_a3c_v5(state_dim, action_dim):
+    
+    inputs = Input(shape=state_dim, dtype='float32', name='input')
+    
+    conv1 = Conv2D(4, (4, 4), strides=(2, 2), activation='relu', padding='valid')(inputs)
+    conv2 = Conv2D(8, (4, 4), strides=(2, 2), activation='relu', padding='valid')(conv1)
+    conv3 = Conv2D(8, (4, 4), strides=(2, 2), activation='relu', padding='valid')(conv2)
+    flatten = Flatten()(conv3)
+    dense1 = Dense(128, activation='relu')(flatten)
+    
+    output_actions = Dense(action_dim, activation='softmax')(dense1)
+    output_value = Dense(1, activation='linear')(dense1)
+    
+    model = Model(inputs=[inputs], outputs=[output_actions, output_value])
+    
+    
+    
+    return model
+#==============================================================================
+
+
+#==============================================================================
+# CNN a3c v4, Apr 10
+#==============================================================================
+def CNN_a3c_v4(state_dim, action_dim):
+    
+    inputs = Input(shape=state_dim, dtype='float32', name='input')
+    
+    conv1 = Conv2D(8, (4, 4), strides=(2, 2), activation='relu', padding='same')(inputs)
+    conv2 = Conv2D(16, (4, 4), strides=(2, 2), activation='relu', padding='same')(conv1)
+    conv3 = Conv2D(32, (4, 4), strides=(2, 2), activation='relu', padding='same')(conv2)
+    conv4 = Conv2D(64, (4, 4), strides=(2, 2), activation='relu', padding='same')(conv3)
+    conv5 = Conv2D(64, (3, 3), strides=(1, 1), activation='relu', padding='same')(conv4)
+    flatten = Flatten()(conv5)
+    dense1 = Dense(256, activation='relu')(flatten)
+    #lstm1 = LSTM(256, activation='relu')(dense1)
+    
+    
+    output_actions = Dense(action_dim, activation='softmax')(dense1)
+    output_value = Dense(1, activation='linear')(dense1)
+    
+    model = Model(inputs=[inputs], outputs=[output_actions, output_value])
+    
+    
+    
+    return model
+#==============================================================================
+
+
+#==============================================================================
+# CNN a3c v3, Apr 3, achieved 305s
+#==============================================================================
+def CNN_a3c_v3(state_dim, action_dim):
     
     inputs = Input(shape=state_dim, dtype='float32', name='input')
     

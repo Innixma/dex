@@ -4,9 +4,11 @@
 
 import numpy as np
 
-def full_augment(data):
+def full_augment(total_data):
     
-    total_data = data + rotate4(data)
+    total_data = total_data + pixel(total_data)
+    
+    total_data = total_data + rotate4(total_data)
     
     return total_data + flip(total_data)
 
@@ -58,4 +60,79 @@ def flip(data): # Flips data lr
         d_new.append([np.fliplr(d[0]), d1 % 2, d[2], np.fliplr(d[3]), d[4]])
     return d_new
             
-            
+def pixel(data): # Lacks diagonal
+    d_new = []
+    rows = [-1, 1]
+    cols = [-1, 1]
+    for d in data:
+        for row in rows:
+            s0 = np.roll(d[0], row, 0)
+            s0_ = np.roll(d[3], row, 0)
+            d_new.append([s0, d[1], d[2], s0_, d[4]])
+           
+        for col in cols:
+            s0 = np.roll(d[0], col, 1)
+            s0_ = np.roll(d[3], col, 1)
+            d_new.append([s0, d[1], d[2], s0_, d[4]])
+        """
+        for row in rows:
+            for col in cols:
+                if row != 0 or col != 0:
+                    s0 = np.zeros(data_shape, dtype='float16')
+                    s0_ = np.zeros(data_shape, dtype='float16')
+                    
+                    s0 = [0:-1]
+                    
+                    print((row, col))
+                    s0 = np.roll(d[0], (row, col), axis=(0,1))
+                    s0_ = np.roll(d[3], [row, col], axis=[0,1])
+                    d_new.append([s0, d[1], d[2], s0_, d[4]])
+        """
+    return d_new
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

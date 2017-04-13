@@ -12,7 +12,7 @@ from skimage import color
 
 class HexagonEmulator:
 
-    def __init__(self, application, window_size=[140,140], capture_zoom=[0,0], screen_id=-1, screen_number=0, rewards=[1,-1], mode='standard'): # window_size = x,y
+    def __init__(self, application, window_size=[140,140], capture_zoom=[0,0], screen_id=-1, screen_number=0, rewards=[1,-10], mode='standard'): # window_size = x,y
         self.keys = np.array(['none', 'left_arrow', 'right_arrow'])
         self.action_dim = 3
         self.application = application
@@ -167,8 +167,8 @@ class HexagonEmulator:
         
         # ----------------------------------------------------
         # Polar Conversion
-        if self.mode == 'polar':
-            image = convert_to_polar.reproject_image_into_polar(image)[0].reshape((self.capture_size[1], self.capture_size[0], 3))
+        #if self.mode == 'polar':
+        #    image = convert_to_polar.reproject_image_into_polar(image)[0].reshape((self.capture_size[1], self.capture_size[0], 3))
         #    image = image[14:][:]
         # ----------------------------------------------------
         

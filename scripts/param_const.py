@@ -23,6 +23,12 @@ hex_hyperparams = Hyperparam(
 hex_screen = Screenparam(
                          app='Open Hexagon 1.92 - by vittorio romeo',
                          size=[140,140],
+                         zoom=[12,2]
+                         )
+
+hex_screen_old = Screenparam(
+                         app='Open Hexagon 1.92 - by vittorio romeo',
+                         size=[140,140],
                          zoom=[28,18]
                          )
 
@@ -47,7 +53,7 @@ hex_base = Args(
                         screen=hex_screen,
                         hyper=hex_hyperparams,
                         directory='default',
-                        memory_delay=4
+                        memory_delay=4.5
                         )
 
 gym_cart_ddqn_hyperparams = Hyperparam(
@@ -106,17 +112,17 @@ hex_base_a3c_hyperspecific = Hyper_a3c(
                                        )
 
 hex_base_a3c_hyperparams = Hyperparam(
-                             framerate=40,
+                             framerate=30,
                              gamma=0.99,
-                             batch=128,
+                             batch=64,
                              observe=0,
-                             explore=100000,
+                             explore=50000,
                              epsilon_init=0.4,
-                             epsilon_final=0.01,
+                             epsilon_final=0.05,
                              memory_size=4,
                              save_rate=5000,
                              neg_regret_frames=0,
-                             img_channels=2,
+                             img_channels=4,
                              update_rate=1000,
                              learning_rate=2.5e-4,
                              extra=hex_base_a3c_hyperspecific
@@ -131,7 +137,7 @@ hex_base_a3c = Args(
                         screen=hex_screen,
                         hyper=hex_base_a3c_hyperparams,
                         directory='default',
-                        memory_delay=4
+                        memory_delay=4.5
                         )
 
 hex_incongruence_a3c_hyperspecific = Hyper_a3c(
@@ -152,7 +158,7 @@ hex_incongruence_a3c_hyperparams = Hyperparam(
                              neg_regret_frames=0,
                              img_channels=2,
                              update_rate=1000,
-                             learning_rate=2.5e-3,
+                             learning_rate=2.5e-4,
                              extra=hex_incongruence_a3c_hyperspecific
                            )
 
@@ -176,9 +182,9 @@ hex_base_a3c_load = Args(
                         data='default',
                         screen=hex_screen,
                         hyper=hex_base_a3c_hyperparams,
-                        directory='hex_a3c_base_v1',
-                        memory_delay=4,
-                        run_count_load=3365
+                        directory='hex_a3c_base_v4',
+                        memory_delay=4.5,
+                        run_count_load=2611
                         )
 
 hex_incongruence_a3c_load = Args(
@@ -230,5 +236,5 @@ hex_base_gather = Args(
                         screen=hex_screen,
                         hyper=hex_gather_hyperparams,
                         directory='default',
-                        memory_delay=4
+                        memory_delay=4.5
                         )

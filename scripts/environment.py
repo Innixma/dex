@@ -40,6 +40,8 @@ class Environment_realtime_a3c:
     def framerate_check(self, start_time, frame):
         if time.time() - start_time < (self.timelapse * frame): # Cap framerate
             time.sleep(self.timelapse - (time.time() % self.timelapse))
+        else:
+            self.catchup_frames += 1
         
     def init_run(self, img_channels):
         x_t, r_0, terminal = self.env.gameState()
@@ -51,6 +53,8 @@ class Environment_realtime_a3c:
         return(s_t)
             
     def run(self, agent):
+        frame_delay = int(agent.h.framerate*agent.args.memory_delay)
+        self.catchup_frames = -1
         frame = 0
         frame_saved = 0
         useRate = np.zeros([agent.action_dim])
@@ -73,7 +77,7 @@ class Environment_realtime_a3c:
             
             s_t1 = np.append(x_t1, s_t[:, :, :agent.h.img_channels-1], axis=2)
 
-            if frame > agent.h.framerate*agent.args.memory_delay: # Don't store early useless frames
+            if frame > frame_delay: # Don't store early useless frames
                 agent.observe([s_t, action_index, r_t, s_t1, terminal])
                 agent.replay()
                 useRate[action_index] += 1
@@ -82,12 +86,12 @@ class Environment_realtime_a3c:
             s_t = s_t1
             frame += 1
                 
-            if frame > 20000: # Likely stuck, just go to new level
+            if frame > 25000: # Likely stuck, just go to new level
                 print('Stuck! Moving on...')
                 frame_saved = 0
                 self.env.alive = False
                 print('Deleting invalid memory...')
-                agent.memory.removeLastN(20000)
+                agent.memory.removeLastN(25000)
         
         end_time = time.time()
         self.env.end_game()
@@ -96,7 +100,7 @@ class Environment_realtime_a3c:
         agent.metrics.update(end_time-start_time)
         v = agent.brain.predict_v(self.base_frame)
         v = v[0][0]
-        print('V:', str(v))
+        print('V:', str(v), ', catchup:', str(self.catchup_frames))
         agent.metrics.V.append(v)
         return frame, useRate, frame_saved # Metrics
 

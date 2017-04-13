@@ -3,6 +3,7 @@
 
 import numpy as np
 import graphHelper
+import sys
 
 class Metrics: # TODO: Save this to a pickle file?
     def __init__(self):
@@ -31,7 +32,9 @@ class Metrics: # TODO: Save this to a pickle file?
             framerate = frame/self.survival_times[-1]
             print('R' + str(self.total_size) + ': ' + "%.2f" % self.survival_times[-1] + 's' + ', %.2f fps' % framerate + ', key: ', ['%.2f' % k for k in useRate], end='')
             print(' Mean: %.2f' % self.survival_times_full_mean[-1], 'Last 10: %.2f' % self.survival_times_last_10[-1], 'Max: %.2f' % self.max_survival, "TS", total_saved, "E %.2f" % epsilon)
-    
+            
+            sys.stdout.flush()
+            
     def save_metrics_training(self, save_location):
         graphHelper.graphSimple([np.arange(len(self.Q))], [self.Q], ['Q Value'], 'Q Value', 'Q Value', 'Replay (10^2)', savefigName=save_location + 'Q')
         graphHelper.graphSimple([np.arange(len(self.loss))], [self.loss], ['Loss'], 'Loss', 'Loss', 'Replay (10^2)', savefigName=save_location + 'loss')        
