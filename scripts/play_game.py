@@ -2,7 +2,7 @@
 # Contains functions for game play loops
 
 from environment import Environment_gym, Environment_realtime, Environment_realtime_a3c
-from data_utils import saveAll, saveMemory, saveClass, loadClass, loadMemory, save_weights
+from data_utils import saveAll, saveMemory, saveClass, loadClass, loadMemory, save_weights, saveMemory_v2
 import time
 import OpenHexagonEmulator
 import models
@@ -69,6 +69,9 @@ def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
     agent = agent_func(args, state_dim, action_dim, models.CNN_a3c)
     
     env = Environment_realtime_a3c(emulator, img_channels)
+    
+    hasSavedMemory = False
+    
     while (True):
         frame, useRate, frame_saved = env.run(agent)
         
@@ -80,8 +83,21 @@ def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
             agent.metrics.save_metrics(agent.results_location)
             agent.metrics.save_metrics_v(agent.results_location)
             #agent.metrics.save_metrics_training(agent.results_location)
-
-                    
+        
+        if agent.brain.brain_memory.isFull and hasSavedMemory == False:
+            hasSavedMemory = True
+            saveMemory_v2(agent)
+            
+        if frame_saved > 1000:
+            frame_saved = 1000
+            
+        print('Learning...', str(frame_saved))
+        for i in range(frame_saved):
+            if i % 10 == 0:
+                print('\r', 'Learning', '(', i+1, '/', frame_saved, ')', end="")
+            agent.brain.optimize_v2()
+        print('\r', 'Learning', '(', frame_saved, '/', frame_saved, ')')
+            
 def playGameReal(args, agent_func, screen_number=0, screen_id=-1):
     
     emulator = OpenHexagonEmulator.HexagonEmulator(

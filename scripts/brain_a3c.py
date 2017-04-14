@@ -15,7 +15,7 @@ from memory import Memory_v2
 import numpy as np
 import data_aug
 
-MEMORY_SIZE = 200000
+MEMORY_SIZE = 150000
 
 # Class concept from Jaromir Janisch, 2017
 # https://jaromiru.com/2017/03/26/lets-make-an-a3c-implementation/
@@ -52,7 +52,7 @@ class Brain:
         self.s_ = np.zeros([self.max_size] + state_dim)
         self.s_mask = np.zeros((self.max_size, 1))
         
-        #self.brain_memory = Memory_v2(self.state_dim, MEMORY_SIZE)
+        self.brain_memory = Memory_v2(MEMORY_SIZE, self.state_dim, self.action_dim)
         
         
         #self.default_graph.finalize()    # avoid modifications
@@ -100,6 +100,27 @@ class Brain:
 
         return s_t, a_t, r_t, minimize
 
+    def optimize_v2(self):
+        #print('hey')
+        if self.brain_memory.isFull != True:
+            return
+        idx = self.brain_memory.sample(self.batch)
+        
+        s  = self.brain_memory.s [idx, :]
+        a  = self.brain_memory.a [idx, :]
+        r  = np.copy(self.brain_memory.r [idx, :])
+        s_ = self.brain_memory.s_[idx, :]
+        t  = self.brain_memory.t [idx, :]
+        
+        v  = self.predict_v(s_)
+        
+        r = r + self.gamma_n * v * t # set v to 0 where s_ is terminal state
+        
+        s_t, a_t, r_t, minimize = self.graph
+
+        self.session.run(minimize, feed_dict={s_t: s, a_t: a, r_t: r})    
+        self.cur_size = 0
+        
     def optimize(self):
         if self.cur_size < self.batch:
             return
@@ -155,9 +176,9 @@ class Brain:
     def train_augmented(self, s, a, r, s_):
         
         if s_ is None:
-            self.train_push_all_augmented(data_aug.full_augment([[s, a, r, self.NONE_STATE, 0.]]))
+            self.train_push_all_augmented_v2(data_aug.full_augment([[s, a, r, self.NONE_STATE, 0.]]))
         else:    
-            self.train_push_all_augmented(data_aug.full_augment([[s, a, r, s_, 1.]]))
+            self.train_push_all_augmented_v2(data_aug.full_augment([[s, a, r, s_, 1.]]))
         
         
     def train_push_all_augmented(self, frames):
@@ -186,6 +207,25 @@ class Brain:
         self.train_queue[3].append(frame[3])
         self.train_queue[4].append(frame[4])
         
+    def train_push_all_augmented_v2(self, frames):
+        for frame in frames:
+            self.train_push_augmented_v2(frame)
+
+    def train_push_augmented_v2(self, frame):
+        #self.s[self.cur_size] = frame[0]
+
+        a_cat = np.zeros(self.action_dim)
+        a_cat[frame[1]] = 1
+
+        #self.a[self.cur_size] = a_cat
+        #self.r[self.cur_size] = frame[2]
+        #self.s_[self.cur_size] = frame[3]
+        #self.s_mask[self.cur_size] = frame[4]
+
+        self.brain_memory.add_single(frame[0], a_cat, frame[2], frame[3], frame[4])
+
+        #self.cur_size += 1        
+            
     """
     def train_push(self, s, a, r, s_):
         self.train_queue[0].append(s)

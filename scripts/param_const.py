@@ -146,19 +146,19 @@ hex_incongruence_a3c_hyperspecific = Hyper_a3c(
                                        )
 
 hex_incongruence_a3c_hyperparams = Hyperparam(
-                             framerate=40,
+                             framerate=30,
                              gamma=0.99,
-                             batch=64,
+                             batch=128,
                              observe=0,
-                             explore=30000,
+                             explore=20000,
                              epsilon_init=0.4,
                              epsilon_final=0.01,
                              memory_size=4,
                              save_rate=5000,
                              neg_regret_frames=0,
-                             img_channels=2,
+                             img_channels=4,
                              update_rate=1000,
-                             learning_rate=2.5e-4,
+                             learning_rate=1e-4,
                              extra=hex_incongruence_a3c_hyperspecific
                            )
 

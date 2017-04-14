@@ -59,7 +59,19 @@ def saveAll(agent):
     screenfile = agent.data_location + 'screen'
     saveClass(agent.h, hyperfile)
     saveClass(agent.args.screen, screenfile)
-            
+
+# For Memory_v2 agents
+def saveMemory_v2(agent):
+    memory = agent.brain.brain_memory
+    np.savez_compressed(
+                        agent.data_location+'memory.npz',
+                        s  = memory.s ,
+                        a  = memory.a ,
+                        r  = memory.r ,
+                        s_ = memory.s_,
+                        t  = memory.t
+                        )
+    print('Memory Saved...')
 # Saves memory, hyperparameters, and screen parameters
 def saveMemory(agent):
     
@@ -105,6 +117,21 @@ def saveClass(object_, location):
 def loadClass(location):
     with open(location,"rb") as file:
         return pickle.load(file)
+
+def loadMemory_v2(agent, memory_location):
+    memory = np.load(memory_location+'memory.npz')
+    agent.brain.brain_memory.s  = memory['s' ]
+    agent.brain.brain_memory.a  = memory['a' ]
+    agent.brain.brain_memory.r  = memory['r' ]
+    agent.brain.brain_memory.s_ = memory['s_']
+    agent.brain.brain_memory.t  = memory['t' ]
+
+    
+    agent.brain.brain_memory.size = agent.brain.brain_memory.s.shape[0]
+    agent.brain.brain_memory.max_size = agent.brain.brain_memory.size
+    agent.brain.brain_memory.total_saved = agent.brain.brain_memory.size
+    agent.brain.brain_memory.isFull = True
+    print('Importing', agent.brain.brain_memory.size, 'states')
     
 def loadMemory(agent, memory_location):
     memory = np.load(memory_location+'memory.npz')

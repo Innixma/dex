@@ -55,13 +55,13 @@ class Memory: # TODO: use maxlen argument in Deque?
         return random.sample(self.D, batch_size)
 
 class Memory_v2: # Improved memory class
-    def __init__(self, max_size, state_dim):
+    def __init__(self, max_size, state_dim, action_dim):
         # state_dim = [96,96,4] example
         
         full_dims = [max_size] + list(state_dim)
 
         self.s = np.zeros(full_dims, dtype='float16')
-        self.a = np.zeros([max_size, 1], dtype='int8')
+        self.a = np.zeros([max_size, action_dim], dtype='int8')
         self.r = np.zeros([max_size, 1], dtype='float64')
         self.s_ = np.zeros(full_dims, dtype='float16')
         self.t = np.zeros([max_size, 1], dtype='int8')
@@ -110,9 +110,7 @@ class Memory_v2: # Improved memory class
             self.r [self.curIndex:newIndex] = r
             self.s_[self.curIndex:newIndex] = s_
             self.t [self.curIndex:newIndex] = t
-            
-            
-            
+               
         self.increment_index_n(n)
 
 
@@ -122,6 +120,7 @@ class Memory_v2: # Improved memory class
         if self.isFull == False:
             self.size += n
             if self.size >= self.max_size:
+                print('Brain Memory Filled...')
                 self.isFull = True
                 self.size = self.max_size
         
