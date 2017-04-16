@@ -146,19 +146,19 @@ hex_incongruence_a3c_hyperspecific = Hyper_a3c(
                                        )
 
 hex_incongruence_a3c_hyperparams = Hyperparam(
-                             framerate=30,
+                             framerate=50,
                              gamma=0.99,
-                             batch=128,
+                             batch=64,
                              observe=0,
                              explore=20000,
                              epsilon_init=0.4,
-                             epsilon_final=0.01,
+                             epsilon_final=0.05,
                              memory_size=4,
                              save_rate=5000,
                              neg_regret_frames=0,
                              img_channels=4,
                              update_rate=1000,
-                             learning_rate=1e-4,
+                             learning_rate=2.5e-4,
                              extra=hex_incongruence_a3c_hyperspecific
                            )
 
@@ -198,6 +198,19 @@ hex_incongruence_a3c_load = Args(
                         directory='hex_a3c_incongruence_v1',
                         memory_delay=0.5,
                         run_count_load=18070
+                        )
+
+hex_pi_acer_load = Args(
+                        algorithm='a3c',
+                        mode='train_old',
+                        game='default',
+                        env='real',
+                        data='default',
+                        screen=hex_screen,
+                        hyper=hex_incongruence_a3c_hyperparams,
+                        directory='hex_acer_pi_v1',
+                        memory_delay=0.5,
+                        run_count_load=6412
                         )
 
 gym_cart_a3c = Args(
