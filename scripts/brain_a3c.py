@@ -15,8 +15,8 @@ from memory import Memory_v2
 import numpy as np
 import data_aug
 
-MEMORY_SIZE = 150000
-
+#MEMORY_SIZE = 150000
+MEMORY_SIZE = 15000
 # Class concept from Jaromir Janisch, 2017
 # https://jaromiru.com/2017/03/26/lets-make-an-a3c-implementation/
 class Brain:
@@ -46,11 +46,6 @@ class Brain:
         self.default_graph = tf.get_default_graph()
 
         self.cur_size = 0
-        self.s = np.zeros([self.max_size] + state_dim)
-        self.a = np.zeros([self.max_size] + [self.action_dim])
-        self.r = np.zeros((self.max_size, 1))
-        self.s_ = np.zeros([self.max_size] + state_dim)
-        self.s_mask = np.zeros((self.max_size, 1))
         
         self.brain_memory = Memory_v2(MEMORY_SIZE, self.state_dim, self.action_dim)
         
@@ -100,7 +95,7 @@ class Brain:
 
         return s_t, a_t, r_t, minimize
 
-    def optimize_v2(self):
+    def optimize(self):
         #print('hey')
         if self.brain_memory.isFull != True:
             return
@@ -121,125 +116,22 @@ class Brain:
         self.session.run(minimize, feed_dict={s_t: s, a_t: a, r_t: r})    
         self.cur_size = 0
         
-    def optimize(self):
-        if self.cur_size < self.batch:
-            return
-
-        v = self.predict_v(self.s_[:self.cur_size])
-        #v = v.reshape(self.cur_size)
-        #print(v.shape)
-        #print(self.s_mask[:self.cur_size].shape)
-        #print((self.gamma_n * v.T * self.s_mask[:self.cur_size]).reshape(self.cur_size).shape)
-        r = self.r[:self.cur_size] + self.gamma_n * v * self.s_mask[:self.cur_size]    # set v to 0 where s_ is terminal state
-        
-        s_t, a_t, r_t, minimize = self.graph
-
-        
-        
-        #s = self.s[:self.cur_size]
-        #a = self.a[:self.cur_size]
-        #print(s.shape)
-        #print(a.shape)
-        #print(r.shape)
-        self.session.run(minimize, feed_dict={s_t: self.s[:self.cur_size], a_t: self.a[:self.cur_size], r_t: r})    
-        self.cur_size = 0
-        
-    def optimizeOld(self):
-        if len(self.train_queue[0]) < self.batch:
-            return
-        s, a, r, s_, s_mask = self.train_queue
-        self.train_queue = [ [], [], [], [], [] ]
-
-        a_cats = []
-        for a_ in a:
-            a_cat = np.zeros(self.action_dim)
-            a_cat[a_] = 1
-            a_cats.append(a_cat)
-        #print(np.array(s[0]).shape)
-        #print(np.array(s).shape)
-        #s = np.vstack(s)
-        
-        s = np.array(s)
-        s_ = np.array(s_)
-        a = np.vstack(a_cats)
-        r = np.vstack(r)
-        #s_ = np.vstack(s_)
-        s_mask = np.vstack(s_mask)
-
-        v = self.predict_v(s_)
-        r = r + self.gamma_n * v * s_mask    # set v to 0 where s_ is terminal state
-        
-        s_t, a_t, r_t, minimize = self.graph
-
-        self.session.run(minimize, feed_dict={s_t: s, a_t: a, r_t: r})
-
     def train_augmented(self, s, a, r, s_):
         
         if s_ is None:
-            self.train_push_all_augmented_v2(data_aug.full_augment([[s, a, r, self.NONE_STATE, 0.]]))
+            self.train_push_all_augmented(data_aug.full_augment([[s, a, r, self.NONE_STATE, 0.]]))
         else:    
-            self.train_push_all_augmented_v2(data_aug.full_augment([[s, a, r, s_, 1.]]))
-        
+            self.train_push_all_augmented(data_aug.full_augment([[s, a, r, s_, 1.]]))
         
     def train_push_all_augmented(self, frames):
         for frame in frames:
             self.train_push_augmented(frame)
-        self.optimize()
-        
+
     def train_push_augmented(self, frame):
-        self.s[self.cur_size] = frame[0]
-
         a_cat = np.zeros(self.action_dim)
         a_cat[frame[1]] = 1
 
-        self.a[self.cur_size] = a_cat
-        self.r[self.cur_size] = frame[2]
-        self.s_[self.cur_size] = frame[3]
-        self.s_mask[self.cur_size] = frame[4]
-
-
-        self.cur_size += 1
-        
-    def train_push_augmented_old(self, frame):
-        self.train_queue[0].append(frame[0])
-        self.train_queue[1].append(frame[1])
-        self.train_queue[2].append(frame[2])  
-        self.train_queue[3].append(frame[3])
-        self.train_queue[4].append(frame[4])
-        
-    def train_push_all_augmented_v2(self, frames):
-        for frame in frames:
-            self.train_push_augmented_v2(frame)
-
-    def train_push_augmented_v2(self, frame):
-        #self.s[self.cur_size] = frame[0]
-
-        a_cat = np.zeros(self.action_dim)
-        a_cat[frame[1]] = 1
-
-        #self.a[self.cur_size] = a_cat
-        #self.r[self.cur_size] = frame[2]
-        #self.s_[self.cur_size] = frame[3]
-        #self.s_mask[self.cur_size] = frame[4]
-
-        self.brain_memory.add_single(frame[0], a_cat, frame[2], frame[3], frame[4])
-
-        #self.cur_size += 1        
-            
-    """
-    def train_push(self, s, a, r, s_):
-        self.train_queue[0].append(s)
-        self.train_queue[1].append(a)
-        self.train_queue[2].append(r)
-        if s_ is None:
-            self.train_queue[3].append(self.NONE_STATE)
-            self.train_queue[4].append(0.)
-        else:    
-            self.train_queue[3].append(s_)
-            self.train_queue[4].append(1.)
-
-        self.optimize()
-    """
+        self.brain_memory.add_single(frame[0], a_cat, frame[2], frame[3], frame[4])      
        
     def predict(self, s):
         with self.default_graph.as_default():
