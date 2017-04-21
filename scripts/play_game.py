@@ -93,12 +93,12 @@ def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
         if frame_saved < 300:
             frame_saved = 300
         if agent.brain.brain_memory.isFull:
-            #print('Learning...', str(frame_saved), end="")
-            for i in range(frame_saved):
-                if i % 10 == 0:
-                    print('\r', 'Learning', '(', i, '/', frame_saved, ')', end="")
-                agent.brain.optimize()
-            print('\r', 'Learning', '(', frame_saved, '/', frame_saved, ')')
+            agent.brain.optimize_batch(frame_saved)
+            #for i in range(frame_saved):
+            #    if i % 10 == 0:
+            #        print('\r', 'Learning', '(', i, '/', frame_saved, ')', end="")
+            #    agent.brain.optimize()
+            #print('\r', 'Learning', '(', frame_saved, '/', frame_saved, ')')
             
 def playGameReal(args, agent_func, screen_number=0, screen_id=-1):
     

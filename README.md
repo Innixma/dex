@@ -9,7 +9,7 @@ This is a deep learning repository for playing the game Open Hexagon with screen
 
 - Runs on Windows, currently working on a Linux version.
 - Python 3.5
-- [Tensorflow 0.12 (GPU)](https://github.com/tensorflow/tensorflow) (TODO: Upgrade to Tensorflow r1.0 at some point)
+- [Tensorflow v1.0.1 (GPU)](https://github.com/tensorflow/tensorflow)
 - [Keras v2.0.2](https://github.com/fchollet/keras)
 
 ## Algorithms

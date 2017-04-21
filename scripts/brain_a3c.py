@@ -15,8 +15,10 @@ from memory import Memory_v2
 import numpy as np
 import data_aug
 
-#MEMORY_SIZE = 150000
-MEMORY_SIZE = 15000
+print('TensorFlow version' , tf.__version__)
+
+MEMORY_SIZE = 150000
+#MEMORY_SIZE = 15000
 # Class concept from Jaromir Janisch, 2017
 # https://jaromiru.com/2017/03/26/lets-make-an-a3c-implementation/
 class Brain:
@@ -31,7 +33,6 @@ class Brain:
         self.loss_v = hyper.extra.loss_v
         self.loss_entropy = hyper.extra.loss_entropy
         self.batch = hyper.batch
-        self.max_size = self.batch * 10
         self.learning_rate = hyper.learning_rate
         
         self.NONE_STATE = np.zeros(state_dim)
@@ -44,8 +45,6 @@ class Brain:
 
         self.session.run(tf.global_variables_initializer())
         self.default_graph = tf.get_default_graph()
-
-        self.cur_size = 0
         
         self.brain_memory = Memory_v2(MEMORY_SIZE, self.state_dim, self.action_dim)
         
@@ -71,13 +70,12 @@ class Brain:
         return model
         
     def create_graph(self, model):
-        #print(self.state_dim)
-        #print(self.state_dim[0])
-        zzz = [None] + self.state_dim
-        print(zzz)
-        s_t = tf.placeholder(tf.float32, shape=(zzz))
-        a_t = tf.placeholder(tf.float32, shape=(None, self.action_dim))
-        r_t = tf.placeholder(tf.float32, shape=(None, 1)) # not immediate, but discounted n step reward
+        batch_size = self.batch # = None
+        state_dim = [batch_size] + self.state_dim
+        print(state_dim)
+        s_t = tf.placeholder(tf.float32, shape=(state_dim))
+        a_t = tf.placeholder(tf.float32, shape=(batch_size, self.action_dim))
+        r_t = tf.placeholder(tf.float32, shape=(batch_size, 1)) # not immediate, but discounted n step reward
         
         p, v = model(s_t)
 
@@ -96,7 +94,6 @@ class Brain:
         return s_t, a_t, r_t, minimize
 
     def optimize(self):
-        #print('hey')
         if self.brain_memory.isFull != True:
             return
         idx = self.brain_memory.sample(self.batch)
@@ -114,10 +111,32 @@ class Brain:
         s_t, a_t, r_t, minimize = self.graph
 
         self.session.run(minimize, feed_dict={s_t: s, a_t: a, r_t: r})    
-        self.cur_size = 0
+        
+    def optimize_batch(self, batch_size):
+        if self.brain_memory.isFull != True:
+            return
+            
+        idx = self.brain_memory.sample(self.batch * batch_size)
+        
+        s  = self.brain_memory.s [idx, :]
+        a  = self.brain_memory.a [idx, :]
+        r  = np.copy(self.brain_memory.r [idx, :])
+        s_ = self.brain_memory.s_[idx, :]
+        t  = self.brain_memory.t [idx, :]
+
+        s_t, a_t, r_t, minimize = self.graph
+        for i in range(batch_size):
+            if i % 10 == 0:
+                print('\r', 'Learning', '(', i, '/', batch_size, ')', end="")
+            start = i * self.batch
+            end = (i+1) * self.batch
+            #v  = self.predict_v(s_[start:end])
+            r[start:end] = r[start:end] + self.gamma_n * self.predict_v(s_[start:end]) * t[start:end] # set v to 0 where s_ is terminal state
+
+            self.session.run(minimize, feed_dict={s_t: s[start:end], a_t: a[start:end], r_t: r[start:end]})    
+        print('\r', 'Learning', '(', batch_size, '/', batch_size, ')')
         
     def train_augmented(self, s, a, r, s_):
-        
         if s_ is None:
             self.train_push_all_augmented(data_aug.full_augment([[s, a, r, self.NONE_STATE, 0.]]))
         else:    
