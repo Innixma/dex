@@ -36,7 +36,7 @@ print(end-start)
 state_dims = (64, 64, 2)
 max_size = 200000
 
-mem_test = memory.Memory_v2(max_size, state_dims)
+mem_test = memory.Memory_v2(max_size, state_dims, action_dim)
 
 s  = np.ones((2000, 64, 64, 2), dtype='float16')
 a  = np.ones((2000, 1), dtype='int8')

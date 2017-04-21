@@ -112,7 +112,7 @@ hex_base_a3c_hyperspecific = Hyper_a3c(
                                        )
 
 hex_base_a3c_hyperparams = Hyperparam(
-                             framerate=30,
+                             framerate=50,
                              gamma=0.99,
                              batch=64,
                              observe=0,
@@ -122,7 +122,7 @@ hex_base_a3c_hyperparams = Hyperparam(
                              memory_size=4,
                              save_rate=5000,
                              neg_regret_frames=0,
-                             img_channels=4,
+                             img_channels=2,
                              update_rate=1000,
                              learning_rate=2.5e-4,
                              extra=hex_base_a3c_hyperspecific
@@ -150,13 +150,13 @@ hex_incongruence_a3c_hyperparams = Hyperparam(
                              gamma=0.99,
                              batch=64,
                              observe=0,
-                             explore=20000,
-                             epsilon_init=0.4,
-                             epsilon_final=0.05,
+                             explore=50000,
+                             epsilon_init=1,
+                             epsilon_final=0.03,
                              memory_size=4,
                              save_rate=5000,
                              neg_regret_frames=0,
-                             img_channels=4,
+                             img_channels=2,
                              update_rate=1000,
                              learning_rate=2.5e-4,
                              extra=hex_incongruence_a3c_hyperspecific
@@ -195,9 +195,9 @@ hex_incongruence_a3c_load = Args(
                         data='default',
                         screen=hex_screen,
                         hyper=hex_incongruence_a3c_hyperparams,
-                        directory='hex_a3c_incongruence_v1',
+                        directory='hex_acer_end_v1',
                         memory_delay=0.5,
-                        run_count_load=18070
+                        run_count_load=1511
                         )
 
 hex_pi_acer_load = Args(

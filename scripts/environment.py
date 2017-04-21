@@ -86,12 +86,12 @@ class Environment_realtime_a3c:
             s_t = s_t1
             frame += 1
                 
-            if frame > 40000: # Likely stuck, just go to new level
+            if frame > 80000: # Likely stuck, just go to new level
                 print('Stuck! Moving on...')
                 frame_saved = 0
                 self.env.alive = False
                 print('Deleting invalid memory...')
-                agent.memory.removeLastN(40000)
+                agent.memory.removeLastN(80000)
         
         end_time = time.time()
         self.env.end_game()
