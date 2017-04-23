@@ -112,19 +112,19 @@ hex_base_a3c_hyperspecific = Hyper_a3c(
                                        )
 
 hex_base_a3c_hyperparams = Hyperparam(
-                             framerate=50,
+                             framerate=40,
                              gamma=0.99,
                              batch=64,
                              observe=0,
-                             explore=50000,
-                             epsilon_init=0.4,
-                             epsilon_final=0.05,
+                             explore=1000,
+                             epsilon_init=1,
+                             epsilon_final=0.03,
                              memory_size=4,
                              save_rate=5000,
                              neg_regret_frames=0,
                              img_channels=2,
                              update_rate=1000,
-                             learning_rate=2.5e-4,
+                             learning_rate=1.0e-3, # 2.5e-4
                              extra=hex_base_a3c_hyperspecific
                            )
 
@@ -146,11 +146,11 @@ hex_incongruence_a3c_hyperspecific = Hyper_a3c(
                                        )
 
 hex_incongruence_a3c_hyperparams = Hyperparam(
-                             framerate=50,
+                             framerate=40,
                              gamma=0.99,
                              batch=64,
                              observe=0,
-                             explore=50000,
+                             explore=20000,
                              epsilon_init=1,
                              epsilon_final=0.03,
                              memory_size=4,
@@ -158,7 +158,7 @@ hex_incongruence_a3c_hyperparams = Hyperparam(
                              neg_regret_frames=0,
                              img_channels=2,
                              update_rate=1000,
-                             learning_rate=2.5e-4,
+                             learning_rate=2.5e-4, # 2.5e-4
                              extra=hex_incongruence_a3c_hyperspecific
                            )
 
@@ -182,9 +182,9 @@ hex_base_a3c_load = Args(
                         data='default',
                         screen=hex_screen,
                         hyper=hex_base_a3c_hyperparams,
-                        directory='hex_a3c_base_v4',
+                        directory='hex_acer_hexreal_v2',
                         memory_delay=4.5,
-                        run_count_load=2611
+                        run_count_load=231
                         )
 
 hex_incongruence_a3c_load = Args(

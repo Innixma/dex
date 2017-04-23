@@ -61,7 +61,7 @@ def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
                                                    screen_id,
                                                    screen_number
                                                   )
-    img_rows , img_cols = emulator.capture_size[0], emulator.capture_size[1]
+    img_rows , img_cols = emulator.final_size[0], emulator.final_size[1]
     img_channels = args.hyper.img_channels
     state_dim = [img_rows, img_cols, img_channels]
     action_dim = emulator.action_dim

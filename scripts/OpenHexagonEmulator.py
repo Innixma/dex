@@ -9,6 +9,7 @@ import convert_to_polar
 import scipy.misc as smp
 import skimage as skimage
 from skimage import color
+import skimage.transform as transf
 
 class HexagonEmulator:
 
@@ -50,6 +51,9 @@ class HexagonEmulator:
         self.curKey = 'enter'
         self.prevKey = 'enter'
         
+        self.final_size = np.copy(self.capture_size)
+        #self.final_size[0] = int(self.final_size[0]/2)
+        #self.final_size[1] = int(self.final_size[1]/2)
     #==============================================================================
     
     def start_game(self):
@@ -164,7 +168,7 @@ class HexagonEmulator:
         #print(np.frombuffer(dataBitMap.GetBitmapBits(True), dtype=np.uint8).shape)
         image = np.frombuffer(self.dataBitMap.GetBitmapBits(True), dtype=np.uint8).reshape((self.capture_size[1], self.capture_size[0], 4))[:,:,:-1][:,:,::-1]       
         #print(image.shape)
-        
+        #print(image.dtype)
         # ----------------------------------------------------
         # Polar Conversion
         #if self.mode == 'polar':
@@ -187,8 +191,8 @@ class HexagonEmulator:
     # Converts image to grayscale, and forces image to proper dimensions
     def prepareImage(self, image):
         
-        tmpImage = color.rgb2gray(image)
-        
+        tmpImage = color.rgb2gray(image).astype('float16')
+        #print(tmpImage.dtype)
         #global ZZ
         #ZZ += 1
         #if ZZ > 300:
@@ -203,9 +207,10 @@ class HexagonEmulator:
         #print(np.mean(tmpImage))
         #tmpImage = tmpImage.astype('float32') / 128 - 1
         # ----
-        tmpImage = tmpImage.astype('float16')
-        #tmpImage = tmpImage.reshape(1, 1, tmpImage.shape[0], tmpImage.shape[1])
-        #tmpImage = tmpImage.reshape(1, tmpImage.shape[0], tmpImage.shape[1]) # Theano
+        #tmpImage = tmpImage.astype('float16')
+
+        #tmpImage = transf.downscale_local_mean(tmpImage, (2,2)) # Downsample
+        
         tmpImage = tmpImage.reshape(tmpImage.shape[0], tmpImage.shape[1], 1) # Tensorflow
         return tmpImage
         
@@ -236,7 +241,6 @@ class HexagonEmulator:
         
         self.prevKey = self.curKey
         self.curKey = inKey
-        
         
         state = self.captureIm()
         

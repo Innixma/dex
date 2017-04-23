@@ -16,8 +16,8 @@ import numpy as np
 import data_aug
 
 print('TensorFlow version' , tf.__version__)
-
-MEMORY_SIZE = 150000
+print(K.learning_phase())
+MEMORY_SIZE = 20000
 #MEMORY_SIZE = 15000
 # Class concept from Jaromir Janisch, 2017
 # https://jaromiru.com/2017/03/26/lets-make-an-a3c-implementation/
@@ -48,6 +48,13 @@ class Brain:
         
         self.brain_memory = Memory_v2(MEMORY_SIZE, self.state_dim, self.action_dim)
         
+        
+        #for layer in self.model.layers:
+        #    weights = layer.get_weights()
+        #    print(np.sum(np.sum(weights)))
+            #c += 1
+            #print(c)
+            #print(np.sum(layer.get_weights()))
         
         #self.default_graph.finalize()    # avoid modifications
 
@@ -88,7 +95,7 @@ class Brain:
 
         loss_total = tf.reduce_mean(loss_policy + loss_value + entropy)
 
-        optimizer = tf.train.RMSPropOptimizer(self.learning_rate, decay=.99) # Previously .99
+        optimizer = tf.train.RMSPropOptimizer(self.learning_rate, decay=0.99) # Previously .99
         minimize = optimizer.minimize(loss_total)
 
         return s_t, a_t, r_t, minimize
@@ -110,11 +117,15 @@ class Brain:
         
         s_t, a_t, r_t, minimize = self.graph
 
-        self.session.run(minimize, feed_dict={s_t: s, a_t: a, r_t: r})    
+        self.session.run(minimize, feed_dict={s_t: s, a_t: a, r_t: r, K.learning_phase(): 0})    
         
     def optimize_batch(self, batch_size):
         if self.brain_memory.isFull != True:
             return
+            
+        #for layer in self.model.layers:
+        #    weights = layer.get_weights()
+        #    print(np.mean(np.mean(weights)))  
             
         idx = self.brain_memory.sample(self.batch * batch_size)
         
@@ -133,9 +144,9 @@ class Brain:
             #v  = self.predict_v(s_[start:end])
             r[start:end] = r[start:end] + self.gamma_n * self.predict_v(s_[start:end]) * t[start:end] # set v to 0 where s_ is terminal state
 
-            self.session.run(minimize, feed_dict={s_t: s[start:end], a_t: a[start:end], r_t: r[start:end]})    
+            self.session.run(minimize, feed_dict={s_t: s[start:end], a_t: a[start:end], r_t: r[start:end], K.learning_phase(): 0})    
         print('\r', 'Learning', '(', batch_size, '/', batch_size, ')')
-        
+
     def train_augmented(self, s, a, r, s_):
         if s_ is None:
             self.train_push_all_augmented(data_aug.full_augment([[s, a, r, self.NONE_STATE, 0.]]))
@@ -159,10 +170,10 @@ class Brain:
 
     def predict_p(self, s):
         with self.default_graph.as_default():
-            p, v = self.model.predict(s)        
+            p, _ = self.model.predict(s)
             return p
 
     def predict_v(self, s):
         with self.default_graph.as_default():
-            p, v = self.model.predict(s)
+            _, v = self.model.predict(s)
             return v

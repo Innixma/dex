@@ -8,7 +8,7 @@
 from keras import backend as K
 from keras.models import model_from_json
 from keras.models import Sequential, Model
-from keras.layers import Input, Dense, LSTM, MaxPooling2D
+from keras.layers import Input, Dense, LSTM, MaxPooling2D, BatchNormalization
 from keras.layers.core import Dropout, Activation, Flatten
 from keras.layers.convolutional import Convolution2D
 from keras.layers.convolutional import Conv2D
@@ -100,11 +100,89 @@ def CNN_a3c_LSTM_v8(state_dim, action_dim):
     return model
 #==============================================================================
 
+#==============================================================================
+# CNN a3c v9, Apr 21 (Batch Normalization)
+#==============================================================================
+def CNN_a3_v9(state_dim, action_dim):
+    
+    inputs = Input(shape=state_dim, dtype='float32', name='input')
+    
+    #input_norm1 = BatchNormalization()(inputs)
+    
+    conv1 = Conv2D(32, (4, 4), strides=(2, 2), activation='relu', padding='valid')(inputs)
+    norm1 = BatchNormalization()(conv1)
+    
+    conv2 = Conv2D(64, (4, 4), strides=(2, 2), activation='relu', padding='valid')(norm1)
+    norm2 = BatchNormalization()(conv2)
+    
+    conv3 = Conv2D(128, (4, 4), strides=(2, 2), activation='relu', padding='valid')(norm2)
+    norm3 = BatchNormalization()(conv3)
+    
+    conv4 = Conv2D(128, (4, 4), strides=(2, 2), activation='relu', padding='same')(norm3)
+    norm4 = BatchNormalization()(conv4)
+    
+    conv5 = Conv2D(256, (3, 3), strides=(1, 1), activation='relu', padding='valid')(norm4)
+    norm5 = BatchNormalization()(conv5)
+    
+    flatten = Flatten()(norm5)
+    dense1 = Dense(512, activation='relu')(flatten)
+    norm6 = BatchNormalization()(dense1)
+    
+    #lstm1 = LSTM(256, activation='relu')(dense1)
+    
+    output_actions = Dense(action_dim, activation='softmax')(norm6)
+    output_value = Dense(1, activation='linear')(norm6)
+    
+    model = Model(inputs=[inputs], outputs=[output_actions, output_value])
+    
+    return model
+#==============================================================================
+
+
+
+#==============================================================================
+# CNN a3c v8, Apr 21 (Batch Normalization)
+#==============================================================================
+def CNN_a3c(state_dim, action_dim):
+    
+    inputs = Input(shape=state_dim, dtype='float32', name='input')
+    
+    #input_norm1 = BatchNormalization()(inputs)
+    
+    conv1 = Conv2D(32, (4, 4), strides=(2, 2), activation='relu', padding='valid')(inputs)
+    norm1 = BatchNormalization()(conv1)
+    
+    conv2 = Conv2D(64, (4, 4), strides=(2, 2), activation='relu', padding='valid')(norm1)
+    norm2 = BatchNormalization()(conv2)
+    
+    conv3 = Conv2D(128, (4, 4), strides=(2, 2), activation='relu', padding='valid')(norm2)
+    norm3 = BatchNormalization()(conv3)
+    
+    conv4 = Conv2D(128, (4, 4), strides=(2, 2), activation='relu', padding='same')(norm3)
+    norm4 = BatchNormalization()(conv4)
+    
+    conv5 = Conv2D(256, (3, 3), strides=(1, 1), activation='relu', padding='valid')(norm4)
+    norm5 = BatchNormalization()(conv5)
+    
+    flatten = Flatten()(norm5)
+    dense1 = Dense(512, activation='relu')(flatten)
+    norm6 = BatchNormalization()(dense1)
+    
+    #lstm1 = LSTM(256, activation='relu')(dense1)
+    
+    output_actions = Dense(action_dim, activation='softmax')(norm6)
+    output_value = Dense(1, activation='linear')(norm6)
+    
+    model = Model(inputs=[inputs], outputs=[output_actions, output_value])
+    
+    return model
+#==============================================================================
+
 
 #==============================================================================
 # CNN a3c v7, Apr 16
 #==============================================================================
-def CNN_a3c(state_dim, action_dim):
+def CNN_a3c_v7(state_dim, action_dim):
     
     inputs = Input(shape=state_dim, dtype='float32', name='input')
     
