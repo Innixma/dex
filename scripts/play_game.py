@@ -4,7 +4,10 @@
 from environment import Environment_gym, Environment_realtime, Environment_realtime_a3c
 from data_utils import saveAll, saveMemory, saveClass, loadClass, loadMemory, save_weights, saveMemory_v2
 import time
-import OpenHexagonEmulator
+try:
+    import OpenHexagonEmulator
+except:
+    print("Can't import OpenHexagonEmulator, not a Windows environment, skipping...")
 import models
 
 def run(args, agent):   
