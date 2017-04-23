@@ -37,5 +37,5 @@ class Agent:
     def observe(self, sample):
         self.memory.add(sample)
 
-    def replay(self):
+    def replay(self, debug=False):
         pass
