@@ -1,60 +1,10 @@
 # By Nick Erickson
 # Contains class for memory
 
-from collections import deque
-import random
 import numpy as np
 
 # TODO: Implement sum tree for prioritized learning
-# TODO: Can make an optimized version for a3c, with no size checks.
-class Memory: # TODO: use maxlen argument in Deque?
-    def __init__(self, max_size):
-        self.D = deque()
-        self.max_size = max_size
-        self.size = 0
-        self.total_saved = 0
-        self.isFull = False
-    
-    def add(self, x):
-        self.D.append(x)
-        if self.size >= self.max_size:
-            self.D.popleft()
-            self.isFull = True
-        else:
-            self.size += 1
-        self.total_saved += 1
-        
-    def removeLastN(self, n): # Remove last n instances
-        if n > self.size:
-            n = self.size
-        for i in range(n):
-            self.D.pop()
-        self.size -= n
-        self.total_saved -= n
-        self.isFull = False
-        
-    def removeFirstN(self, n): # Remove first n instances
-        if n > self.size:
-            n = self.size
-        for i in range(n):
-            self.D.popleft()
-        self.size -= n
-        #self.total_saved -= n
-        self.isFull = False
-        
-    def popleft(self): # Note: Only call if you know an element exists
-        self.size -= 1
-        return self.D.popleft()
-        
-    def reset(self):
-        self.size = 0
-        self.isFull = False
-        self.D = deque()
-        
-    def sample(self, batch_size):
-        return random.sample(self.D, batch_size)
-
-class Memory_v2: # Improved memory class
+class Memory: # Improved memory class
     def __init__(self, max_size, state_dim, action_dim):
         # state_dim = [96,96,4] example
         
@@ -120,11 +70,36 @@ class Memory_v2: # Improved memory class
         if self.isFull == False:
             self.size += n
             if self.size >= self.max_size:
-                print('Brain Memory Filled...')
+                #print('Brain Memory Filled...')
                 self.isFull = True
                 self.size = self.max_size
+    
+    def get_last_n(self, n):
+        pointer = (self.curIndex - n) % self.max_size
+
+        return self.s[pointer], self.a[pointer], self.r[pointer], self.s_[pointer], self.t[pointer]
+                
+    def get_last(self):
+        pointer = (self.curIndex - 1) % self.max_size
         
+        return self.s[pointer], self.a[pointer], self.r[pointer], self.s_[pointer], self.t[pointer]
+                
     def sample(self, batch_size):
         idx = np.random.randint(self.size, size=batch_size)
         return idx
-                
+        
+    def sample_data(self, batch_size):
+        idx = self.sample(batch_size)
+        
+        s  = self.s [idx, :]
+        a  = self.a [idx, :]
+        r  = np.copy(self.r [idx, :])
+        s_ = self.s_[idx, :]
+        t  = self.t [idx, :]
+
+        return s, a, r, s_, t
+               
+    def reset(self):
+        self.size = 0
+        self.isFull = False
+        self.curIndex = 0

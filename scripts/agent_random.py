@@ -1,6 +1,7 @@
 # By Nick Erickson
 # Random Agent Class
 
+# TODO: Currently broken by new memory class
 import globs as G
 import os
 import random

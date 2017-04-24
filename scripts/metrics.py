@@ -6,7 +6,7 @@ import graphHelper
 import sys
 
 class Metrics: # TODO: Save this to a pickle file?
-    def __init__(self):
+    def __init__(self, metric_type='a3c'):
         self.survival_times = []
         self.survival_times_last_10 = []
         self.survival_times_full_mean = []
@@ -16,6 +16,12 @@ class Metrics: # TODO: Save this to a pickle file?
         self.size = 0
         self.max_survival = -1
         self.V = []
+        self.V_episode = []
+
+        if metric_type == 'a3c':
+            self.a3c = A3C_Metrics()
+        else:
+            self.a3c = None
    
     def update(self, survival_time):
         self.size += 1
@@ -24,7 +30,7 @@ class Metrics: # TODO: Save this to a pickle file?
             self.max_survival = survival_time
         self.survival_times.append(survival_time)
         self.survival_times_last_10.append(np.mean(self.survival_times[-10:]))
-        self.survival_times_full_mean.append(np.mean(self.survival_times))
+        self.survival_times_full_mean.append(np.mean(self.survival_times)) # make this better...
 
     def display_metrics(self, frame, useRate, total_saved=0, epsilon=0):
             if np.sum(useRate) != 0:
@@ -41,11 +47,58 @@ class Metrics: # TODO: Save this to a pickle file?
     
     def save_metrics_v(self, save_location):
         graphHelper.graphSimple([np.arange(len(self.V))], [self.V], ['Value'], 'Value', 'Value', 'Run', savefigName=save_location + 'V')
+        graphHelper.graphSimple([np.arange(len(self.V_episode))], [self.V_episode], ['Value'], 'Value', 'Value', 'Frame', savefigName=save_location + 'V_episode')
         
     def save_metrics(self, save_location):
         # TODO: Remove these logs, just export the data directly
         graphHelper.graphSimple([np.arange(self.size),np.arange(self.size),np.arange(self.size)], [self.survival_times, self.survival_times_last_10, self.survival_times_full_mean], ['Survival Time', 'Survival Rolling 10 Mean', 'Survival Mean'], 'Survival Times', 'Time(s)', 'Run', savefigName=save_location + 'survival')
-                
+        
+class MetricInfo:
+    def __init__(self, name):
+        self.name = name
+        self.mean = []
+        self.max = []
+        self.min = []
+        self.size = 0
+
+    def update(self, data):
+        self.mean.append(np.mean(data))
+        self.max.append(np.max(data))
+        self.min.append(np.min(data))
+        self.size += 1
+        
+    def graph_mean(self, save_location):
+        graphHelper.graphSimple([np.arange(self.size)], [self.mean], [self.name], self.name, self.name, 'Batch', savefigName=save_location + self.name)
+        
+        
+class A3C_Metrics:
+    def __init__(self):
+        self.L  = MetricInfo('Loss Total') # Loss Total
+        self.Pr = MetricInfo('Log Probability') # Log Prob
+        self.Po = MetricInfo('Loss Probability') # Loss Prob
+        self.V  = MetricInfo('Loss Value') # Loss Value
+        self.E  = MetricInfo('Loss Entropy') # Loss Entropy
+
+        self.metrics = []
+        self.metrics.extend([self.L, self.Pr, self.Po, self.V, self.E])
+
+    def update(self, l, pr, po, v, e):
+        self.L.update(l)
+        self.Pr.update(pr)
+        self.Po.update(po)
+        self.V.update(v)
+        self.E.update(e)
+        
+    def graph_all(self, save_location):
+        for metric in self.metrics:
+            metric.graph_mean(save_location)
+        
+        
+
             
-            
+
+
+
+
+
             

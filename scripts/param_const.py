@@ -94,11 +94,11 @@ gym_cart_a3c_hyperparams = Hyperparam(
                              gamma=0.99,
                              batch=8,
                              observe=0,
-                             explore=75000,
+                             explore=30000,
                              epsilon_init=0.4,
                              epsilon_final=0.15,
                              memory_size=8,
-                             save_rate=100000,
+                             save_rate=10000,
                              neg_regret_frames=0,
                              img_channels=1,
                              update_rate=1000,
@@ -112,19 +112,19 @@ hex_base_a3c_hyperspecific = Hyper_a3c(
                                        )
 
 hex_base_a3c_hyperparams = Hyperparam(
-                             framerate=40,
+                             framerate=50,
                              gamma=0.99,
                              batch=64,
                              observe=0,
                              explore=1000,
                              epsilon_init=1,
-                             epsilon_final=0.03,
+                             epsilon_final=0.001,
                              memory_size=4,
-                             save_rate=5000,
+                             save_rate=1000,
                              neg_regret_frames=0,
                              img_channels=2,
                              update_rate=1000,
-                             learning_rate=1.0e-3, # 2.5e-4
+                             learning_rate=2.5e-4, # 2.5e-4
                              extra=hex_base_a3c_hyperspecific
                            )
 
@@ -146,7 +146,7 @@ hex_incongruence_a3c_hyperspecific = Hyper_a3c(
                                        )
 
 hex_incongruence_a3c_hyperparams = Hyperparam(
-                             framerate=40,
+                             framerate=50,
                              gamma=0.99,
                              batch=64,
                              observe=0,
@@ -182,9 +182,9 @@ hex_base_a3c_load = Args(
                         data='default',
                         screen=hex_screen,
                         hyper=hex_base_a3c_hyperparams,
-                        directory='hex_acer_hexreal_v2',
+                        directory='hex_acer_hexreal_v1',
                         memory_delay=4.5,
-                        run_count_load=231
+                        run_count_load=3387
                         )
 
 hex_incongruence_a3c_load = Args(

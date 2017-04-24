@@ -19,15 +19,19 @@ class Environment_gym:
             #self.env.render()
             
             a = agent.act(s)
-            s_, r, done, info = self.env.step(a)
+            s_, r, t, info = self.env.step(a)
 
-            agent.observe( (s, a, r, s_, done) )
+            agent.observe(s, a, r, s_, t)
             if agent.mode == 'train':
                 agent.replay(debug=False)
+                
+                if agent.args.algorithm == 'a3c':
+                    if agent.brain.brain_memory.isFull:
+                        agent.brain.optimize_batch_full()
 
             s = s_
             R += r
-            if done:
+            if t:
                 return R, 1
 
 class Environment_realtime_a3c:
@@ -44,13 +48,13 @@ class Environment_realtime_a3c:
             self.catchup_frames += 1
         
     def init_run(self, img_channels):
-        x_t, r_0, terminal = self.env.gameState()
+        x, r, t = self.env.gameState()
     
-        stacking = [x_t for i in range(img_channels)]
-        s_t = np.stack(stacking, axis=2)
+        stacking = [x for i in range(img_channels)]
+        s = np.stack(stacking, axis=2)
 
-        s_t = s_t.reshape(s_t.shape[0], s_t.shape[1], img_channels)
-        return(s_t)
+        s = s.reshape(s.shape[0], s.shape[1], img_channels)
+        return(s)
             
     def run(self, agent):
         frame_delay = int(agent.h.framerate*agent.args.memory_delay)
@@ -63,27 +67,33 @@ class Environment_realtime_a3c:
         
         self.env.start_game()
         start_time = time.time()
-        s_t = self.init_run(agent.h.img_channels)
+        s = self.init_run(agent.h.img_channels)
         
         if not self.has_base_frame:
             self.has_base_frame = True
-            new_shape = [1] + list(s_t.shape)
-            self.base_frame = s_t.reshape(new_shape)
+            new_shape = [1] + list(s.shape)
+            self.base_frame = s.reshape(new_shape)
         
+        v_episode = []
         while self.env.alive:
             self.framerate_check(start_time, frame)
-            action_index = agent.act(s_t)      
-            x_t1, r_t, terminal = self.env.gameState(action_index)
+            #a = agent.act(s)
+            a, v_cur = agent.act_v(s)
             
-            s_t1 = np.append(x_t1, s_t[:, :, :agent.h.img_channels-1], axis=2)
+            
+            
+            x_, r, t = self.env.gameState(a)
+            
+            s_ = np.append(x_, s[:, :, :agent.h.img_channels-1], axis=2)
 
             if frame > frame_delay: # Don't store early useless frames
-                agent.observe([s_t, action_index, r_t, s_t1, terminal])
+                agent.observe(s, a, r, s_, t)
                 agent.replay()
-                useRate[action_index] += 1
+                useRate[a] += 1
                 frame_saved += 1
+                v_episode.append(v_cur[0][0])
         
-            s_t = s_t1
+            s = s_
             frame += 1
                 
             if frame > 80000: # Likely stuck, just go to new level
@@ -91,17 +101,19 @@ class Environment_realtime_a3c:
                 frame_saved = 0
                 self.env.alive = False
                 print('Deleting invalid memory...')
-                agent.memory.removeLastN(80000)
+                agent.brain.brain_memory.isFull = False # Reset brain memory
+                agent.brain.brain_memory.size = 0
         
         end_time = time.time()
         self.env.end_game()
         agent.run_count += 1
         
         agent.metrics.update(end_time-start_time)
-        v = agent.brain.predict_v(self.base_frame)
-        v = v[0][0]
+        
+        v = agent.brain.predict_v(self.base_frame)[0][0]
         print('V:', str(v), ', catchup:', str(self.catchup_frames))
         agent.metrics.V.append(v)
+        agent.metrics.V_episode.extend(v_episode)
         return frame, useRate, frame_saved # Metrics
 
 class Environment_realtime:
@@ -114,15 +126,16 @@ class Environment_realtime:
             time.sleep(self.timelapse - (time.time() % self.timelapse))
         
     def init_run(self, img_channels):
-        x_t, r_0, terminal = self.env.gameState()
+        x, r, t = self.env.gameState()
     
-        stacking = [x_t for i in range(img_channels)]
-        s_t = np.stack(stacking, axis=2)
+        stacking = [x for i in range(img_channels)]
+        s = np.stack(stacking, axis=2)
 
-        s_t = s_t.reshape(s_t.shape[0], s_t.shape[1], img_channels)
-        return(s_t)
+        s = s.reshape(s.shape[0], s.shape[1], img_channels)
+        return(s)
             
     def run(self, agent):
+        frame_delay = int(agent.h.framerate*agent.args.memory_delay)
         frame = 0
         frame_saved = 0
         useRate = np.zeros([agent.action_dim])
@@ -131,36 +144,38 @@ class Environment_realtime:
         
         self.env.start_game()
         start_time = time.time()
-        s_t = self.init_run(agent.h.img_channels)
-
+        s = self.init_run(agent.h.img_channels)
         
         while self.env.alive:
             self.framerate_check(start_time, frame)
-            action_index = agent.act(s_t)      
-            x_t1, r_t, terminal = self.env.gameState(action_index)
+            a = agent.act(s)      
+            x_, r, t = self.env.gameState(a)
             
-            if terminal: # Don't save terminal state itself, since it is pure white
-                for i in range(agent.h.neg_regret_frames):
-                    if agent.memory.size > i:
-                        agent.memory.D[-1-i][2] = self.env.reward_terminal/(i+1)
-                if agent.memory.size > 0:
-                    agent.memory.D[-1][4] = 1 # Terminal State
-            else:
-                s_t1 = np.append(x_t1, s_t[:, :, :agent.h.img_channels-1], axis=2)
-                if frame > agent.h.framerate*agent.args.memory_delay: # Don't store early useless frames
-                    agent.observe([s_t, action_index, r_t, s_t1, terminal])
-                    useRate[action_index] += 1
-                    frame_saved += 1
-        
-                s_t = s_t1
-                frame += 1
+            s_ = np.append(x_, s[:, :, :agent.h.img_channels-1], axis=2)
+            
+            #if t: # Don't save t state itself, since it is pure white
+            #    for i in range(agent.h.neg_regret_frames):
+            #        if agent.memory.size > i:
+            #            agent.memory.D[-1-i][2] = self.env.reward_terminal/(i+1)
+            #    if agent.memory.size > 0:
+            #        agent.memory.D[-1][4] = 1 # t State
+            #else:
                 
-            if frame > 20000: # Likely stuck, just go to new level
+            if frame > frame_delay: # Don't store early useless frames
+                agent.observe(s, a, r, s_, t)
+                useRate[a] += 1
+                frame_saved += 1
+        
+            s = s_
+            frame += 1
+                
+            if frame > 80000: # Likely stuck, just go to new level
                 print('Stuck! Moving on...')
                 frame_saved = 0
                 self.env.alive = False
                 print('Deleting invalid memory...')
-                agent.memory.removeLastN(20000)
+                agent.brain.brain_memory.isFull = False # Reset brain memory
+                agent.brain.brain_memory.size = 0
         
         end_time = time.time()
         self.env.end_game()

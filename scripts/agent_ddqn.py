@@ -10,15 +10,15 @@ import random
 
 class Agent:
     def __init__(self, args, state_dim, action_dim, modelFunc=None):
-        
+        self.state_dim = state_dim
+        self.action_dim = action_dim
         self.h = args.hyper
         self.metrics = Metrics()
-        self.memory = Memory(self.h.memory_size)
+        self.memory = Memory(self.h.memory_size, self.state_dim, 1)
         self.brain = Brain(state_dim, action_dim, modelFunc)
         self.args = args
         self.epsilon = self.h.epsilon_init
-        self.action_dim = action_dim
-        self.state_dim = state_dim        
+            
         self.run_count = -1
         self.replay_count = -1
         self.save_iterator = -1
@@ -44,46 +44,33 @@ class Agent:
         else:
             return np.argmax(self.brain.predictOne(s))
     
-    def observe(self, sample):
-        self.memory.add(sample)
+    def observe(self, s, a, r, s_, t):
+        self.memory.add_single(s, a, r, s_, t)
         self.update_epsilon()
         self.save_iterator += 1
-        #self.update_iterator += 1
         
     def replay(self, debug=True):
         self.replay_count += 1
         self.update_iterator += 1
         Q_sa_total = 0
         
-        batch = self.memory.sample(self.h.batch)
-        batchLen = len(batch)
-        
-        states = np.array([x[0] for x in batch])
-        states_ = np.array([x[3] for x in batch])
-        
-        targets = self.brain.predict(states)
-        targets_ = self.brain.predict(states_, target=False) # Target Network!              
-        pTarget_ = self.brain.predict(states_, target=True)                    
-        Q_size = batchLen
-        
-        # TODO: Prioritized experience replay
-        for i in range(0, batchLen):
-            action_t = batch[i][1]
-            reward_t = batch[i][2]
-            terminal = batch[i][4]
-            
-            if terminal:
-                Q_size -= 1
-                targets[i, action_t] = reward_t
-            else:
-                Q_sa_total += np.max(targets_[i])
-                #targets[i, action_t] = reward_t + self.h.gamma * np.max(targets_[i]) # Full DQN (Worse than double DQN)
-                targets[i, action_t] = reward_t + self.h.gamma * pTarget_[i][np.argmax(targets_[i])]  # double DQN
+        s, a, r, s_, t = self.memory.sample_data(self.h.batch)
 
-        #loss = self.brain.model.train_on_batch(states, targets) # Maybe do fit in future
-        loss = self.brain.train(states, targets)
+        targets = self.brain.predict(s)
+        targets_ = self.brain.predict(s_, target=False) # Target Network!              
+        pTarget_ = self.brain.predict(s_, target=True)                    
+        Q_size = self.h.batch - np.sum(t)
         if Q_size == 0:
             Q_size = 1
+        # TODO: Prioritized experience replay
+        for i in range(0, self.h.batch):
+            if t[i]:
+                targets[i, a[i]] = r[i]
+            else:
+                Q_sa_total += np.max(targets_[i])
+                targets[i, a[i]] = r[i] + self.h.gamma * pTarget_[i][np.argmax(targets_[i])] # double DQN
+
+        loss = self.brain.train(s, targets)
         Q_sa_total = Q_sa_total/Q_size
         
         if debug:

@@ -2,7 +2,7 @@
 # A3C Agent
 
 import numpy as np
-from memory import Memory, Memory_v2
+from memory import Memory
 from metrics import Metrics
 from brain_a3c import Brain
 from data_utils import load_weights
@@ -10,22 +10,22 @@ import random
 
 class Agent:
     def __init__(self, args, state_dim, action_dim, modelFunc=None):
-        
-        self.h = args.hyper
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+        self.args = args
+        self.h = self.args.hyper
+        self.epsilon = self.h.epsilon_init
         self.h.gamma_n = self.h.gamma ** self.h.memory_size
         self.metrics = Metrics()
-        self.memory = Memory(self.h.memory_size)
-        self.brain = Brain(state_dim, action_dim, self.h, modelFunc)
-        self.args = args
-        self.epsilon = self.h.epsilon_init
-        self.action_dim = action_dim
-        self.state_dim = state_dim        
+        self.memory = Memory(self.h.memory_size, self.state_dim, 1)
         self.run_count = -1
         self.replay_count = -1
         self.save_iterator = -1
         self.update_iterator = -1
         self.mode = 'train'
         self.R = 0
+        
+        self.brain = Brain(self, modelFunc)
         
         load_weights(self)
 
@@ -39,16 +39,23 @@ class Agent:
         else:
             return np.argmax(self.brain.predict_p(np.array([s])))
     
-    def observe(self, sample):
-        self.memory.add(sample)
+    def act_v(self, s):
+        p, v = self.brain.predict(np.array([s]))
+        if random.random() < self.epsilon:   
+            return random.randrange(0, self.action_dim), v
+        else:
+            return np.argmax(p), v
+            
+    def observe(self, s, a, r, s_, t):
+        self.memory.add_single(s, a, r, s_, t)
         self.update_epsilon()
         self.save_iterator += 1
         
-    def replay(self, debug=True): # Can make this even faster by giving arguments for last memory
+    def replay(self, debug=True):
         self.replay_count += 1
         self.update_iterator += 1
         
-        _, _, r, s_, t = self.memory.D[-1]
+        _, _, r, s_, t = self.memory.get_last()
         if t:
             s_ = None
         
@@ -57,18 +64,14 @@ class Agent:
         if s_ is None:
             if self.memory.size < self.memory.max_size:
                 self.memory.reset() # Don't train, R is inaccurate
-            while self.memory.size > 0:
-                s, a, r, _, _ = self.memory.popleft()
-                #self.brain.train_push(s, a, self.R, None)
+            for i in range(self.memory.size, 0, -1):
+                s, a, r, _, _ = self.memory.get_last_n(i)
                 self.brain.train_augmented(s, a, self.R, None)
                 self.R = ( self.R - r ) / self.h.gamma
             self.R = 0
+            self.memory.reset()
+            
         if self.memory.size >= self.memory.max_size:
-            s, a, r, _, _ = self.memory.popleft()
-            #self.brain.train_push(s, a, self.R, s_)
+            s, a, r, _, _ = self.memory.get_last_n(0)
             self.brain.train_augmented(s, a, self.R, s_)
             self.R = self.R - r  
-        
-        if self.replay_count % 100 == 0:
-            self.metrics.Q.append(0) # TODO: Save these better
-            self.metrics.loss.append(0)

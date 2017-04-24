@@ -39,7 +39,7 @@ def playGameGym(args, agent_func):
         if agent.memory.total_saved > agent.h.observe:
             if agent.mode == 'observe':
                 agent.mode = 'train'
-                print('training')
+                print('Training...')
                 time.sleep(0.5)
         
         if agent.mode == 'train':
@@ -51,6 +51,8 @@ def playGameGym(args, agent_func):
         if agent.h.save_rate < agent.save_iterator:
             agent.save_iterator -= agent.h.save_rate
             save_weights(agent)
+            if agent.args.algorithm == 'a3c':
+                agent.metrics.a3c.graph_all(agent.results_location)
             #if agent.mode == 'train': # Fix this later, not correct
                     #agent.metrics.save_metrics(agent.results_location)
                     #agent.metrics.save_metrics_training(agent.results_location)
@@ -85,6 +87,7 @@ def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
             save_weights(agent, agent.run_count)
             agent.metrics.save_metrics(agent.results_location)
             agent.metrics.save_metrics_v(agent.results_location)
+            agent.metrics.a3c.graph_all(agent.results_location)
             #agent.metrics.save_metrics_training(agent.results_location)
         
         if agent.brain.brain_memory.isFull and hasSavedMemory == False:

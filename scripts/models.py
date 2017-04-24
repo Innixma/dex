@@ -21,10 +21,10 @@ def hubert_loss(y_true, y_pred): # sqrt(1+a^2)-1
 def default_model(state_dim, action_dim):
     model = Sequential()
 
-    model.add(Dense(output_dim=64, activation='relu', input_shape=state_dim))
+    model.add(Dense(output_dim=16, activation='relu', input_shape=state_dim))
     model.add(Dense(output_dim=action_dim, activation='linear'))
 
-    opt = RMSprop(lr=0.00025)
+    opt = RMSprop(lr=0.00025, decay=.99)
     model.compile(loss=hubert_loss, optimizer=opt)
     #model.compile(loss='mse', optimizer=opt)
     return model
@@ -143,7 +143,7 @@ def CNN_a3_v9(state_dim, action_dim):
 #==============================================================================
 # CNN a3c v8, Apr 21 (Batch Normalization)
 #==============================================================================
-def CNN_a3c(state_dim, action_dim):
+def CNN_a3c_v8(state_dim, action_dim):
     
     inputs = Input(shape=state_dim, dtype='float32', name='input')
     
@@ -182,7 +182,7 @@ def CNN_a3c(state_dim, action_dim):
 #==============================================================================
 # CNN a3c v7, Apr 16
 #==============================================================================
-def CNN_a3c_v7(state_dim, action_dim):
+def CNN_a3c(state_dim, action_dim):
     
     inputs = Input(shape=state_dim, dtype='float32', name='input')
     

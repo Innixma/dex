@@ -11,31 +11,35 @@ from keras.optimizers import SGD , Adam , RMSprop
 import tensorflow as tf
 from models import default_model
 
-from memory import Memory_v2
+from memory import Memory
 import numpy as np
 import data_aug
 
 print('TensorFlow version' , tf.__version__)
 print(K.learning_phase())
-MEMORY_SIZE = 20000
+MEMORY_SIZE = 8
 #MEMORY_SIZE = 15000
 # Class concept from Jaromir Janisch, 2017
 # https://jaromiru.com/2017/03/26/lets-make-an-a3c-implementation/
 class Brain:
     train_queue = [ [], [], [], [], [] ]    # s, a, r, s', s' terminal mask
 
-    def __init__(self, state_dim, action_dim, hyper, modelFunc=None):
-        self.state_dim = state_dim
-        self.action_dim = action_dim
-        self.gamma = hyper.gamma
-        self.n_step_return = hyper.memory_size
+    def __init__(self, agent, modelFunc=None):
+        self.agent = agent
+        self.state_dim = self.agent.state_dim
+        self.action_dim = self.agent.action_dim
+        self.gamma = self.agent.h.gamma
+        self.n_step_return = self.agent.h.memory_size
         self.gamma_n = self.gamma ** self.n_step_return
-        self.loss_v = hyper.extra.loss_v
-        self.loss_entropy = hyper.extra.loss_entropy
-        self.batch = hyper.batch
-        self.learning_rate = hyper.learning_rate
+        self.loss_v = self.agent.h.extra.loss_v
+        self.loss_entropy = self.agent.h.extra.loss_entropy
+        self.batch = self.agent.h.batch
+        self.learning_rate = self.agent.h.learning_rate
         
-        self.NONE_STATE = np.zeros(state_dim)
+        self.env = self.agent.args.env
+        self.metrics = self.agent.metrics
+        
+        self.NONE_STATE = np.zeros(self.state_dim)
         self.session = tf.Session()
         K.set_session(self.session)
         K.manual_variable_initialization(True)
@@ -46,7 +50,7 @@ class Brain:
         self.session.run(tf.global_variables_initializer())
         self.default_graph = tf.get_default_graph()
         
-        self.brain_memory = Memory_v2(MEMORY_SIZE, self.state_dim, self.action_dim)
+        self.brain_memory = Memory(MEMORY_SIZE, self.state_dim, self.action_dim)
         
         
         #for layer in self.model.layers:
@@ -77,7 +81,7 @@ class Brain:
         return model
         
     def create_graph(self, model):
-        batch_size = self.batch # = None
+        batch_size = None # = None
         state_dim = [batch_size] + self.state_dim
         print(state_dim)
         s_t = tf.placeholder(tf.float32, shape=(state_dim))
@@ -86,72 +90,76 @@ class Brain:
         
         p, v = model(s_t)
 
-        log_prob = tf.log( tf.reduce_sum(p * a_t, axis=1, keep_dims=True) + 1e-10)
+        log_prob = tf.log( tf.reduce_sum(p * a_t, axis=1, keep_dims=True) + 1e-10) # Negative, larger when action is less likely
         advantage = r_t - v
 
-        loss_policy = - log_prob * tf.stop_gradient(advantage)                                    # maximize policy
-        loss_value  = self.loss_v * tf.square(advantage)                                                # minimize value error
-        entropy = self.loss_entropy * tf.reduce_sum(p * tf.log(p + 1e-10), axis=1, keep_dims=True)    # maximize entropy (regularization)
+        loss_policy = - log_prob * tf.stop_gradient(advantage) # Pos if better than expected, Neg if bad                                  # maximize policy
+        loss_value  = self.loss_v * tf.square(advantage) # Positive # minimize value error
+        entropy = self.loss_entropy * tf.reduce_sum(p * tf.log(p + 1e-10), axis=1, keep_dims=True) # Negative Value
 
         loss_total = tf.reduce_mean(loss_policy + loss_value + entropy)
 
-        optimizer = tf.train.RMSPropOptimizer(self.learning_rate, decay=0.99) # Previously .99
+        optimizer = tf.train.RMSPropOptimizer(self.learning_rate, decay=0.99) # .99
         minimize = optimizer.minimize(loss_total)
 
-        return s_t, a_t, r_t, minimize
+        return s_t, a_t, r_t, minimize, loss_total, log_prob, loss_policy, loss_value, entropy
 
-    def optimize(self):
+    def optimize_batch_full(self, reset=1, suppress=1): # Use for online learning
         if self.brain_memory.isFull != True:
             return
-        idx = self.brain_memory.sample(self.batch)
+            
+        idx = np.arange(0, self.brain_memory.max_size)
+        
+        self.optimize_batch_index(idx, 1, suppress)
+        
+        if reset == 1:
+            self.brain_memory.isFull = False
+            self.brain_memory.size = 0
+    
+    def optimize_batch(self, batch_count=1, suppress=0): # Use for offline learning
+        if self.brain_memory.isFull != True:
+            return
+
+        idx = self.brain_memory.sample(self.batch * batch_count)
+        self.optimize_batch_index(idx, batch_count, suppress)
+        
+    def optimize_batch_index(self, idx, batch_count=1, suppress=0):
         
         s  = self.brain_memory.s [idx, :]
         a  = self.brain_memory.a [idx, :]
         r  = np.copy(self.brain_memory.r [idx, :])
         s_ = self.brain_memory.s_[idx, :]
         t  = self.brain_memory.t [idx, :]
-        
-        v  = self.predict_v(s_)
-        
-        r = r + self.gamma_n * v * t # set v to 0 where s_ is terminal state
-        
-        s_t, a_t, r_t, minimize = self.graph
+    
+        self.optimize_batch_child(s, a, r, s_, t, batch_count, suppress)
 
-        self.session.run(minimize, feed_dict={s_t: s, a_t: a, r_t: r, K.learning_phase(): 0})    
-        
-    def optimize_batch(self, batch_size):
-        if self.brain_memory.isFull != True:
-            return
-            
-        #for layer in self.model.layers:
-        #    weights = layer.get_weights()
-        #    print(np.mean(np.mean(weights)))  
-            
-        idx = self.brain_memory.sample(self.batch * batch_size)
-        
-        s  = self.brain_memory.s [idx, :]
-        a  = self.brain_memory.a [idx, :]
-        r  = np.copy(self.brain_memory.r [idx, :])
-        s_ = self.brain_memory.s_[idx, :]
-        t  = self.brain_memory.t [idx, :]
-
-        s_t, a_t, r_t, minimize = self.graph
-        for i in range(batch_size):
-            if i % 10 == 0:
-                print('\r', 'Learning', '(', i, '/', batch_size, ')', end="")
+    def optimize_batch_child(self, s, a, r, s_, t, batch_count=1, suppress=0):
+        s_t, a_t, r_t, minimize, loss_total, log_prob, loss_policy, loss_value, entropy = self.graph
+        for i in range(batch_count):
             start = i * self.batch
             end = (i+1) * self.batch
             #v  = self.predict_v(s_[start:end])
             r[start:end] = r[start:end] + self.gamma_n * self.predict_v(s_[start:end]) * t[start:end] # set v to 0 where s_ is terminal state
-
-            self.session.run(minimize, feed_dict={s_t: s[start:end], a_t: a[start:end], r_t: r[start:end], K.learning_phase(): 0})    
-        print('\r', 'Learning', '(', batch_size, '/', batch_size, ')')
-
+            _, loss_current, log_current, loss_p_current, loss_v_current, entropy_current = self.session.run([minimize, loss_total, log_prob, loss_policy, loss_value, entropy], feed_dict={s_t: s[start:end], a_t: a[start:end], r_t: r[start:end], K.learning_phase(): 0})    
+            self.metrics.a3c.update(loss_current, log_current, loss_p_current, loss_v_current, entropy_current)
+            
+            if i % 10 == 0 and suppress == 0:
+                print('\r', 'Learning', '(', i, '/', batch_count, ')', end="")
+        
+        if suppress == 0:
+            print('\r', 'Learning', '(', batch_count, '/', batch_count, ')')
+        
     def train_augmented(self, s, a, r, s_):
-        if s_ is None:
-            self.train_push_all_augmented(data_aug.full_augment([[s, a, r, self.NONE_STATE, 0.]]))
-        else:    
-            self.train_push_all_augmented(data_aug.full_augment([[s, a, r, s_, 1.]]))
+        if self.env == 'real':
+            if s_ is None:
+                self.train_push_all_augmented(data_aug.full_augment([[s, a, r, self.NONE_STATE, 0.]]))
+            else:    
+                self.train_push_all_augmented(data_aug.full_augment([[s, a, r, s_, 1.]]))
+        else:
+            if s_ is None:
+                self.train_push_augmented([s, a, r, self.NONE_STATE, 0.])
+            else:    
+                self.train_push_augmented([s, a, r, s_, 1.])
         
     def train_push_all_augmented(self, frames):
         for frame in frames:
