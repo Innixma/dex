@@ -11,6 +11,8 @@ maxMean = 0
 prevMean = 0
 c = 0
 
+thresholdMax = 120 / 255
+
 # Resets globals
 def reset_globs():
     global prevMean, meanDiff, meanLight, c, maxDiff, maxMean
@@ -42,7 +44,10 @@ def check_terminal(data):
         maxDiff = max(maxDiff, abs(diff))
         maxMean = max(curMean, maxMean)
         #print(meanDiff, diff)
-        threshold = (120 - meanLight) / 2
+        
+        
+        
+        threshold = (thresholdMax - meanLight) / 2
         #print(threshold, diff, maxDiff)
         #print(diff, threshold)
         if diff > threshold:

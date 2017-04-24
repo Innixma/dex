@@ -17,8 +17,9 @@ import data_aug
 
 print('TensorFlow version' , tf.__version__)
 print(K.learning_phase())
-MEMORY_SIZE = 8
-#MEMORY_SIZE = 15000
+# TODO: Avoid hardcoding memory size
+#MEMORY_SIZE = 8
+MEMORY_SIZE = 100000
 # Class concept from Jaromir Janisch, 2017
 # https://jaromiru.com/2017/03/26/lets-make-an-a3c-implementation/
 class Brain:
@@ -86,14 +87,14 @@ class Brain:
         print(state_dim)
         s_t = tf.placeholder(tf.float32, shape=(state_dim))
         a_t = tf.placeholder(tf.float32, shape=(batch_size, self.action_dim))
-        r_t = tf.placeholder(tf.float32, shape=(batch_size, 1)) # not immediate, but discounted n step reward
+        r_t = tf.placeholder(tf.float32, shape=(batch_size, 1)) # Discounted Reward
         
         p, v = model(s_t)
 
         log_prob = tf.log( tf.reduce_sum(p * a_t, axis=1, keep_dims=True) + 1e-10) # Negative, larger when action is less likely
         advantage = r_t - v
 
-        loss_policy = - log_prob * tf.stop_gradient(advantage) # Pos if better than expected, Neg if bad                                  # maximize policy
+        loss_policy = - log_prob * tf.stop_gradient(advantage) # Pos if better than expected, Neg if bad
         loss_value  = self.loss_v * tf.square(advantage) # Positive # minimize value error
         entropy = self.loss_entropy * tf.reduce_sum(p * tf.log(p + 1e-10), axis=1, keep_dims=True) # Negative Value
 
@@ -138,7 +139,6 @@ class Brain:
         for i in range(batch_count):
             start = i * self.batch
             end = (i+1) * self.batch
-            #v  = self.predict_v(s_[start:end])
             r[start:end] = r[start:end] + self.gamma_n * self.predict_v(s_[start:end]) * t[start:end] # set v to 0 where s_ is terminal state
             _, loss_current, log_current, loss_p_current, loss_v_current, entropy_current = self.session.run([minimize, loss_total, log_prob, loss_policy, loss_value, entropy], feed_dict={s_t: s[start:end], a_t: a[start:end], r_t: r[start:end], K.learning_phase(): 0})    
             self.metrics.a3c.update(loss_current, log_current, loss_p_current, loss_v_current, entropy_current)

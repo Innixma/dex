@@ -52,8 +52,8 @@ class HexagonEmulator:
         self.prevKey = 'enter'
         
         self.final_size = np.copy(self.capture_size)
-        #self.final_size[0] = int(self.final_size[0]/2)
-        #self.final_size[1] = int(self.final_size[1]/2)
+        self.final_size[0] = int(self.final_size[0]/2)
+        self.final_size[1] = int(self.final_size[1]/2)
     #==============================================================================
     
     def start_game(self):
@@ -209,7 +209,7 @@ class HexagonEmulator:
         # ----
         #tmpImage = tmpImage.astype('float16')
 
-        #tmpImage = transf.downscale_local_mean(tmpImage, (2,2)) # Downsample
+        tmpImage = transf.downscale_local_mean(tmpImage, (2,2)) # Downsample
         
         tmpImage = tmpImage.reshape(tmpImage.shape[0], tmpImage.shape[1], 1) # Tensorflow
         return tmpImage
@@ -243,13 +243,9 @@ class HexagonEmulator:
         self.curKey = inKey
         
         state = self.captureIm()
-        
-        # TODO: Replace this in future to check the prepared image state,
-        # Much faster that way
+        state = self.prepareImage(state)
         terminal = terminal_detection.check_terminal(state)
         
-        state = self.prepareImage(state)
-
         if terminal:
             self.release(inKey)
             reward = self.reward_terminal

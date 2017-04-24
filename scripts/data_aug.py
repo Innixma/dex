@@ -6,7 +6,7 @@ import numpy as np
 
 def full_augment(total_data):
     
-    total_data = total_data + pixel(total_data)
+    #total_data = total_data + pixel(total_data)
     
     total_data = total_data + rotate4(total_data)
     

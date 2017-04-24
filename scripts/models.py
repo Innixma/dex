@@ -100,6 +100,27 @@ def CNN_a3c_LSTM_v8(state_dim, action_dim):
     return model
 #==============================================================================
 
+
+#==============================================================================
+# CNN a3c v10, Apr 24 (Downsampled input)
+#==============================================================================
+def CNN_a3c(state_dim, action_dim):
+    
+    inputs = Input(shape=state_dim, dtype='float32', name='input')
+    
+    conv1 = Conv2D(32, (8, 8), strides=(4, 4), activation='relu', padding='valid')(inputs)
+    conv2 = Conv2D(64, (4, 4), strides=(2, 2), activation='relu', padding='valid')(conv1)
+    flatten = Flatten()(conv2)
+    dense1 = Dense(256, activation='relu')(flatten)
+    
+    output_actions = Dense(action_dim, activation='softmax')(dense1)
+    output_value = Dense(1, activation='linear')(dense1)
+    
+    model = Model(inputs=[inputs], outputs=[output_actions, output_value])
+    
+    return model
+#==============================================================================
+
 #==============================================================================
 # CNN a3c v9, Apr 21 (Batch Normalization)
 #==============================================================================
@@ -182,7 +203,7 @@ def CNN_a3c_v8(state_dim, action_dim):
 #==============================================================================
 # CNN a3c v7, Apr 16
 #==============================================================================
-def CNN_a3c(state_dim, action_dim):
+def CNN_a3c_v7(state_dim, action_dim):
     
     inputs = Input(shape=state_dim, dtype='float32', name='input')
     
