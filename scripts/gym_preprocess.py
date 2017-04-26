@@ -3,7 +3,6 @@
 
 import numpy as np
 
-import sklearn.preprocessing as preprocessing
 import skimage.transform as transf
 from skimage import color
 
