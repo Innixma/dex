@@ -10,31 +10,26 @@ except:
     print("Can't import OpenHexagonEmulator, not a Windows environment, skipping...")
 import models
 
+
 def run(args, agent):   
-    if args.env == 'real':
+    if args.env.type == 'real':
         if args.algorithm == 'ddqn':
             playGameReal(args, agent)
         elif args.algorithm == 'a3c':
             playGameReal_a3c(args, agent)
-    elif args.env == 'gym':
+    elif args.env.type == 'gym':
         playGameGym(args, agent)
-    elif args.env == 'memory': 
+    elif args.env.type == 'memory': 
         gatherMemory(args, agent)
     else:
         pass
 
 def playGameGym(args, agent_func):
-    env = Environment_gym(args.game)
-    state_dim  = list(env.env.observation_space.shape)
-    if state_dim[-1] == 3:
-        print('assuming gym rgb')
-        state_dim = [int(i / 2) for i in state_dim]
-        state_dim = state_dim[:-1] + [1]
-        
-    action_dim = env.env.action_space.n
-    #state_dim = [state_dim]
-    #TMP!!!!
-    agent = agent_func(args, state_dim, action_dim, models.buildmodel_CNN_v3)
+    env = Environment_gym(args.env)
+    state_dim  = env.env.state_dim()
+    action_dim = env.env.env.action_space.n
+
+    agent = agent_func(args, state_dim, action_dim, getattr(models,args.hyper.model))
     
     iteration = 0
     while (True):

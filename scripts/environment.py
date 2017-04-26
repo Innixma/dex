@@ -8,29 +8,25 @@ from skimage import color # Tmp, make this a new class later
 import skimage.transform as transf
 
 class Environment_gym:
-    def __init__(self, problem):
-        self.problem = problem
-        import gym # Lazy import to avoid dependency if not used
+    def __init__(self, env_info):
+        self.problem = env_info.problem
+        #import gym # Lazy import to avoid dependency if not used
+        import gym_preprocess
         
-        self.env = gym.make(problem)
+        #self.env = gym.make(problem)
+        self.env = getattr(gym_preprocess,env_info.wrapper)(self.problem)
+        #self.env = gym.make(self.problem)
         
     def run(self, agent):
         s = self.env.reset()
-        s = color.rgb2gray(s).astype('float16')   
-        s = s.reshape(list(s.shape) + [1])
-        s = transf.downscale_local_mean(s, (2,2,1)) # Downsample        
-        
-        print(s.shape)
+        #print(s.shape)
         R = 0 
         
         while True:         
-            self.env.render()
+            #self.env.render()
             
             a = agent.act(s)
             s_, r, t, info = self.env.step(a)
-            s_ = color.rgb2gray(s_).astype('float16')
-            s_ = s_.reshape(list(s_.shape) + [1])
-            s_ = transf.downscale_local_mean(s_, (2,2,1)) # Downsample   
             
             agent.observe(s, a, r, s_, t)
             if agent.mode == 'train':

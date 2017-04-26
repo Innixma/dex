@@ -4,6 +4,8 @@
 # TODO: Add lstm to initial layer???
 # TODO: Add lstm to final layer???
 
+# TODO: Split into front and back so algorithms can share, much easier
+
 # Deep Learning Modules
 from keras import backend as K
 from keras.models import model_from_json
@@ -27,6 +29,17 @@ def default_model(state_dim, action_dim):
     opt = RMSprop(lr=0.00025, decay=.99)
     model.compile(loss=hubert_loss, optimizer=opt)
     #model.compile(loss='mse', optimizer=opt)
+    return model
+    
+def default_model_a3c(state_dim, action_dim, visualization=False):
+    l_input = Input( batch_shape=[None] + state_dim )
+    l_dense = Dense(16, activation='relu')(l_input)
+
+    out_actions = Dense(action_dim, activation='softmax')(l_dense)
+    out_value   = Dense(1, activation='linear')(l_dense)
+
+    model = Model(inputs=[l_input], outputs=[out_actions, out_value])
+    
     return model
 
 #==============================================================================

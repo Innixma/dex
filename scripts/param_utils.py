@@ -18,7 +18,8 @@ class Hyperparam:
                  img_channels=2,
                  update_rate=1000,
                  learning_rate=0.00025,
-                 extra=None
+                 extra=None,
+                 model=None
                  ):
         
         self.framerate = framerate # REAL
@@ -34,9 +35,9 @@ class Hyperparam:
         self.img_channels = img_channels # ALL
         self.update_rate = update_rate # DDQN
         self.learning_rate = learning_rate # ALL
-        
         self.extra = extra # Additional hyperparmeters for algorithms
-
+        self.model = model
+        
 class Hyper_a3c: # Additional hyperparameters for a3c
     def __init__(
                  self,
@@ -61,6 +62,25 @@ class Hyper_ddqn: # Additional hyperparameters for ddqn
         self.observe = observe
         self.update_rate = update_rate
         self.neg_regret_frames = neg_regret_frames
+
+class Gym_param:
+    def __init__(self,
+                 problem='CartPole-v0',
+                 wrapper='Gym_base_wrapper'
+                 ):
+        self.type = 'gym'
+        self.problem = problem
+        self.wrapper = wrapper
+
+class Real_param:
+    def __init__(self,
+                 problem='Hexagon',
+                 wrapper=None
+                 ):
+        self.type = 'real'
+        self.problem = problem
+        self.wrapper = wrapper
+                
         
 class Screenparam:
     def __init__(self,
