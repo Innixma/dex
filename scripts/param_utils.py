@@ -42,10 +42,12 @@ class Hyper_a3c: # Additional hyperparameters for a3c
                  self,
                  loss_v=0.5,
                  loss_entropy=0.01,
+                 brain_memory_size=8
                  ):
         
         self.loss_v = loss_v
         self.loss_entropy = loss_entropy
+        self.brain_memory_size = brain_memory_size
 
 # TODO: Use this
 class Hyper_ddqn: # Additional hyperparameters for ddqn

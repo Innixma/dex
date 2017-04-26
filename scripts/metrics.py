@@ -91,8 +91,10 @@ class A3C_Metrics:
         
     def graph_all(self, save_location):
         for metric in self.metrics:
-            metric.graph_mean(save_location)
-        
+            try:
+                metric.graph_mean(save_location)
+            except:
+                print(metric.name)
         
 
             

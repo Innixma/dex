@@ -87,6 +87,7 @@ gym_cart_ddqn = Args(
 gym_cart_a3c_hyperspecific = Hyper_a3c(
                                        loss_v=0.5,
                                        loss_entropy=0.01,
+                                       brain_memory_size=8
                                        )
 
 gym_cart_a3c_hyperparams = Hyperparam(
@@ -109,6 +110,7 @@ gym_cart_a3c_hyperparams = Hyperparam(
 hex_base_a3c_hyperspecific = Hyper_a3c(
                                        loss_v=0.5,
                                        loss_entropy=0.01,
+                                       brain_memory_size=40000
                                        )
 
 hex_base_a3c_hyperparams = Hyperparam(
@@ -143,6 +145,7 @@ hex_base_a3c = Args(
 hex_incongruence_a3c_hyperspecific = Hyper_a3c(
                                        loss_v=0.5,
                                        loss_entropy=0.01,
+                                       brain_memory_size=40000
                                        )
 
 hex_incongruence_a3c_hyperparams = Hyperparam(

@@ -19,7 +19,7 @@ print('TensorFlow version' , tf.__version__)
 print(K.learning_phase())
 # TODO: Avoid hardcoding memory size
 #MEMORY_SIZE = 8
-MEMORY_SIZE = 32000
+#MEMORY_SIZE = 32000
 # Class concept from Jaromir Janisch, 2017
 # https://jaromiru.com/2017/03/26/lets-make-an-a3c-implementation/
 class Brain:
@@ -36,10 +36,12 @@ class Brain:
         self.loss_entropy = self.agent.h.extra.loss_entropy
         self.batch = self.agent.h.batch
         self.learning_rate = self.agent.h.learning_rate
+        self.brain_memory_size = self.agent.args.hyper.extra.brain_memory_size
+        
         
         self.env = self.agent.args.env
         self.metrics = self.agent.metrics
-        self.brain_memory = Memory(MEMORY_SIZE, self.state_dim, self.action_dim)
+        self.brain_memory = Memory(self.brain_memory_size, self.state_dim, self.action_dim)
         
         self.NONE_STATE = np.zeros(self.state_dim)
         

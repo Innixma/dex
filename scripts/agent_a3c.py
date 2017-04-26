@@ -38,7 +38,7 @@ class Agent:
         if random.random() < self.epsilon:
             return random.randrange(0, self.action_dim)
         else:
-            pr = self.brain.predict_p(np.array[s])[0]
+            pr = self.brain.predict_p(np.array([s]))
             a = np.random.choice(self.action_dim, p=pr[0])
             return a
             #return np.argmax(self.brain.predict_p(np.array([s])))
