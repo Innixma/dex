@@ -1,5 +1,5 @@
 # By Nick Erickson
-# Visualizing Data Testing
+# Wrappers for Gym 
 
 import numpy as np
 

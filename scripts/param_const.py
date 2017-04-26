@@ -105,7 +105,8 @@ gym_pong_ddqn_hyperparams = Hyperparam(
                              neg_regret_frames=0,
                              img_channels=1,
                              update_rate=1000,
-                             learning_rate=5e-3
+                             learning_rate=5e-3,
+                             model='buildmodel_CNN_v3'
                            )
 
 gym_pong_ddqn = Args(
