@@ -10,6 +10,7 @@ import random
 
 class Agent:
     def __init__(self, args, state_dim, action_dim, modelFunc=None):
+        print(state_dim)
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.h = args.hyper

@@ -25,10 +25,16 @@ def run(args, agent):
 
 def playGameGym(args, agent_func):
     env = Environment_gym(args.game)
-    state_dim  = env.env.observation_space.shape[0]
+    state_dim  = list(env.env.observation_space.shape)
+    if state_dim[-1] == 3:
+        print('assuming gym rgb')
+        state_dim = [int(i / 2) for i in state_dim]
+        state_dim = state_dim[:-1] + [1]
+        
     action_dim = env.env.action_space.n
-    state_dim = [state_dim]
-    agent = agent_func(args, state_dim, action_dim)
+    #state_dim = [state_dim]
+    #TMP!!!!
+    agent = agent_func(args, state_dim, action_dim, models.buildmodel_CNN_v3)
     
     iteration = 0
     while (True):

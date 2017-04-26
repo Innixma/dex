@@ -84,6 +84,34 @@ gym_cart_ddqn = Args(
                         memory_delay=4
                         )
 
+gym_pong_ddqn_hyperparams = Hyperparam(
+                             framerate=40,
+                             gamma=0.99,
+                             batch=8,
+                             observe=7500,
+                             explore=30000,
+                             epsilon_init=0.4,
+                             epsilon_final=0.15,
+                             memory_size=7500,
+                             save_rate=10000,
+                             neg_regret_frames=0,
+                             img_channels=1,
+                             update_rate=1000,
+                             learning_rate=5e-3
+                           )
+
+gym_pong_ddqn = Args(
+                        algorithm='ddqn',
+                        mode='train',
+                        game='Pong-v0',
+                        env='gym',
+                        data='default',
+                        screen='default',
+                        hyper=gym_pong_ddqn_hyperparams,
+                        directory='default',
+                        memory_delay=4
+                        )
+
 gym_cart_a3c_hyperspecific = Hyper_a3c(
                                        loss_v=0.5,
                                        loss_entropy=0.01,

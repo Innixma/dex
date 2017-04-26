@@ -3,24 +3,35 @@
 
 import numpy as np
 import time
+import skimage as skimage
+from skimage import color # Tmp, make this a new class later
+import skimage.transform as transf
 
 class Environment_gym:
     def __init__(self, problem):
         self.problem = problem
         import gym # Lazy import to avoid dependency if not used
+        
         self.env = gym.make(problem)
         
     def run(self, agent):
         s = self.env.reset()
-
+        s = color.rgb2gray(s).astype('float16')   
+        s = s.reshape(list(s.shape) + [1])
+        s = transf.downscale_local_mean(s, (2,2,1)) # Downsample        
+        
+        print(s.shape)
         R = 0 
         
         while True:         
-            #self.env.render()
+            self.env.render()
             
             a = agent.act(s)
             s_, r, t, info = self.env.step(a)
-
+            s_ = color.rgb2gray(s_).astype('float16')
+            s_ = s_.reshape(list(s_.shape) + [1])
+            s_ = transf.downscale_local_mean(s_, (2,2,1)) # Downsample   
+            
             agent.observe(s, a, r, s_, t)
             if agent.mode == 'train':
                 agent.replay(debug=False)

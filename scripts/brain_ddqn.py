@@ -9,6 +9,8 @@ from models import default_model
 class Brain:
     def __init__(self, state_dim, action_dim, modelFunc=None):
         self.state_dim = state_dim
+        print(state_dim)
+        print(action_dim)
         self.action_dim = action_dim
 
         self.model = self.create_model(modelFunc)
