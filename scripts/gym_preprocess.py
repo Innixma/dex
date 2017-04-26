@@ -29,7 +29,7 @@ class Gym_base_wrapper(object):
         self.env.render()
         
     def state_dim(self):
-        return list(self.preprocess(self.reset()).shape)
+        return list(self.reset().shape)
 
 class Gym_rgb_wrapper(Gym_base_wrapper):
     def __init__(self, problem):
