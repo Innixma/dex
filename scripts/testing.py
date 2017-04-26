@@ -1,7 +1,7 @@
 # By Nick Erickson
 # Visualizing Data Testing
 
-from data_utils import loadMemory, loadMemory_v2
+from data_utils import loadMemory_v2
 from agent_random import Agent
 from agent_a3c import Agent as Agent_a3c
 from param_const import hex_base_gather

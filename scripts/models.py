@@ -104,7 +104,7 @@ def CNN_a3c_LSTM_v8(state_dim, action_dim):
 #==============================================================================
 # CNN a3c v10, Apr 24 (Downsampled input)
 #==============================================================================
-def CNN_a3c(state_dim, action_dim):
+def CNN_a3c_v10(state_dim, action_dim):
     
     inputs = Input(shape=state_dim, dtype='float32', name='input')
     
@@ -203,7 +203,12 @@ def CNN_a3c_v8(state_dim, action_dim):
 #==============================================================================
 # CNN a3c v7, Apr 16
 #==============================================================================
-def CNN_a3c_v7(state_dim, action_dim):
+def CNN_a3c(state_dim, action_dim, visualization=False):
+    if visualization == True:
+        action_activation = 'linear'
+    else:
+        action_activation = 'softmax'
+    
     
     inputs = Input(shape=state_dim, dtype='float32', name='input')
     
@@ -216,8 +221,9 @@ def CNN_a3c_v7(state_dim, action_dim):
     dense1 = Dense(512, activation='relu')(flatten)
     #lstm1 = LSTM(256, activation='relu')(dense1)
     
-    output_actions = Dense(action_dim, activation='softmax')(dense1)
-    output_value = Dense(1, activation='linear')(dense1)
+    
+    output_actions = Dense(action_dim, activation=action_activation, name='action')(dense1) # FIX THIS
+    output_value = Dense(1, activation='linear', name='value')(dense1)
     
     model = Model(inputs=[inputs], outputs=[output_actions, output_value])
     

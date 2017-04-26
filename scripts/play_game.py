@@ -2,7 +2,7 @@
 # Contains functions for game play loops
 
 from environment import Environment_gym, Environment_realtime, Environment_realtime_a3c
-from data_utils import saveAll, saveMemory, saveClass, loadClass, loadMemory, save_weights, saveMemory_v2
+from data_utils import saveAll, saveClass, loadClass, save_weights, saveMemory_v2, loadMemory_v2, save_memory_subset
 import time
 try:
     import OpenHexagonEmulator
@@ -77,11 +77,22 @@ def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
     
     hasSavedMemory = False
     
+    max_frame_saved = 300
+    
     while (True):
+        pointer_start = agent.brain.brain_memory.curIndex + 0
         frame, useRate, frame_saved = env.run(agent)
-        
+        pointer_end = agent.brain.brain_memory.curIndex + 0
         agent.metrics.display_metrics(frame, useRate, agent.memory.total_saved, agent.epsilon)
                     
+        if frame_saved > max_frame_saved:
+            print('New max time!')
+            max_frame_saved = frame_saved
+            
+            save_memory_subset(agent, pointer_start, pointer_end, frame_saved, skip=8)
+            save_weights(agent, 'frame_' + str(frame_saved))
+            
+        
         if agent.h.save_rate < agent.save_iterator:
             agent.save_iterator -= agent.h.save_rate
             save_weights(agent, agent.run_count)
@@ -124,7 +135,7 @@ def playGameReal(args, agent_func, screen_number=0, screen_id=-1):
     
     if args.data != 'default':
         # Load Memory
-        loadMemory(agent, args.data)
+        loadMemory_v2(agent, args.data)
         
         agent.mode = 'train'
         loaded_replays = int(agent.memory.size)

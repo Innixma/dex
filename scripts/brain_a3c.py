@@ -19,7 +19,7 @@ print('TensorFlow version' , tf.__version__)
 print(K.learning_phase())
 # TODO: Avoid hardcoding memory size
 #MEMORY_SIZE = 8
-MEMORY_SIZE = 100000
+MEMORY_SIZE = 32000
 # Class concept from Jaromir Janisch, 2017
 # https://jaromiru.com/2017/03/26/lets-make-an-a3c-implementation/
 class Brain:
@@ -39,19 +39,24 @@ class Brain:
         
         self.env = self.agent.args.env
         self.metrics = self.agent.metrics
+        self.brain_memory = Memory(MEMORY_SIZE, self.state_dim, self.action_dim)
         
         self.NONE_STATE = np.zeros(self.state_dim)
-        self.session = tf.Session()
-        K.set_session(self.session)
-        K.manual_variable_initialization(True)
-
-        self.model = self.create_model(modelFunc)
-        self.graph = self.create_graph(self.model)
-
-        self.session.run(tf.global_variables_initializer())
-        self.default_graph = tf.get_default_graph()
         
-        self.brain_memory = Memory(MEMORY_SIZE, self.state_dim, self.action_dim)
+        self.visualization = agent.visualization
+        self.model = self.create_model(modelFunc)
+        
+        if self.visualization == False:
+        #######################################
+            self.session = tf.Session()
+            K.set_session(self.session)
+            K.manual_variable_initialization(True)
+            self.graph = self.create_graph(self.model)
+    
+            self.session.run(tf.global_variables_initializer())
+            self.default_graph = tf.get_default_graph()
+        #######################################
+        
         
         
         #for layer in self.model.layers:
@@ -67,7 +72,7 @@ class Brain:
         print(self.state_dim)
         print(self.action_dim)
         if modelFunc:
-            model = modelFunc(self.state_dim, self.action_dim)
+            model = modelFunc(self.state_dim, self.action_dim, self.visualization)
         else:
             l_input = Input( batch_shape=(None, self.state_dim[0]) )
             l_dense = Dense(16, activation='relu')(l_input)
@@ -164,7 +169,7 @@ class Brain:
     def train_push_all_augmented(self, frames):
         for frame in frames:
             self.train_push_augmented(frame)
-
+    # TODO: t value is flipped for brain memory and agent memory... should be consistent. Not a bug however.
     def train_push_augmented(self, frame):
         a_cat = np.zeros(self.action_dim)
         a_cat[frame[1]] = 1

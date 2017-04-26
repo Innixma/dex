@@ -93,3 +93,4 @@ class Args:
         self.directory = directory
         self.memory_delay = memory_delay
         self.run_count_load = run_count_load
+        self.weight_override = None

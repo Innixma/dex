@@ -116,7 +116,7 @@ hex_base_a3c_hyperparams = Hyperparam(
                              gamma=0.99,
                              batch=64,
                              observe=0,
-                             explore=20000,
+                             explore=1000,
                              epsilon_init=1,
                              epsilon_final=0.01,
                              memory_size=4,
@@ -146,13 +146,13 @@ hex_incongruence_a3c_hyperspecific = Hyper_a3c(
                                        )
 
 hex_incongruence_a3c_hyperparams = Hyperparam(
-                             framerate=60,
+                             framerate=30,
                              gamma=0.99,
                              batch=64,
                              observe=0,
-                             explore=20000,
+                             explore=10000,
                              epsilon_init=1,
-                             epsilon_final=0.03,
+                             epsilon_final=0.01,
                              memory_size=4,
                              save_rate=5000,
                              neg_regret_frames=0,
