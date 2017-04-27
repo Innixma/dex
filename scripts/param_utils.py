@@ -12,7 +12,7 @@ class Hyperparam:
                  epsilon_final=0.01, # Fine
                  memory_size=20000, # Fine
                  save_rate=10000, # Fine, could be in metrics?
-                 img_channels=2, # Specific to game
+                 img_channels=1, # Specific to game
                  learning_rate=0.00025, # Fine
                  extra=None, # Fine
                  ):
@@ -61,8 +61,8 @@ class Gym_param:
         self.wrapper = wrapper
 
     def generate_env(self):
-        import gym_preprocess
-        return getattr(gym_preprocess,self.wrapper)(self.problem)
+        import env_wrappers
+        return getattr(env_wrappers,self.wrapper)(self.problem)
        
         
 class Real_param:
@@ -81,8 +81,8 @@ class Real_param:
         self.game_args = game_args
         
     def generate_env(self):
-        import gym_preprocess
-        return getattr(gym_preprocess,self.wrapper)(self.problem, self.module_name, self.class_name, self.game_args)
+        import env_wrappers
+        return getattr(env_wrappers,self.wrapper)(self.problem, self.module_name, self.class_name, self.game_args)
                 
         
 class Screenparam:

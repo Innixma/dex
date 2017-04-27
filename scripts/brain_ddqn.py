@@ -28,7 +28,7 @@ class Brain:
             modelFunc = models.model_mid_default
         model = models.model_start(self.state_dim, self.action_dim, models.model_top_ddqn, modelFunc)
         
-        adam = Adam(lr=0.00025)
+        adam = Adam(lr=self.agent.hyper.learning_rate)
         model.compile(loss=hubert_loss,optimizer=adam)
         
         print("Finished building the model")

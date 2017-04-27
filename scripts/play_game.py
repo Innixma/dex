@@ -1,7 +1,7 @@
 # By Nick Erickson
 # Contains functions for game play loops
 
-from environment import Environment_gym, Environment_realtime, Environment_realtime_a3c
+from environment import Environment_gym, Environment_gym_rgb, Environment_realtime, Environment_realtime_a3c
 from data_utils import saveAll, saveClass, loadClass, save_weights, saveMemory_v2, loadMemory_v2, save_memory_subset
 import time
 try:
@@ -28,7 +28,10 @@ def run(args, agent):
         pass
 
 def playGameGym_a3c(args, agent_func):
-    env = Environment_gym(args.env)
+    if args.hyper.img_channels > 1:
+        env = Environment_gym_rgb(args.env)
+    else:
+        env = Environment_gym(args.env)
     state_dim  = env.env.state_dim
     action_dim = env.env.action_dim
 
@@ -55,7 +58,10 @@ def playGameGym_a3c(args, agent_func):
                     #agent.metrics.save_metrics_training(agent.results_location)
     
 def playGameGym_ddqn(args, agent_func):
-    env = Environment_gym(args.env)
+    if args.hyper.img_channels > 1:
+        env = Environment_gym_rgb(args.env)
+    else:
+        env = Environment_gym(args.env)
     state_dim  = env.env.state_dim
     action_dim = env.env.action_dim
 

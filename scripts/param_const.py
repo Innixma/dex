@@ -15,6 +15,12 @@ ddqn_hyperspecific = Hyper_ddqn(
                                 update_rate=1000,
                                 )
 
+gym_a3c_hyperspecific = Hyper_a3c(
+                                       loss_v=0.5,
+                                       loss_entropy=0.01,
+                                       brain_memory_size=8
+                                       )
+
 gym_cart_env = Gym_param()
 gym_pong_env = Gym_param(
                          problem='Pong-v0',
@@ -100,7 +106,7 @@ gym_pong_ddqn_hyperparams = Hyperparam(
                              memory_size=7500,
                              save_rate=10000,
                              img_channels=1,
-                             learning_rate=5e-3,
+                             learning_rate=2.5e-4,
                              extra=ddqn_hyperspecific
                            )
 
@@ -116,11 +122,29 @@ gym_pong_ddqn = Args(
                         model='model_mid_cnn'
                         )
 
-gym_cart_a3c_hyperspecific = Hyper_a3c(
-                                       loss_v=0.5,
-                                       loss_entropy=0.01,
-                                       brain_memory_size=8
-                                       )
+gym_pong_a3c_hyperparams = Hyperparam(
+                             gamma=0.99,
+                             batch=8,
+                             explore=30000,
+                             epsilon_init=0.4,
+                             epsilon_final=0.01,
+                             memory_size=2,
+                             save_rate=10000,
+                             img_channels=4,
+                             learning_rate=2.5e-4,
+                             extra=gym_a3c_hyperspecific
+                           )
+
+gym_pong_a3c = Args(
+                        algorithm='a3c',
+                        mode='train',
+                        env=gym_pong_env,
+                        data='default',
+                        screen='default',
+                        hyper=gym_pong_a3c_hyperparams,
+                        directory='default',
+                        model='model_mid_cnn'
+                        )
 
 gym_cart_a3c_hyperparams = Hyperparam(
                              gamma=0.99,
@@ -132,7 +156,7 @@ gym_cart_a3c_hyperparams = Hyperparam(
                              save_rate=10000,
                              img_channels=1,
                              learning_rate=5e-3,
-                             extra=gym_cart_a3c_hyperspecific,
+                             extra=gym_a3c_hyperspecific,
                            )
 
 gym_cart_a3c = Args(

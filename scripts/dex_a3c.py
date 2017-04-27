@@ -12,7 +12,7 @@ from __future__ import print_function
 #import threading
 
 # Utilities
-from param_const import hex_base_a3c, gym_cart_a3c, hex_base_a3c_load, hex_incongruence_a3c, hex_incongruence_a3c_load, hex_pi_acer_load
+from param_const import hex_base_a3c, gym_pong_a3c, gym_cart_a3c, hex_base_a3c_load, hex_incongruence_a3c, hex_incongruence_a3c_load, hex_pi_acer_load
 import play_game
 import agent_a3c
 
@@ -27,6 +27,7 @@ if __name__ == "__main__":
     
     #args = hex_base_a3c
     #args = gym_cart_a3c
+    #args = gym_pong_a3c
     args = hex_incongruence_a3c
     #args = hex_incongruence_a3c_load
     #args = hex_pi_acer_load

@@ -3,9 +3,6 @@
 
 import numpy as np
 import time
-import skimage as skimage
-from skimage import color # Tmp, make this a new class later
-import skimage.transform as transf
 
 class Environment_gym:
     def __init__(self, env_info):
@@ -20,6 +17,40 @@ class Environment_gym:
             #self.env.render()
             a = agent.act(s)
             s_, r, t, info = self.env.step(a)
+            agent.observe(s, a, r, s_, t)
+            if agent.mode == 'train':
+                agent.replay(debug=False)
+                if agent.args.algorithm == 'a3c':
+                    if agent.brain.brain_memory.isFull:
+                        agent.brain.optimize_batch_full()
+            s = s_
+            R += r
+            if t:
+                return R, 1
+                
+class Environment_gym_rgb:
+    def __init__(self, env_info):
+        self.problem = env_info.problem
+        self.env = env_info.generate_env()
+
+    def init_run(self, img_channels):
+        x = self.env.reset()
+    
+        stacking = [x for i in range(img_channels)]
+        s = np.stack(stacking, axis=2)
+
+        s = s.reshape(s.shape[0], s.shape[1], img_channels)
+        return(s)
+        
+    def run(self, agent):
+        s = self.init_run(agent.h.img_channels)
+        R = 0 
+        
+        while True:         
+            #self.env.render()
+            a = agent.act(s)
+            x_, r, t, info = self.env.step(a)
+            s_ = np.append(x_, s[:, :, :agent.h.img_channels-1], axis=2)
             agent.observe(s, a, r, s_, t)
             if agent.mode == 'train':
                 agent.replay(debug=False)

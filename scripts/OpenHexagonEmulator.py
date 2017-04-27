@@ -13,7 +13,6 @@ import skimage.transform as transf
 
 class HexagonEmulator:
 
-    #def __init__(self, application, window_size=[140,140], capture_zoom=[0,0], screen_id=-1, screen_number=0, rewards=[1,-1], mode='standard'): # window_size = x,y
     def __init__(self, screen_info, screen_id=-1, screen_number=0, rewards=[1,-1], mode='standard'): # window_size = x,y
         self.keys = np.array(['none', 'left_arrow', 'right_arrow'])
         self.action_dim = 3
@@ -120,16 +119,8 @@ class HexagonEmulator:
                 win32api.keybd_event(G.VK_CODE[i], 0, win32con.KEYEVENTF_KEYUP, 0)
     
     def configure(self):
-        #time.sleep(0.5)
         #win32gui.SetForegroundWindow(hwnd)
         time.sleep(0.5)
-        #img = captureIm()
-        #img = img[31:G.y_size-10,10:G.x_size-10,:]
-        #print(img.shape)
-        #for pixel in img[0]:
-        #    print(pixel)
-        #img = smp.toimage(img)
-        #img.show()
     
         self.capture_offset[0] = 10
         self.capture_offset[1] = 31
@@ -160,16 +151,9 @@ class HexagonEmulator:
 
     # Capture 1 screenshot
     def captureIm(self):
-      
-        
-        #print(G.y_size, G.x_size)
-        #G.image = np.zeros((memory_size,G.y_size,G.x_size,3), dtype=np.uint8)
-        #print(G.image.shape)
         self.cDC.BitBlt((0, 0), (self.capture_size[0], self.capture_size[1]), self.dcObj, (self.capture_offset[0], self.capture_offset[1]), win32con.SRCCOPY)
-        #print(np.frombuffer(dataBitMap.GetBitmapBits(True), dtype=np.uint8).shape)
         image = np.frombuffer(self.dataBitMap.GetBitmapBits(True), dtype=np.uint8).reshape((self.capture_size[1], self.capture_size[0], 4))[:,:,:-1][:,:,::-1]       
-        #print(image.shape)
-        #print(image.dtype)
+
         # ----------------------------------------------------
         # Polar Conversion
         #if self.mode == 'polar':
@@ -193,22 +177,9 @@ class HexagonEmulator:
     def prepareImage(self, image):
         
         tmpImage = color.rgb2gray(image).astype('float16')
-        #print(tmpImage.dtype)
-        #global ZZ
-        #ZZ += 1
-        #if ZZ > 300:
-        #    img = smp.toimage(tmpImage)
-        #    smp.imsave('outfile' + str(ZZ % 36) + '.png', img)    
-        
+
         # Following line commented out Feb 25 2017, due to potential issues caused.
         #tmpImage = skimage.exposure.rescale_intensity(tmpImage, out_range=(0, 255))
-        
-        # ----
-        # NEW!!! Feb 28: Normalize pixels
-        #print(np.mean(tmpImage))
-        #tmpImage = tmpImage.astype('float32') / 128 - 1
-        # ----
-        #tmpImage = tmpImage.astype('float16')
 
         #tmpImage = transf.downscale_local_mean(tmpImage, (2,2)) # Downsample
         
@@ -226,10 +197,10 @@ class HexagonEmulator:
         
     # Check for game termination (UNUSED)
     def termination(self, data):
-        terminal = 0
+        t = 0
         if np.mean(data) >= 220:
-            terminal = 1
-        return(terminal)
+            t = 1
+        return t
     
     # Game state function
     def step(self, inKey=0):
@@ -245,16 +216,16 @@ class HexagonEmulator:
         self.prevKey = self.curKey
         self.curKey = inKey
         
-        state = self.captureIm()
-        state = self.prepareImage(state)
-        terminal = terminal_detection.check_terminal(state)
+        s = self.captureIm()
+        s = self.prepareImage(s)
+        t = terminal_detection.check_terminal(s)
         
-        if terminal:
+        if t:
             self.release(inKey)
-            reward = self.reward_terminal
+            r = self.reward_terminal
             self.alive = False
             self.end_game()
         else:
-            reward = self.reward_alive
+            r = self.reward_alive
             
-        return(state, reward, terminal)
+        return(s, r, t)
