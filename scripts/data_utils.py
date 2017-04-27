@@ -46,14 +46,17 @@ def load_weights(agent): # TODO: Update this function
             filename = filename + '_' + str(agent.args.run_count_load)
         
         if agent.args.mode == 'run':
-            agent.h.observe = 999999999    # Never train
+            try:
+                agent.h.extra.observe = 999999999    # Never train
+            except:
+                pass
+            agent.mode = 'observe'
             agent.epsilon = 0
             print ("Now we load weight from " + agent.results_location + filename + '.h5')
             agent.brain.model.load_weights(agent.results_location + filename + '.h5')
 
             print ("Weights loaded successfully")
         elif agent.args.mode == 'train_old': # Continue training old network
-            agent.h.observe = agent.h.observe
             agent.epsilon = agent.h.epsilon_init
             print ("Now we load weight from " + agent.results_location + filename + '.h5')
             agent.brain.model.load_weights(agent.results_location + filename + '.h5')
@@ -61,7 +64,6 @@ def load_weights(agent): # TODO: Update this function
             print ("Weights loaded successfully, training")
         else: # Train new
             print('Training new network!')
-            agent.h.observe = agent.h.observe
             agent.epsilon = agent.h.epsilon_init
      
 def save_weights(agent, addon=None):

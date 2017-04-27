@@ -1,18 +1,19 @@
 # By Nick Erickson
 # Contains parameters for games and levels
 
-from param_utils import Args, Hyperparam, Screenparam, Hyper_a3c, Gym_param, Real_param
+from param_utils import Args, Hyperparam, Screenparam, Hyper_a3c, Hyper_ddqn, Gym_param, Real_param
 
 hex_screen = Screenparam(
                          app='Open Hexagon 1.92 - by vittorio romeo',
                          size=[140,140],
-                         zoom=[12,2]
+                         zoom=[12,2],
+                         framerate=50
                          )
-hex_screen_old = Screenparam(
-                         app='Open Hexagon 1.92 - by vittorio romeo',
-                         size=[140,140],
-                         zoom=[28,18]
-                         )
+
+ddqn_hyperspecific = Hyper_ddqn(
+                                observe=7500,
+                                update_rate=1000,
+                                )
 
 gym_cart_env = Gym_param()
 gym_pong_env = Gym_param(
@@ -28,19 +29,15 @@ hex_env = Real_param(
                      )
 
 hex_hyperparams = Hyperparam(
-                 framerate=40,
                  gamma=0.99,
                  batch=16,
-                 observe=1000,
                  explore=3000,
                  epsilon_init=1.0,
                  epsilon_final=0.01,
                  memory_size=50000,
                  save_rate=10000,
-                 neg_regret_frames=1,
                  img_channels=2,
-                 update_rate=1000,
-                 model='model_mid_cnn'
+                 extra=ddqn_hyperspecific
                  )
 
 hex_incongruence = Args(
@@ -51,7 +48,8 @@ hex_incongruence = Args(
                         screen=hex_screen,
                         hyper=hex_hyperparams,
                         directory='default',
-                        memory_delay=0.5
+                        memory_delay=0.5,
+                        model='model_mid_cnn'
                         )
 
 hex_base = Args(
@@ -62,26 +60,23 @@ hex_base = Args(
                         screen=hex_screen,
                         hyper=hex_hyperparams,
                         directory='default',
-                        memory_delay=4.5
+                        memory_delay=4.5,
+                        model='model_mid_cnn'
                         )
 
 
 
 gym_cart_ddqn_hyperparams = Hyperparam(
-                             framerate=40,
                              gamma=0.99,
                              batch=8,
-                             observe=7500,
                              explore=30000,
                              epsilon_init=0.4,
                              epsilon_final=0.15,
                              memory_size=7500,
                              save_rate=10000,
-                             neg_regret_frames=0,
                              img_channels=1,
-                             update_rate=1000,
                              learning_rate=5e-3,
-                             model='model_mid_default'
+                             extra=ddqn_hyperspecific
                            )
 
 gym_cart_ddqn = Args(
@@ -92,24 +87,21 @@ gym_cart_ddqn = Args(
                         screen='default',
                         hyper=gym_cart_ddqn_hyperparams,
                         directory='default',
-                        memory_delay=4
+                        memory_delay=4,
+                        model='model_mid_default'
                         )
 
 gym_pong_ddqn_hyperparams = Hyperparam(
-                             framerate=40,
                              gamma=0.99,
                              batch=8,
-                             observe=7500,
                              explore=30000,
                              epsilon_init=0.4,
                              epsilon_final=0.15,
                              memory_size=7500,
                              save_rate=10000,
-                             neg_regret_frames=0,
                              img_channels=1,
-                             update_rate=1000,
                              learning_rate=5e-3,
-                             model='model_mid_cnn'
+                             extra=ddqn_hyperspecific
                            )
 
 gym_pong_ddqn = Args(
@@ -120,7 +112,8 @@ gym_pong_ddqn = Args(
                         screen='default',
                         hyper=gym_pong_ddqn_hyperparams,
                         directory='default',
-                        memory_delay=4
+                        memory_delay=4,
+                        model='model_mid_cnn'
                         )
 
 gym_cart_a3c_hyperspecific = Hyper_a3c(
@@ -130,21 +123,16 @@ gym_cart_a3c_hyperspecific = Hyper_a3c(
                                        )
 
 gym_cart_a3c_hyperparams = Hyperparam(
-                             framerate=40,
                              gamma=0.99,
                              batch=8,
-                             observe=0,
                              explore=30000,
                              epsilon_init=0.4,
                              epsilon_final=0.15,
                              memory_size=8,
                              save_rate=10000,
-                             neg_regret_frames=0,
                              img_channels=1,
-                             update_rate=1000,
                              learning_rate=5e-3,
                              extra=gym_cart_a3c_hyperspecific,
-                             model='model_mid_default'
                            )
 
 gym_cart_a3c = Args(
@@ -155,7 +143,8 @@ gym_cart_a3c = Args(
                         screen='default',
                         hyper=gym_cart_a3c_hyperparams,
                         directory='default',
-                        memory_delay=4
+                        memory_delay=4,
+                        model='model_mid_default'
                         )
 
 hex_base_a3c_hyperspecific = Hyper_a3c(
@@ -165,21 +154,16 @@ hex_base_a3c_hyperspecific = Hyper_a3c(
                                        )
 
 hex_base_a3c_hyperparams = Hyperparam(
-                             framerate=50,
                              gamma=0.99,
                              batch=64,
-                             observe=0,
                              explore=1000,
                              epsilon_init=1,
                              epsilon_final=0.01,
                              memory_size=4,
                              save_rate=5000,
-                             neg_regret_frames=0,
                              img_channels=2,
-                             update_rate=1000,
                              learning_rate=2.5e-4, # 2.5e-4
                              extra=hex_base_a3c_hyperspecific,
-                             model='model_mid_cnn'
                            )
 
 hex_base_a3c = Args(
@@ -190,7 +174,8 @@ hex_base_a3c = Args(
                         screen=hex_screen,
                         hyper=hex_base_a3c_hyperparams,
                         directory='default',
-                        memory_delay=4.5
+                        memory_delay=4.5,
+                        model='model_mid_cnn'
                         )
 
 hex_incongruence_a3c_hyperspecific = Hyper_a3c(
@@ -200,21 +185,16 @@ hex_incongruence_a3c_hyperspecific = Hyper_a3c(
                                        )
 
 hex_incongruence_a3c_hyperparams = Hyperparam(
-                             framerate=30,
                              gamma=0.99,
                              batch=64,
-                             observe=0,
                              explore=10000,
                              epsilon_init=1,
                              epsilon_final=0.01,
                              memory_size=4,
                              save_rate=5000,
-                             neg_regret_frames=0,
                              img_channels=2,
-                             update_rate=1000,
                              learning_rate=2.5e-4, # 2.5e-4
                              extra=hex_incongruence_a3c_hyperspecific,
-                             model='model_mid_cnn'
                            )
 
 hex_incongruence_a3c = Args(
@@ -225,7 +205,8 @@ hex_incongruence_a3c = Args(
                         screen=hex_screen,
                         hyper=hex_incongruence_a3c_hyperparams,
                         directory='default',
-                        memory_delay=0.5
+                        memory_delay=0.5,
+                        model='model_mid_cnn'
                         )
 
 hex_base_a3c_load = Args(
@@ -237,7 +218,8 @@ hex_base_a3c_load = Args(
                         hyper=hex_base_a3c_hyperparams,
                         directory='hex_acer_hexreal_v1',
                         memory_delay=4.5,
-                        run_count_load=3387
+                        run_count_load=3387,
+                        model='model_mid_cnn'
                         )
 
 hex_incongruence_a3c_load = Args(
@@ -249,7 +231,8 @@ hex_incongruence_a3c_load = Args(
                         hyper=hex_incongruence_a3c_hyperparams,
                         directory='hex_acer_end_v1',
                         memory_delay=0.5,
-                        run_count_load=1511
+                        run_count_load=1511,
+                        model='model_mid_cnn'
                         )
 
 hex_pi_acer_load = Args(
@@ -261,24 +244,21 @@ hex_pi_acer_load = Args(
                         hyper=hex_incongruence_a3c_hyperparams,
                         directory='hex_acer_pi_v1',
                         memory_delay=0.5,
-                        run_count_load=6412
+                        run_count_load=6412,
+                        model='model_mid_cnn'
                         )
 
 
 
 hex_gather_hyperparams = Hyperparam(
-                             framerate=40,
                              gamma=0.99,
                              batch=64,
-                             observe=1000,
                              explore=1000,
                              epsilon_init=1.0,
                              epsilon_final=0.01,
                              memory_size=1000,
                              save_rate=10000,
-                             neg_regret_frames=1,
                              img_channels=2,
-                             update_rate=1000
                            )
 
 hex_base_gather = Args(

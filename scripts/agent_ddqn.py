@@ -16,7 +16,7 @@ class Agent:
         self.h = args.hyper
         self.metrics = Metrics()
         self.memory = Memory(self.h.memory_size, self.state_dim, 1)
-        self.brain = Brain(state_dim, action_dim, modelFunc)
+        self.brain = Brain(self, modelFunc)
         self.args = args
         self.epsilon = self.h.epsilon_init
             
@@ -30,12 +30,12 @@ class Agent:
         self.brain.updateTargetModel()
 
     def update_epsilon(self):
-        if self.epsilon > self.h.epsilon_final and self.memory.total_saved > self.h.observe:
+        if self.epsilon > self.h.epsilon_final and self.memory.total_saved > self.h.extra.observe:
             self.epsilon -= (self.h.epsilon_init - self.h.epsilon_final) / self.h.explore
         
     def update_agent(self):
-        if self.update_iterator >= self.h.update_rate:
-            self.update_iterator -= self.h.update_rate
+        if self.update_iterator >= self.h.extra.update_rate:
+            self.update_iterator -= self.h.extra.update_rate
             print('Updating Target Network')
             self.brain.updateTargetModel()
             

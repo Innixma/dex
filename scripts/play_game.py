@@ -14,22 +14,25 @@ import models
 def run(args, agent):   
     if args.env.type == 'real':
         if args.algorithm == 'ddqn':
-            playGameReal(args, agent)
+            playGameReal_ddqn(args, agent)
         elif args.algorithm == 'a3c':
             playGameReal_a3c(args, agent)
     elif args.env.type == 'gym':
-        playGameGym(args, agent)
+        if args.algorithm == 'ddqn':
+            playGameGym_ddqn(args, agent)
+        elif args.algorithm == 'a3c':
+            playGameGym_a3c(args, agent)
     elif args.env.type == 'memory': 
         gatherMemory(args, agent)
     else:
         pass
 
-def playGameGym(args, agent_func):
+def playGameGym_a3c(args, agent_func):
     env = Environment_gym(args.env)
     state_dim  = env.env.state_dim()
     action_dim = env.env.env.action_space.n
 
-    agent = agent_func(args, state_dim, action_dim, getattr(models,args.hyper.model))
+    agent = agent_func(args, state_dim, action_dim, getattr(models,args.model))
     
     iteration = 0
     while (True):
@@ -37,7 +40,34 @@ def playGameGym(args, agent_func):
         
         R, useRate = env.run(agent)
         
-        if agent.memory.total_saved > agent.h.observe:
+        if agent.mode == 'train':
+            if iteration % 10 == 0:
+                print("Step:", agent.memory.total_saved, ", Total reward:", R)
+            
+        #agent.metrics.display_metrics(frame, useRate, agent.memory.total_saved, agent.epsilon)
+        
+        if agent.h.save_rate < agent.save_iterator:
+            agent.save_iterator -= agent.h.save_rate
+            save_weights(agent)
+            agent.metrics.a3c.graph_all(agent.results_location)
+            #if agent.mode == 'train': # Fix this later, not correct
+                    #agent.metrics.save_metrics(agent.results_location)
+                    #agent.metrics.save_metrics_training(agent.results_location)
+    
+def playGameGym_ddqn(args, agent_func):
+    env = Environment_gym(args.env)
+    state_dim  = env.env.state_dim()
+    action_dim = env.env.env.action_space.n
+
+    agent = agent_func(args, state_dim, action_dim, getattr(models,args.model))
+    
+    iteration = 0
+    while (True):
+        iteration += 1
+        
+        R, useRate = env.run(agent)
+        
+        if agent.memory.total_saved > agent.h.extra.observe:
             if agent.mode == 'observe':
                 agent.mode = 'train'
                 print('Training...')
@@ -52,8 +82,6 @@ def playGameGym(args, agent_func):
         if agent.h.save_rate < agent.save_iterator:
             agent.save_iterator -= agent.h.save_rate
             save_weights(agent)
-            if agent.args.algorithm == 'a3c':
-                agent.metrics.a3c.graph_all(agent.results_location)
             #if agent.mode == 'train': # Fix this later, not correct
                     #agent.metrics.save_metrics(agent.results_location)
                     #agent.metrics.save_metrics_training(agent.results_location)
@@ -69,7 +97,7 @@ def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
     print(state_dim)
     print(action_dim)
     
-    agent = agent_func(args, state_dim, action_dim, getattr(models,args.hyper.model))
+    agent = agent_func(args, state_dim, action_dim, getattr(models,args.model))
     
     
     hasSavedMemory = False
@@ -114,7 +142,7 @@ def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
             #    agent.brain.optimize()
             #print('\r', 'Learning', '(', frame_saved, '/', frame_saved, ')')
             
-def playGameReal(args, agent_func, screen_number=0, screen_id=-1):
+def playGameReal_ddqn(args, agent_func, screen_number=0, screen_id=-1):
     
     img_channels = args.hyper.img_channels
     env = Environment_realtime(args.env)

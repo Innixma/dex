@@ -54,13 +54,13 @@ class Environment_realtime_a3c:
         return(s)
             
     def run(self, agent):
-        frame_delay = int(agent.h.framerate*agent.args.memory_delay)
+        frame_delay = int(agent.args.screen.framerate*agent.args.memory_delay)
         self.catchup_frames = -1
         frame = 0
         frame_saved = 0
         useRate = np.zeros([agent.action_dim])
         
-        self.timelapse = 1/agent.h.framerate
+        self.timelapse = 1/agent.args.screen.framerate
         
         self.env.start_game()
         start_time = time.time()
@@ -132,12 +132,12 @@ class Environment_realtime:
         return(s)
             
     def run(self, agent):
-        frame_delay = int(agent.h.framerate*agent.args.memory_delay)
+        frame_delay = int(agent.args.screen.framerate*agent.args.memory_delay)
         frame = 0
         frame_saved = 0
         useRate = np.zeros([agent.action_dim])
         
-        self.timelapse = 1/agent.h.framerate
+        self.timelapse = 1/agent.args.screen.framerate
         
         self.env.start_game()
         start_time = time.time()
@@ -150,15 +150,7 @@ class Environment_realtime:
             x_, r, t = self.env.step(a)
             
             s_ = np.append(x_, s[:, :, :agent.h.img_channels-1], axis=2)
-            
-            #if t: # Don't save t state itself, since it is pure white
-            #    for i in range(agent.h.neg_regret_frames):
-            #        if agent.memory.size > i:
-            #            agent.memory.D[-1-i][2] = self.env.reward_terminal/(i+1)
-            #    if agent.memory.size > 0:
-            #        agent.memory.D[-1][4] = 1 # t State
-            #else:
-                
+        
             if frame > frame_delay: # Don't store early useless frames
                 agent.observe(s, a, r, s_, t)
                 useRate[a] += 1
@@ -180,7 +172,7 @@ class Environment_realtime:
         
         agent.metrics.update(survival_time)
         
-        if agent.memory.total_saved > agent.h.observe:
+        if agent.memory.total_saved > agent.h.extra.observe:
             if agent.mode == 'observe':
                 agent.mode = 'train'
                 time.sleep(1)

@@ -39,9 +39,6 @@ def model_top_ddqn(inputs, action_dim, model, visualization=False):
     
     model = Model(inputs=[inputs], outputs=[output_actions])
     
-    adam = Adam(lr=0.00025)
-    model.compile(loss=hubert_loss,optimizer=adam)
-    
     return model
     
 def model_mid_cnn(inputs):
