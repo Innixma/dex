@@ -9,7 +9,8 @@ from data_utils import load_weights
 import random
 
 class Agent:
-    def __init__(self, args, state_dim, action_dim, modelFunc=None, visualization=False):
+    def __init__(self, args, state_dim, action_dim, modelFunc=None, visualization=False, brain=None, idx=0):
+        self.idx = idx
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.args = args
@@ -26,9 +27,12 @@ class Agent:
         
         self.metrics = Metrics()
         self.memory = Memory(self.h.memory_size, self.state_dim, 1)
-        self.brain = Brain(self, modelFunc)
-        
-        load_weights(self)
+        if not brain:
+            self.brain = Brain(self, modelFunc)
+            load_weights(self)
+        else:
+            self.brain = brain
+            
 
     def update_epsilon(self):
         if self.epsilon > self.h.epsilon_final:

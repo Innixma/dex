@@ -20,9 +20,9 @@ class Environment_gym:
             agent.observe(s, a, r, s_, t)
             if agent.mode == 'train':
                 agent.replay(debug=False)
-                if agent.args.algorithm == 'a3c':
-                    if agent.brain.brain_memory.isFull:
-                        agent.brain.optimize_batch_full()
+                #if agent.args.algorithm == 'a3c':
+                    #if agent.brain.brain_memory.isFull:
+                        #agent.brain.optimize_batch_full()
             s = s_
             R += r
             if t:
@@ -54,9 +54,10 @@ class Environment_gym_rgb:
             agent.observe(s, a, r, s_, t)
             if agent.mode == 'train':
                 agent.replay(debug=False)
-                if agent.args.algorithm == 'a3c':
-                    if agent.brain.brain_memory.isFull:
-                        agent.brain.optimize_batch_full()
+                #if agent.args.algorithm == 'a3c':
+                    #pass
+                    #if agent.brain.brain_memory.isFull:
+                        #agent.brain.optimize_batch_full()
             s = s_
             R += r
             if t:

@@ -10,6 +10,10 @@ except:
     print("Can't import OpenHexagonEmulator, not a Windows environment, skipping...")
 import models
 
+import threading
+
+MULTITHREAD = 7
+MULTITHREAD_BRAIN = 1
 
 def run(args, agent):   
     if args.env.type == 'real':
@@ -27,7 +31,140 @@ def run(args, agent):
     else:
         pass
 
+def init_agents(args, agent_func):
+    agents = []
+    envs = []
+    brain = None
+    for i in range(MULTITHREAD):
+        if args.hyper.img_channels > 1:
+            env = Environment_gym_rgb(args.env)
+            state_dim  = env.env.state_dim + [args.hyper.img_channels]
+        else:
+            env = Environment_gym(args.env)
+            state_dim  = env.env.state_dim
+        action_dim = env.env.action_dim
+        agent = agent_func(args, state_dim, action_dim, getattr(models,args.model), brain=brain, idx=i)
+        brain = agent.brain
+        envs.append(env)
+        agents.append(agent)
+        
+    return agents, envs
+    
+def playGameGym_a3c_multithread_init(args, agent_func):
+    agents, envs = init_agents(args, agent_func)
+    brain = agents[0].brain
+    threads = []
+    for i in range(MULTITHREAD):
+        threads.append(Multithread_agent(agents[i], envs[i]))
+    
+    threads_brain = []
+
+    for i in range(MULTITHREAD_BRAIN):
+        threads_brain.append(Multithread_brain(brain))
+        
+    for i in range(MULTITHREAD):
+        threads[i].start()
+        
+    for i in range(MULTITHREAD_BRAIN):
+        threads_brain[i].start()
+        
+    
+    """    
+    time.sleep(20)
+    
+    print('stopping')
+    
+    for i in range(MULTITHREAD):
+        threads[i].stop()
+        
+    for i in range(MULTITHREAD):
+        threads[i].join()
+        
+    print('agents all stopped')
+    
+    for i in range(MULTITHREAD_BRAIN):
+        threads_brain[i].stop()
+        
+    for i in range(MULTITHREAD_BRAIN):
+        threads_brain[i].join()
+        
+    print('brains all stopped')
+    print(brain.brain_memory.total_saved)
+    print(brain.c)
+    print(brain.brain_memory.total_saved / brain.c)
+    """
+class Multithread_agent(threading.Thread):
+    stop_signal = False
+    def __init__(self, agent, env):
+        threading.Thread.__init__(self)
+        self.agent = agent
+        self.env = env
+        
+    def run(self):
+        iteration = 0
+        while not self.stop_signal:
+            iteration += 1
+        
+            R, useRate = self.env.run(self.agent)
+            
+            if self.agent.mode == 'train':
+                if iteration % 10 == 0:
+                    print("Step:", self.agent.memory.total_saved, ", Total reward:", R, "idx:", self.agent.idx)
+                
+            #agent.metrics.display_metrics(frame, useRate, agent.memory.total_saved, agent.epsilon)
+            
+            if self.agent.idx == 0:
+                if self.agent.h.save_rate < self.agent.save_iterator:
+                    self.agent.save_iterator -= self.agent.h.save_rate
+                    save_weights(self.agent)
+                    self.agent.metrics.a3c.graph_all(self.agent.results_location)
+                    
+            #playGameGym_a3c_multithread(self.agent, self.env)
+        
+    def stop(self):
+        self.stop_signal = True
+
+class Multithread_brain(threading.Thread):
+    stop_signal = False
+    def __init__(self, brain):
+        threading.Thread.__init__(self)
+        self.brain = brain
+                  
+    def run(self):
+        while not self.stop_signal:
+            self.brain.optimize_batch_full_multithread()
+        
+    def stop(self):
+        self.stop_signal = True
+        
+def playGameGym_a3c_multithread(agent, env):
+    iteration = 0
+    while (True):
+        iteration += 1
+        
+        R, useRate = env.run(agent)
+        
+        if agent.mode == 'train':
+            if iteration % 10 == 0:
+                print("Step:", agent.memory.total_saved, ", Total reward:", R, "idx:", agent.idx)
+            
+        #agent.metrics.display_metrics(frame, useRate, agent.memory.total_saved, agent.epsilon)
+        
+        if agent.idx == 0:
+            if agent.h.save_rate < agent.save_iterator:
+                agent.save_iterator -= agent.h.save_rate
+                save_weights(agent)
+                agent.metrics.a3c.graph_all(agent.results_location)
+                #if agent.mode == 'train': # Fix this later, not correct
+                        #agent.metrics.save_metrics(agent.results_location)
+                        #agent.metrics.save_metrics_training(agent.results_location)
+    
+    
 def playGameGym_a3c(args, agent_func):
+    
+    playGameGym_a3c_multithread_init(args, agent_func)
+
+    """
     if args.hyper.img_channels > 1:
         env = Environment_gym_rgb(args.env)
         state_dim  = env.env.state_dim + [args.hyper.img_channels]
@@ -36,7 +173,9 @@ def playGameGym_a3c(args, agent_func):
         state_dim  = env.env.state_dim
     action_dim = env.env.action_dim
 
+    
     agent = agent_func(args, state_dim, action_dim, getattr(models,args.model))
+    #brain = agent.brain
     
     iteration = 0
     while (True):
@@ -46,7 +185,7 @@ def playGameGym_a3c(args, agent_func):
         
         if agent.mode == 'train':
             if iteration % 10 == 0:
-                print("Step:", agent.memory.total_saved, ", Total reward:", R)
+                print("Step:", agent.memory.total_saved, ", Total reward:", R, "idx:", agent.idx)
             
         #agent.metrics.display_metrics(frame, useRate, agent.memory.total_saved, agent.epsilon)
         
@@ -57,7 +196,7 @@ def playGameGym_a3c(args, agent_func):
             #if agent.mode == 'train': # Fix this later, not correct
                     #agent.metrics.save_metrics(agent.results_location)
                     #agent.metrics.save_metrics_training(agent.results_location)
-    
+    """
 def playGameGym_ddqn(args, agent_func):
     if args.hyper.img_channels > 1:
         env = Environment_gym_rgb(args.env)

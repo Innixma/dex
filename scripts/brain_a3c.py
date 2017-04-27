@@ -15,8 +15,12 @@ from memory import Memory
 import numpy as np
 import data_aug
 
+import time
+
 print('TensorFlow version' , tf.__version__)
 print(K.learning_phase())
+
+import threading
 # TODO: Avoid hardcoding memory size
 #MEMORY_SIZE = 8
 #MEMORY_SIZE = 32000
@@ -24,8 +28,9 @@ print(K.learning_phase())
 # https://jaromiru.com/2017/03/26/lets-make-an-a3c-implementation/
 class Brain:
     train_queue = [ [], [], [], [], [] ]    # s, a, r, s', s' terminal mask
-
+    lock_queue = threading.Lock()
     def __init__(self, agent, modelFunc=None):
+        self.c = 0
         self.agent = agent
         self.state_dim = self.agent.state_dim
         self.action_dim = self.agent.action_dim
@@ -68,7 +73,7 @@ class Brain:
             #print(c)
             #print(np.sum(layer.get_weights()))
         
-        #self.default_graph.finalize()    # avoid modifications
+        self.default_graph.finalize()    # avoid modifications
 
     def create_model(self, modelFunc=None):
         print(self.state_dim)
@@ -105,43 +110,74 @@ class Brain:
         minimize = optimizer.minimize(loss_total)
 
         return s_t, a_t, r_t, minimize, loss_total, log_prob, loss_policy, loss_value, entropy
-
+        
+        
     def optimize_batch_full(self, reset=1, suppress=1): # Use for online learning
         if self.brain_memory.isFull != True:
             return
-            
+        
         idx = np.arange(0, self.brain_memory.max_size)
         
-        self.optimize_batch_index(idx, 1, suppress)
+        self.optimize_batch_index(idx, 1, reset, suppress)
         
-        if reset == 1:
-            self.brain_memory.isFull = False
-            self.brain_memory.size = 0
-    
+
+    def optimize_batch_full_multithread(self, reset=1, suppress=1): # Use for online learning
+        if self.brain_memory.isFull != True:
+            time.sleep(0)	# yield
+            return
+        
+           
+        idx = np.arange(0, self.brain_memory.max_size)
+        
+        self.optimize_batch_index_multithread(idx, 1, reset, suppress)
+        
+
     def optimize_batch(self, batch_count=1, suppress=0): # Use for offline learning
         if self.brain_memory.isFull != True:
+            time.sleep(0)	# yield
             return
 
         idx = self.brain_memory.sample(self.batch * batch_count)
         self.optimize_batch_index(idx, batch_count, suppress)
         
-    def optimize_batch_index(self, idx, batch_count=1, suppress=0):
-        
+    def optimize_batch_index(self, idx, batch_count=1, reset=0, suppress=0):
         s  = self.brain_memory.s [idx, :]
         a  = self.brain_memory.a [idx, :]
         r  = np.copy(self.brain_memory.r [idx, :])
         s_ = self.brain_memory.s_[idx, :]
         t  = self.brain_memory.t [idx, :]
-    
+        
+        if reset == 1:
+            self.brain_memory.isFull = False
+            self.brain_memory.size = 0
+            
         self.optimize_batch_child(s, a, r, s_, t, batch_count, suppress)
 
+    def optimize_batch_index_multithread(self, idx, batch_count=1, reset=1, suppress=0):
+        with self.lock_queue:
+            if self.brain_memory.isFull != True:
+                return
+             
+            s  = np.copy(self.brain_memory.s [idx, :])
+            a  = np.copy(self.brain_memory.a [idx, :])
+            r  = np.copy(self.brain_memory.r [idx, :])
+            s_ = np.copy(self.brain_memory.s_[idx, :])
+            t  = np.copy(self.brain_memory.t [idx, :])
+        
+            if reset == 1:
+                self.brain_memory.isFull = False
+                self.brain_memory.size = 0
+                
+        self.c += 1
+        self.optimize_batch_child(s, a, r, s_, t, batch_count, suppress)    
+        
     def optimize_batch_child(self, s, a, r, s_, t, batch_count=1, suppress=0):
         s_t, a_t, r_t, minimize, loss_total, log_prob, loss_policy, loss_value, entropy = self.graph
         for i in range(batch_count):
             start = i * self.batch
             end = (i+1) * self.batch
             r[start:end] = r[start:end] + self.gamma_n * self.predict_v(s_[start:end]) * t[start:end] # set v to 0 where s_ is terminal state
-            _, loss_current, log_current, loss_p_current, loss_v_current, entropy_current = self.session.run([minimize, loss_total, log_prob, loss_policy, loss_value, entropy], feed_dict={s_t: s[start:end], a_t: a[start:end], r_t: r[start:end], K.learning_phase(): 0})    
+            _, loss_current, log_current, loss_p_current, loss_v_current, entropy_current = self.session.run([minimize, loss_total, log_prob, loss_policy, loss_value, entropy], feed_dict={s_t: s[start:end], a_t: a[start:end], r_t: r[start:end]})    
             self.metrics.a3c.update(loss_current, log_current, loss_p_current, loss_v_current, entropy_current)
             
             if i % 10 == 0 and suppress == 0:
@@ -170,8 +206,13 @@ class Brain:
         a_cat = np.zeros(self.action_dim)
         a_cat[frame[1]] = 1
 
-        self.brain_memory.add_single(frame[0], a_cat, frame[2], frame[3], frame[4])      
-       
+        with self.lock_queue:
+            if self.brain_memory.isFull == True:
+                time.sleep(0)
+                return
+            self.brain_memory.add_single(frame[0], a_cat, frame[2], frame[3], frame[4])      
+        #self.train_queue.append([frame[0], a_cat, frame[2], frame[3], frame[4]])
+        
     def predict(self, s):
         with self.default_graph.as_default():
             p, v = self.model.predict(s)

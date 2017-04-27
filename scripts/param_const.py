@@ -18,7 +18,7 @@ ddqn_hyperspecific = Hyper_ddqn(
 gym_a3c_hyperspecific = Hyper_a3c(
                                        loss_v=0.5,
                                        loss_entropy=0.01,
-                                       brain_memory_size=8
+                                       brain_memory_size=16
                                        )
 
 gym_cart_env = Gym_param()
@@ -148,12 +148,12 @@ gym_pong_a3c = Args(
 
 gym_cart_a3c_hyperparams = Hyperparam(
                              gamma=0.99,
-                             batch=8,
-                             explore=30000,
+                             batch=16,
+                             explore=3000,
                              epsilon_init=0.4,
-                             epsilon_final=0.15,
-                             memory_size=8,
-                             save_rate=10000,
+                             epsilon_final=0.1,
+                             memory_size=2,
+                             save_rate=100000,
                              img_channels=1,
                              learning_rate=5e-3,
                              extra=gym_a3c_hyperspecific,
