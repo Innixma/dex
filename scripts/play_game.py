@@ -30,9 +30,10 @@ def run(args, agent):
 def playGameGym_a3c(args, agent_func):
     if args.hyper.img_channels > 1:
         env = Environment_gym_rgb(args.env)
+        state_dim  = env.env.state_dim + [args.hyper.img_channels]
     else:
         env = Environment_gym(args.env)
-    state_dim  = env.env.state_dim
+        state_dim  = env.env.state_dim
     action_dim = env.env.action_dim
 
     agent = agent_func(args, state_dim, action_dim, getattr(models,args.model))
@@ -60,9 +61,10 @@ def playGameGym_a3c(args, agent_func):
 def playGameGym_ddqn(args, agent_func):
     if args.hyper.img_channels > 1:
         env = Environment_gym_rgb(args.env)
+        state_dim  = env.env.state_dim + [args.hyper.img_channels]
     else:
         env = Environment_gym(args.env)
-    state_dim  = env.env.state_dim
+        state_dim  = env.env.state_dim
     action_dim = env.env.action_dim
 
     agent = agent_func(args, state_dim, action_dim, getattr(models,args.model))
