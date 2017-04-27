@@ -29,8 +29,8 @@ def run(args, agent):
 
 def playGameGym_a3c(args, agent_func):
     env = Environment_gym(args.env)
-    state_dim  = env.env.state_dim()
-    action_dim = env.env.env.action_space.n
+    state_dim  = env.env.state_dim
+    action_dim = env.env.action_dim
 
     agent = agent_func(args, state_dim, action_dim, getattr(models,args.model))
     
@@ -56,8 +56,8 @@ def playGameGym_a3c(args, agent_func):
     
 def playGameGym_ddqn(args, agent_func):
     env = Environment_gym(args.env)
-    state_dim  = env.env.state_dim()
-    action_dim = env.env.env.action_space.n
+    state_dim  = env.env.state_dim
+    action_dim = env.env.action_dim
 
     agent = agent_func(args, state_dim, action_dim, getattr(models,args.model))
     

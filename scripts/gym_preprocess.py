@@ -49,6 +49,9 @@ class Gym_base_wrapper(object):
         self.problem = problem
         self.env = gym.make(problem)
     
+        self.state_dim = list(self.reset().shape)
+        self.action_dim = self.env.action_space.n
+        
     def step(self, a):
         s_, r, t, info = self.env.step(a)
         return s_, r, t, info
@@ -62,9 +65,6 @@ class Gym_base_wrapper(object):
         
     def render(self):
         self.env.render()
-        
-    def state_dim(self):
-        return list(self.reset().shape)
 
 class Gym_rgb_wrapper(Gym_base_wrapper):
     def __init__(self, problem):
@@ -86,6 +86,3 @@ class Gym_rgb_wrapper(Gym_base_wrapper):
         s = self.env.reset()
         s = self.preprocess(s)
         return s
-        
-    def render(self):
-        self.env.render()
