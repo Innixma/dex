@@ -10,40 +10,30 @@ import skimage.transform as transf
 class Environment_gym:
     def __init__(self, env_info):
         self.problem = env_info.problem
-        #import gym # Lazy import to avoid dependency if not used
-        import gym_preprocess
-        
-        #self.env = gym.make(problem)
-        self.env = getattr(gym_preprocess,env_info.wrapper)(self.problem)
-        #self.env = gym.make(self.problem)
+        self.env = env_info.generate_env()
         
     def run(self, agent):
         s = self.env.reset()
-        #print(s.shape)
         R = 0 
         
         while True:         
             #self.env.render()
-            
             a = agent.act(s)
             s_, r, t, info = self.env.step(a)
-            
             agent.observe(s, a, r, s_, t)
             if agent.mode == 'train':
                 agent.replay(debug=False)
-                
                 if agent.args.algorithm == 'a3c':
                     if agent.brain.brain_memory.isFull:
                         agent.brain.optimize_batch_full()
-
             s = s_
             R += r
             if t:
                 return R, 1
 
 class Environment_realtime_a3c:
-    def __init__(self, emulator, img_channels=1):
-        self.env = emulator
+    def __init__(self, env_info):
+        self.env = env_info.generate_env()
         self.timelapse = 1
         self.has_base_frame = False
         self.base_frame = None
@@ -55,7 +45,7 @@ class Environment_realtime_a3c:
             self.catchup_frames += 1
         
     def init_run(self, img_channels):
-        x, r, t = self.env.gameState()
+        x, r, t = self.env.step()
     
         stacking = [x for i in range(img_channels)]
         s = np.stack(stacking, axis=2)
@@ -82,14 +72,15 @@ class Environment_realtime_a3c:
             self.base_frame = s.reshape(new_shape)
         
         v_episode = []
-        while self.env.alive:
+        t = 0
+        while t == 0:
             self.framerate_check(start_time, frame)
             #a = agent.act(s)
             a, v_cur = agent.act_v(s)
             
             
             
-            x_, r, t = self.env.gameState(a)
+            x_, r, t = self.env.step(a)
             
             s_ = np.append(x_, s[:, :, :agent.h.img_channels-1], axis=2)
 
@@ -106,16 +97,15 @@ class Environment_realtime_a3c:
             if frame > 80000: # Likely stuck, just go to new level
                 print('Stuck! Moving on...')
                 frame_saved = 0
-                self.env.alive = False
-                print('Deleting invalid memory...')
+                self.env.env.end_game()
+                t = 1
                 agent.brain.brain_memory.isFull = False # Reset brain memory
                 agent.brain.brain_memory.size = 0
         
-        end_time = time.time()
-        self.env.end_game()
+        survival_time = time.time() - start_time
         agent.run_count += 1
         
-        agent.metrics.update(end_time-start_time)
+        agent.metrics.update(survival_time)
         
         v = agent.brain.predict_v(self.base_frame)[0][0]
         print('V:', str(v), ', catchup:', str(self.catchup_frames))
@@ -124,8 +114,8 @@ class Environment_realtime_a3c:
         return frame, useRate, frame_saved # Metrics
 
 class Environment_realtime:
-    def __init__(self, emulator):
-        self.env = emulator
+    def __init__(self, env_info):
+        self.env = env_info.generate_env()
         self.timelapse = 1
         
     def framerate_check(self, start_time, frame):
@@ -133,7 +123,7 @@ class Environment_realtime:
             time.sleep(self.timelapse - (time.time() % self.timelapse))
         
     def init_run(self, img_channels):
-        x, r, t = self.env.gameState()
+        x, r, t = self.env.step()
     
         stacking = [x for i in range(img_channels)]
         s = np.stack(stacking, axis=2)
@@ -153,10 +143,11 @@ class Environment_realtime:
         start_time = time.time()
         s = self.init_run(agent.h.img_channels)
         
-        while self.env.alive:
+        t = 0
+        while t == 0:
             self.framerate_check(start_time, frame)
             a = agent.act(s)      
-            x_, r, t = self.env.gameState(a)
+            x_, r, t = self.env.step(a)
             
             s_ = np.append(x_, s[:, :, :agent.h.img_channels-1], axis=2)
             
@@ -179,16 +170,15 @@ class Environment_realtime:
             if frame > 80000: # Likely stuck, just go to new level
                 print('Stuck! Moving on...')
                 frame_saved = 0
-                self.env.alive = False
-                print('Deleting invalid memory...')
+                self.env.env.end_game()
+                t = 1
                 agent.brain.brain_memory.isFull = False # Reset brain memory
                 agent.brain.brain_memory.size = 0
         
-        end_time = time.time()
-        self.env.end_game()
+        survival_time = time.time() - start_time
         agent.run_count += 1
         
-        agent.metrics.update(end_time-start_time)
+        agent.metrics.update(survival_time)
         
         if agent.memory.total_saved > agent.h.observe:
             if agent.mode == 'observe':

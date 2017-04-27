@@ -3,12 +3,29 @@
 
 from param_utils import Args, Hyperparam, Screenparam, Hyper_a3c, Gym_param, Real_param
 
+hex_screen = Screenparam(
+                         app='Open Hexagon 1.92 - by vittorio romeo',
+                         size=[140,140],
+                         zoom=[12,2]
+                         )
+hex_screen_old = Screenparam(
+                         app='Open Hexagon 1.92 - by vittorio romeo',
+                         size=[140,140],
+                         zoom=[28,18]
+                         )
+
 gym_cart_env = Gym_param()
 gym_pong_env = Gym_param(
                          problem='Pong-v0',
                          wrapper='Gym_rgb_wrapper'
                          )
-hex_env = Real_param()
+hex_env = Real_param(
+                     problem='Hexagon',
+                     wrapper='Real_base_wrapper',
+                     module_name='OpenHexagonEmulator',
+                     class_name='HexagonEmulator',
+                     game_args=hex_screen
+                     )
 
 hex_hyperparams = Hyperparam(
                  framerate=40,
@@ -23,24 +40,12 @@ hex_hyperparams = Hyperparam(
                  neg_regret_frames=1,
                  img_channels=2,
                  update_rate=1000,
+                 model='model_mid_cnn'
                  )
-
-hex_screen = Screenparam(
-                         app='Open Hexagon 1.92 - by vittorio romeo',
-                         size=[140,140],
-                         zoom=[12,2]
-                         )
-
-hex_screen_old = Screenparam(
-                         app='Open Hexagon 1.92 - by vittorio romeo',
-                         size=[140,140],
-                         zoom=[28,18]
-                         )
 
 hex_incongruence = Args(
                         algorithm='ddqn',
                         mode='train',
-                        game='default',
                         env=hex_env,
                         data='default',
                         screen=hex_screen,
@@ -52,7 +57,6 @@ hex_incongruence = Args(
 hex_base = Args(
                         algorithm='ddqn',
                         mode='train',
-                        game='default',
                         env=hex_env,
                         data='default',
                         screen=hex_screen,
@@ -77,13 +81,12 @@ gym_cart_ddqn_hyperparams = Hyperparam(
                              img_channels=1,
                              update_rate=1000,
                              learning_rate=5e-3,
-                             model='default_model'
+                             model='model_mid_default'
                            )
 
 gym_cart_ddqn = Args(
                         algorithm='ddqn',
                         mode='train',
-                        game='tmp',
                         env=gym_cart_env,
                         data='default',
                         screen='default',
@@ -106,13 +109,12 @@ gym_pong_ddqn_hyperparams = Hyperparam(
                              img_channels=1,
                              update_rate=1000,
                              learning_rate=5e-3,
-                             model='buildmodel_CNN_v3'
+                             model='model_mid_cnn'
                            )
 
 gym_pong_ddqn = Args(
                         algorithm='ddqn',
                         mode='train',
-                        game='Pong-v0',
                         env=gym_pong_env,
                         data='default',
                         screen='default',
@@ -142,13 +144,12 @@ gym_cart_a3c_hyperparams = Hyperparam(
                              update_rate=1000,
                              learning_rate=5e-3,
                              extra=gym_cart_a3c_hyperspecific,
-                             model='default_model_a3c'
+                             model='model_mid_default'
                            )
 
 gym_cart_a3c = Args(
                         algorithm='a3c',
                         mode='train',
-                        game='CartPole-v0',
                         env=gym_cart_env,
                         data='default',
                         screen='default',
@@ -177,13 +178,13 @@ hex_base_a3c_hyperparams = Hyperparam(
                              img_channels=2,
                              update_rate=1000,
                              learning_rate=2.5e-4, # 2.5e-4
-                             extra=hex_base_a3c_hyperspecific
+                             extra=hex_base_a3c_hyperspecific,
+                             model='model_mid_cnn'
                            )
 
 hex_base_a3c = Args(
                         algorithm='a3c',
                         mode='train',
-                        game='default',
                         env=hex_env,
                         data='default',
                         screen=hex_screen,
@@ -212,13 +213,13 @@ hex_incongruence_a3c_hyperparams = Hyperparam(
                              img_channels=2,
                              update_rate=1000,
                              learning_rate=2.5e-4, # 2.5e-4
-                             extra=hex_incongruence_a3c_hyperspecific
+                             extra=hex_incongruence_a3c_hyperspecific,
+                             model='model_mid_cnn'
                            )
 
 hex_incongruence_a3c = Args(
                         algorithm='a3c',
                         mode='train',
-                        game='default',
                         env=hex_env,
                         data='default',
                         screen=hex_screen,
@@ -230,7 +231,6 @@ hex_incongruence_a3c = Args(
 hex_base_a3c_load = Args(
                         algorithm='a3c',
                         mode='train_old',
-                        game='default',
                         env=hex_env,
                         data='default',
                         screen=hex_screen,
@@ -243,7 +243,6 @@ hex_base_a3c_load = Args(
 hex_incongruence_a3c_load = Args(
                         algorithm='a3c',
                         mode='train_old',
-                        game='default',
                         env=hex_env,
                         data='default',
                         screen=hex_screen,
@@ -256,7 +255,6 @@ hex_incongruence_a3c_load = Args(
 hex_pi_acer_load = Args(
                         algorithm='a3c',
                         mode='train_old',
-                        game='default',
                         env=hex_env,
                         data='default',
                         screen=hex_screen,
@@ -286,7 +284,6 @@ hex_gather_hyperparams = Hyperparam(
 hex_base_gather = Args(
                         algorithm='random',
                         mode='train',
-                        game='default',
                         env='memory', # Fix this later
                         data='default',
                         screen=hex_screen,

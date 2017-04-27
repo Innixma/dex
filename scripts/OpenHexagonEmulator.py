@@ -13,10 +13,11 @@ import skimage.transform as transf
 
 class HexagonEmulator:
 
-    def __init__(self, application, window_size=[140,140], capture_zoom=[0,0], screen_id=-1, screen_number=0, rewards=[1,-1], mode='standard'): # window_size = x,y
+    #def __init__(self, application, window_size=[140,140], capture_zoom=[0,0], screen_id=-1, screen_number=0, rewards=[1,-1], mode='standard'): # window_size = x,y
+    def __init__(self, screen_info, screen_id=-1, screen_number=0, rewards=[1,-1], mode='standard'): # window_size = x,y
         self.keys = np.array(['none', 'left_arrow', 'right_arrow'])
         self.action_dim = 3
-        self.application = application
+        self.application = screen_info.app
         self.screen_id = screen_id
         self.screen_number = screen_number
         self.shell = win32com.client.Dispatch("WScript.Shell")
@@ -25,11 +26,11 @@ class HexagonEmulator:
         else:
             self.game_window = self.screen_id
         
-        self.window_size = window_size
-        self.window_offset = [(window_size[0]+10)*self.screen_number,0] # [0, 0]
+        self.window_size = screen_info.size
+        self.window_offset = [(self.window_size[0]+10)*self.screen_number,0] # [0, 0]
         self.capture_size = [0,0]
         self.capture_offset = [0,0]
-        self.capture_zoom = capture_zoom
+        self.capture_zoom = screen_info.zoom
         self.reward_alive = rewards[0]
         self.reward_terminal = rewards[1]
         self.mode = mode
@@ -51,9 +52,9 @@ class HexagonEmulator:
         self.curKey = 'enter'
         self.prevKey = 'enter'
         
-        self.final_size = np.copy(self.capture_size)
-        #self.final_size[0] = int(self.final_size[0]/2)
-        #self.final_size[1] = int(self.final_size[1]/2)
+        self.state_dim = np.copy(self.capture_size)
+        #self.state_dim[0] = int(self.state_dim[0]/2)
+        #self.state_dim[1] = int(self.state_dim[1]/2)
     #==============================================================================
     
     def start_game(self):
@@ -231,8 +232,10 @@ class HexagonEmulator:
         return(terminal)
     
     # Game state function
-    def gameState(self, inKey=0):
-        
+    def step(self, inKey=0):
+        if self.alive == False:
+            print('invalid step call')
+            return False
 
         inKey = self.keys[inKey]
         #self.get_focus_light()
@@ -250,6 +253,7 @@ class HexagonEmulator:
             self.release(inKey)
             reward = self.reward_terminal
             self.alive = False
+            self.end_game()
         else:
             reward = self.reward_alive
             

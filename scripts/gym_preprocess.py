@@ -6,13 +6,48 @@ import numpy as np
 import skimage.transform as transf
 from skimage import color
 
+import importlib
+
 import gym
+
+class Real_base_wrapper(object):
+    def __init__(self, problem, module_name, class_name, screen_info):
+        self.problem = problem
+        self.module_name = module_name
+        self.class_name = class_name
+        self.module = importlib.import_module(module_name)
+        self.class_func = getattr(self.module, self.class_name)
+        self.env = self.class_func(screen_info)
+    
+    def start_game(self):
+        self.env.start_game()    
+        
+    def step(self, a=0):
+        s_, r, t = self.env.step(a)
+        return s_, r, t
+        
+    def preprocess(self, s):
+        return s
+
+    def reset(self):
+        s = self.env.start_game()
+        return s
+        
+    def render(self):
+        pass
+        
+    def state_dim(self):
+        return self.env.state_dim      
+        
+    def action_dim(self):
+        return self.env.action_dim
+        pass
+        
 
 class Gym_base_wrapper(object):
     def __init__(self, problem):
         self.problem = problem
         self.env = gym.make(problem)
-        pass
     
     def step(self, a):
         s_, r, t, info = self.env.step(a)

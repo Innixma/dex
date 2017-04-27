@@ -1,8 +1,7 @@
 # By Nick Erickson
 # DDQN Brain
 
-from models import default_model
-
+import models
 
 # Class concept from Jaromir Janisch, 2016
 # https://jaromiru.com/2016/09/27/lets-make-a-dqn-theory/
@@ -19,10 +18,10 @@ class Brain:
         self.updateTargetModel()
         
     def create_model(self, modelFunc=None):
-        if modelFunc:
-            model = modelFunc(self.state_dim, self.action_dim)
-        else:
-            model = default_model(self.state_dim, self.action_dim)
+        if not modelFunc:
+            modelFunc = models.model_mid_default
+        model = models.model_start(self.state_dim, self.action_dim, models.model_top_ddqn, modelFunc)
+        
         print("Finished building the model")
         print(model.summary())
         return model

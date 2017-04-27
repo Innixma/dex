@@ -9,7 +9,7 @@ from keras.layers.core import Dense
 from keras.optimizers import SGD , Adam , RMSprop
 
 import tensorflow as tf
-from models import default_model
+import models
 
 from memory import Memory
 import numpy as np
@@ -73,16 +73,10 @@ class Brain:
     def create_model(self, modelFunc=None):
         print(self.state_dim)
         print(self.action_dim)
-        if modelFunc:
-            model = modelFunc(self.state_dim, self.action_dim, self.visualization)
-        else:
-            l_input = Input( batch_shape=(None, self.state_dim[0]) )
-            l_dense = Dense(16, activation='relu')(l_input)
-    
-            out_actions = Dense(self.action_dim, activation='softmax')(l_dense)
-            out_value   = Dense(1, activation='linear')(l_dense)
-    
-            model = Model(inputs=[l_input], outputs=[out_actions, out_value])
+        if not modelFunc:
+            modelFunc = models.model_mid_default
+        model = models.model_start(self.state_dim, self.action_dim, models.model_top_a3c, modelFunc, self.visualization)
+        
         model._make_predict_function() # have to initialize before threading
         print("Finished building the model")
         print(model.summary())

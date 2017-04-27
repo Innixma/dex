@@ -30,7 +30,7 @@ def main(args):
 if __name__ == "__main__":
     #args = hex_base
     #args = hex_base_gather
-    #args = gym_cart_ddqn
-    args = gym_pong_ddqn
+    args = gym_cart_ddqn
+    #args = gym_pong_ddqn
     main(args) 
 

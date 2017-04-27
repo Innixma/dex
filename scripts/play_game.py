@@ -59,22 +59,18 @@ def playGameGym(args, agent_func):
                     #agent.metrics.save_metrics_training(agent.results_location)
 
 def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
-    
-    emulator = OpenHexagonEmulator.HexagonEmulator(
-                                                   args.screen.app,
-                                                   args.screen.size,
-                                                   args.screen.zoom,
-                                                   screen_id,
-                                                   screen_number
-                                                  )
-    img_rows , img_cols = emulator.final_size[0], emulator.final_size[1]
+
     img_channels = args.hyper.img_channels
-    state_dim = [img_rows, img_cols, img_channels]
-    action_dim = emulator.action_dim
+    env = Environment_realtime_a3c(args.env)
+    action_dim = env.env.action_dim()
+    state_dim = list(env.env.state_dim()) + [img_channels]
+    #env = Environment_realtime_a3c(emulator, img_channels)
     
-    agent = agent_func(args, state_dim, action_dim, models.CNN_a3c)
+    print(state_dim)
+    print(action_dim)
     
-    env = Environment_realtime_a3c(emulator, img_channels)
+    agent = agent_func(args, state_dim, action_dim, getattr(models,args.hyper.model))
+    
     
     hasSavedMemory = False
     
@@ -120,19 +116,12 @@ def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
             
 def playGameReal(args, agent_func, screen_number=0, screen_id=-1):
     
-    emulator = OpenHexagonEmulator.HexagonEmulator(
-                                                   args.screen.app,
-                                                   args.screen.size,
-                                                   args.screen.zoom,
-                                                   screen_id,
-                                                   screen_number
-                                                  )
-    img_rows , img_cols = emulator.capture_size[0], emulator.capture_size[1]
     img_channels = args.hyper.img_channels
-    state_dim = [img_rows, img_cols, img_channels]
-    action_dim = emulator.action_dim
+    env = Environment_realtime(args.env)
+    action_dim = env.env.action_dim()
+    state_dim = list(env.env.state_dim()) + [img_channels]
     
-    agent = agent_func(args, state_dim, action_dim, models.buildmodel_CNN_v3)
+    agent = agent_func(args, state_dim, action_dim, getattr(models,args.hyper.model))
     
     if args.data != 'default':
         # Load Memory
@@ -154,8 +143,7 @@ def playGameReal(args, agent_func, screen_number=0, screen_id=-1):
         agent.save_weights()
         
     time.sleep(1)
-    
-    env = Environment_realtime(emulator)
+
     while (True):
         frame, useRate, frame_saved = env.run(agent)
         

@@ -18,7 +18,7 @@ import agent_a3c
 
 #%%
 
-def main(args):    
+def main(args):
     play_game.run(args, agent_a3c.Agent)
     # TODO: Use finally clause to save model weights
 

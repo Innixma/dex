@@ -72,14 +72,29 @@ class Gym_param:
         self.problem = problem
         self.wrapper = wrapper
 
+    def generate_env(self):
+        import gym_preprocess
+        return getattr(gym_preprocess,self.wrapper)(self.problem)
+       
+        
 class Real_param:
     def __init__(self,
                  problem='Hexagon',
-                 wrapper=None
+                 wrapper=None,
+                 module_name=None,
+                 class_name=None,
+                 game_args=None
                  ):
         self.type = 'real'
         self.problem = problem
         self.wrapper = wrapper
+        self.module_name = module_name
+        self.class_name = class_name
+        self.game_args = game_args
+        
+    def generate_env(self):
+        import gym_preprocess
+        return getattr(gym_preprocess,self.wrapper)(self.problem, self.module_name, self.class_name, self.game_args)
                 
         
 class Screenparam:
@@ -96,7 +111,6 @@ class Args:
     def __init__(self,
                  algorithm,
                  mode='train',
-                 game='default',
                  env='real',
                  data='default',
                  screen='default',
@@ -107,7 +121,6 @@ class Args:
                  ):
         self.algorithm = algorithm
         self.mode = mode
-        self.game = game
         self.env = env
         self.data = data
         self.screen = screen
