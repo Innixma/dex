@@ -124,7 +124,7 @@ gym_pong_ddqn = Args(
 
 gym_pong_a3c_hyperparams = Hyperparam(
                              gamma=0.99,
-                             batch=8,
+                             batch=16,
                              explore=30000,
                              epsilon_init=0.4,
                              epsilon_final=0.01,

@@ -178,7 +178,8 @@ class Brain:
             end = (i+1) * self.batch
             r[start:end] = r[start:end] + self.gamma_n * self.predict_v(s_[start:end]) * t[start:end] # set v to 0 where s_ is terminal state
             _, loss_current, log_current, loss_p_current, loss_v_current, entropy_current = self.session.run([minimize, loss_total, log_prob, loss_policy, loss_value, entropy], feed_dict={s_t: s[start:end], a_t: a[start:end], r_t: r[start:end]})    
-            self.metrics.a3c.update(loss_current, log_current, loss_p_current, loss_v_current, entropy_current)
+            
+            #self.metrics.a3c.update(loss_current, log_current, loss_p_current, loss_v_current, entropy_current)
             
             if i % 10 == 0 and suppress == 0:
                 print('\r', 'Learning', '(', i, '/', batch_count, ')', end="")

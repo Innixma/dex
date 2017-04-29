@@ -68,7 +68,11 @@ def playGameGym_a3c_multithread_init(args, agent_func):
     for i in range(MULTITHREAD_BRAIN):
         threads_brain[i].start()
         
-    
+    start = time.time()
+    while True:
+        time.sleep(20)
+        print(brain.brain_memory.total_saved, 'saved')
+        print(brain.brain_memory.total_saved / (time.time() - start), 'saved per second')
     """    
     time.sleep(20)
     
@@ -116,8 +120,8 @@ class Multithread_agent(threading.Thread):
             if self.agent.idx == 0:
                 if self.agent.h.save_rate < self.agent.save_iterator:
                     self.agent.save_iterator -= self.agent.h.save_rate
-                    save_weights(self.agent)
-                    self.agent.metrics.a3c.graph_all(self.agent.results_location)
+                    save_weights(self.agent, self.agent.brain.brain_memory.total_saved)
+                    #self.agent.metrics.a3c.graph_all(self.agent.results_location)
                     
             #playGameGym_a3c_multithread(self.agent, self.env)
         
@@ -153,8 +157,8 @@ def playGameGym_a3c_multithread(agent, env):
         if agent.idx == 0:
             if agent.h.save_rate < agent.save_iterator:
                 agent.save_iterator -= agent.h.save_rate
-                save_weights(agent)
-                agent.metrics.a3c.graph_all(agent.results_location)
+                save_weights(agent, agent.run_count)
+                #agent.metrics.a3c.graph_all(agent.results_location)
                 #if agent.mode == 'train': # Fix this later, not correct
                         #agent.metrics.save_metrics(agent.results_location)
                         #agent.metrics.save_metrics_training(agent.results_location)
@@ -191,7 +195,7 @@ def playGameGym_a3c(args, agent_func):
         
         if agent.h.save_rate < agent.save_iterator:
             agent.save_iterator -= agent.h.save_rate
-            save_weights(agent)
+            save_weights(agent, agent.run_count)
             agent.metrics.a3c.graph_all(agent.results_location)
             #if agent.mode == 'train': # Fix this later, not correct
                     #agent.metrics.save_metrics(agent.results_location)
