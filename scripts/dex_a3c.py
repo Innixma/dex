@@ -26,8 +26,8 @@ if __name__ == "__main__":
     #args = hex_base_a3c_load
     
     #args = hex_base_a3c
-    args = gym_cart_a3c
-    #args = gym_pong_a3c
+    #args = gym_cart_a3c
+    args = gym_pong_a3c
     #args = hex_incongruence_a3c
     #args = hex_incongruence_a3c_load
     #args = hex_pi_acer_load

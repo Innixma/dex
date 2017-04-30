@@ -56,14 +56,17 @@ def playGameGym_a3c_multithread_init(args, agent_func):
     threads = []
     for i in range(MULTITHREAD):
         threads.append(Multithread_agent(agents[i], envs[i]))
-    
+        threads[-1].daemon = True
+
     threads_brain = []
 
     for i in range(MULTITHREAD_BRAIN):
         threads_brain.append(Multithread_brain(brain))
+        threads_brain[-1].daemon = True
         
     for i in range(MULTITHREAD):
         threads[i].start()
+        
         
     for i in range(MULTITHREAD_BRAIN):
         threads_brain[i].start()
