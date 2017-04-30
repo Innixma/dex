@@ -90,7 +90,7 @@ class Gym_rgb_wrapper(Gym_base_wrapper):
         
 class Gym_pong_wrapper(Gym_base_wrapper):
     def __init__(self, problem):
-        super(Gym_rgb_wrapper, self).__init__(problem)
+        super(Gym_pong_wrapper, self).__init__(problem)
         self.state_dim = list(self.reset().shape[:-1])
         pass
     
