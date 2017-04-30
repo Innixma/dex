@@ -103,7 +103,7 @@ class Gym_pong_wrapper(Gym_base_wrapper):
         s = color.rgb2gray(s).astype('float16')   
         s = s.reshape(list(s.shape) + [1])
         s = transf.downscale_local_mean(s, (2,2,1)) # Downsample
-        s = s[17:-7,:,:]
+        s = s[17:-8,:,:]
         return s
 
     def reset(self):
