@@ -49,6 +49,14 @@ def model_mid_cnn(inputs):
     dense1 = Dense(512, activation='relu')(flatten)
     
     return dense1
+    
+def model_mid_atari(inputs):
+    conv1 = Conv2D(16, (8, 8), strides=(4, 4), activation='relu', padding='same')(inputs)
+    conv2 = Conv2D(32, (4, 4), strides=(2, 2), activation='relu', padding='same')(conv1)
+    flatten = Flatten()(conv2)
+    dense1 = Dense(256, activation='relu')(flatten)
+    
+    return dense1
 
 def model_start(state_dim, action_dim, model_top, model_mid, visualization=False):
     inputs = Input(shape=state_dim, dtype='float32', name='input')

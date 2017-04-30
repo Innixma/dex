@@ -37,10 +37,10 @@ def init_agents(args, agent_func):
     brain = None
     for i in range(MULTITHREAD):
         if args.hyper.img_channels > 1:
-            env = Environment_gym_rgb(args.env)
+            env = Environment_gym_rgb(args.env, i)
             state_dim  = env.env.state_dim + [args.hyper.img_channels]
         else:
-            env = Environment_gym(args.env)
+            env = Environment_gym(args.env, i)
             state_dim  = env.env.state_dim
         action_dim = env.env.action_dim
         agent = agent_func(args, state_dim, action_dim, getattr(models,args.model), brain=brain, idx=i)

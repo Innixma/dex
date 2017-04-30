@@ -24,7 +24,7 @@ gym_a3c_hyperspecific = Hyper_a3c(
 gym_cart_env = Gym_param()
 gym_pong_env = Gym_param(
                          problem='Pong-v0',
-                         wrapper='Gym_rgb_wrapper'
+                         wrapper='Gym_pong_wrapper'
                          )
 hex_env = Real_param(
                      problem='Hexagon',
@@ -119,7 +119,7 @@ gym_pong_ddqn = Args(
                         hyper=gym_pong_ddqn_hyperparams,
                         directory='default',
                         memory_delay=4,
-                        model='model_mid_cnn'
+                        model='model_mid_atari'
                         )
 
 gym_pong_a3c_hyperparams = Hyperparam(
@@ -143,7 +143,7 @@ gym_pong_a3c = Args(
                         screen='default',
                         hyper=gym_pong_a3c_hyperparams,
                         directory='default',
-                        model='model_mid_cnn'
+                        model='model_mid_atari'
                         )
 
 gym_cart_a3c_hyperparams = Hyperparam(

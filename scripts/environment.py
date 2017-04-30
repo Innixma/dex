@@ -5,7 +5,8 @@ import numpy as np
 import time
 
 class Environment_gym:
-    def __init__(self, env_info):
+    def __init__(self, env_info, idx=0):
+        self.idx = idx
         self.problem = env_info.problem
         self.env = env_info.generate_env()
         
@@ -29,7 +30,8 @@ class Environment_gym:
                 return R, 1
                 
 class Environment_gym_rgb:
-    def __init__(self, env_info):
+    def __init__(self, env_info, idx=0):
+        self.idx = idx
         self.problem = env_info.problem
         self.env = env_info.generate_env()
 
@@ -46,8 +48,9 @@ class Environment_gym_rgb:
         s = self.init_run(agent.h.img_channels)
         R = 0 
         
-        while True:         
-            #self.env.render()
+        while True:
+            if self.idx == 0:
+                self.env.render()
             a = agent.act(s)
             x_, r, t, info = self.env.step(a)
             s_ = np.append(x_, s[:, :, :agent.h.img_channels-1], axis=2)
@@ -64,7 +67,8 @@ class Environment_gym_rgb:
                 return R, 1
 
 class Environment_realtime_a3c:
-    def __init__(self, env_info):
+    def __init__(self, env_info, idx=0):
+        self.idx = idx
         self.env = env_info.generate_env()
         self.timelapse = 1
         self.has_base_frame = False
@@ -146,7 +150,8 @@ class Environment_realtime_a3c:
         return frame, useRate, frame_saved # Metrics
 
 class Environment_realtime:
-    def __init__(self, env_info):
+    def __init__(self, env_info, idx=0):
+        self.idx = idx
         self.env = env_info.generate_env()
         self.timelapse = 1
         
