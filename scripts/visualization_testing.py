@@ -20,7 +20,7 @@ memory_location = '../data/' + args.directory + '/'
 extra = '_frame_2577'
 
 hex_base_a3c_load.weight_override = 'model_frame_2577'
-agent = Agent(hex_base_a3c_load, state_dim, action_dim, modelFunc=models.CNN_a3c, visualization=True)
+agent = Agent(hex_base_a3c_load, state_dim, action_dim, modelFunc=models.model_mid_cnn, visualization=True)
 s, a, r, s_, t = loadMemory_direct(memory_location, extra)
 
 #prevVal = 0

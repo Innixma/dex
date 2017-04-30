@@ -84,11 +84,12 @@ def combine_images(img1, weight1, img2, weight2):
     return output
     
 def add_text_to_image(img, text):
-    cv2.putText(img, text, (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 2)
+    new_img = np.copy(img)
+    cv2.putText(new_img, text, (5, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
         
-    return img
+    return new_img
 
-def generate_saliceny_map(model, seed_imgs, show=True):
+def generate_saliceny_map(model, seed_imgs, show=True, text=None):
     """Generates a heatmap indicating the pixels that contributed the most towards
     maximizing the filter output. First, the class prediction is determined, then we generate heatmap
     to visualize that class.
@@ -108,20 +109,20 @@ def generate_saliceny_map(model, seed_imgs, show=True):
         if i % 10 == 0:
             print('\r', 'Generating', '(', i, '/', maxIter, ')', end="")
         
-        
+        if text:
+            curText = text[i]
+        else:
+            curText = None
         
         pred_class = np.argmax(model.predict(np.array([seed_img]))[0])
-        heatmap, heatmap_colored, overlayed_image, text_image = visualize_saliency(model, layer_idx, [pred_class], seed_img, overlay=True)
+        heatmap, heatmap_colored, overlayed_image, text_image = visualize_saliency(model, layer_idx, [pred_class], seed_img, text=curText, overlay=True)
 
         heatmaps.append(heatmap)
         heatmaps_c.append(heatmap_colored)
         overlayed_images.append(overlayed_image)
         text_images.append(text_image)
         if show:
-            dim = np.array(list(heatmap[2].shape[:2]))
-            new_dims = tuple(dim*8 + [3])
-            resized = cv2.resize(heatmap[2], new_dims, interpolation = cv2.INTER_AREA)
-            cv2.imshow('Saliency', resized)
+            cv2.imshow('Saliency', overlayed_image)
             cv2.waitKey(0)
             
     print('\r', 'Generating', '(', maxIter, '/', maxIter, ')')

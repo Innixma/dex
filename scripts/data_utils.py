@@ -26,7 +26,7 @@ def save_memory_subset(agent, pointer_start, pointer_end, frame_saved, skip=8):
                     )
     print('Memory Saved...')
 
-def load_weights(agent): # TODO: Update this function
+def load_weights(agent, filename_input=None): # TODO: Update this function
         if agent.args.directory == 'default':
             agent.args.directory = G.CUR_FOLDER
 
@@ -45,6 +45,9 @@ def load_weights(agent): # TODO: Update this function
             agent.metrics.total_size = agent.run_count
             filename = filename + '_' + str(agent.args.run_count_load)
         
+        if filename_input:
+            filename = filename_input
+            
         if agent.args.mode == 'run':
             try:
                 agent.h.extra.observe = 999999999    # Never train

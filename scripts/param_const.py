@@ -21,6 +21,12 @@ gym_a3c_hyperspecific = Hyper_a3c(
                                        brain_memory_size=16
                                        )
 
+hex_a3c_hyperspecific = Hyper_a3c(
+                                       loss_v=0.5,
+                                       loss_entropy=0.01,
+                                       brain_memory_size=20000
+                                       )
+
 gym_cart_env = Gym_param()
 gym_pong_env = Gym_param(
                          problem='Pong-v0',
@@ -180,11 +186,11 @@ hex_base_a3c_hyperspecific = Hyper_a3c(
 hex_base_a3c_hyperparams = Hyperparam(
                              gamma=0.99,
                              batch=64,
-                             explore=1000,
+                             explore=10000,
                              epsilon_init=1,
                              epsilon_final=0.01,
                              memory_size=4,
-                             save_rate=5000,
+                             save_rate=1000,
                              img_channels=2,
                              learning_rate=2.5e-4, # 2.5e-4
                              extra=hex_base_a3c_hyperspecific,
