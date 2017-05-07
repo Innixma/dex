@@ -3,10 +3,6 @@
 
 # Deep Learning Modules
 from keras import backend as K
-from keras.models import Model, Input
-from keras.models import model_from_json
-from keras.layers.core import Dense
-from keras.optimizers import SGD , Adam , RMSprop
 
 import tensorflow as tf
 import models
@@ -114,16 +110,16 @@ class Brain:
         
         p, v = model(s_t)
 
-        log_prob = tf.log( tf.reduce_sum(p * a_t, axis=1, keep_dims=True) + 1e-10) # Negative, larger when action is less likely
+        log_prob = tf.log( tf.reduce_sum(p * a_t, axis=1, keep_dims=True) + 1e-6) # Negative, larger when action is less likely
         advantage = r_t - v
 
         loss_policy = - log_prob * tf.stop_gradient(advantage) # Pos if better than expected, Neg if bad
         loss_value  = self.loss_v * tf.square(advantage) # Positive # minimize value error
-        entropy = self.loss_entropy * tf.reduce_sum(p * tf.log(p + 1e-10), axis=1, keep_dims=True) # Negative Value
+        entropy = self.loss_entropy * tf.reduce_sum(p * tf.log(p + 1e-6), axis=1, keep_dims=True) # Negative Value
 
         loss_total = tf.reduce_mean(loss_policy + loss_value + entropy)
 
-        optimizer = tf.train.RMSPropOptimizer(self.learning_rate, decay=0.99) # .99
+        optimizer = tf.train.AdamOptimizer(self.learning_rate, epsilon=1e-3)
         minimize = optimizer.minimize(loss_total)
 
         return s_t, a_t, r_t, minimize, loss_total, log_prob, loss_policy, loss_value, entropy

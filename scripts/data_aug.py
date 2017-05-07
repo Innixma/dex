@@ -8,9 +8,9 @@ def full_augment(total_data):
     
     #total_data = total_data + pixel(total_data)
     
-    total_data = total_data + rotate4(total_data)
+    #total_data = total_data + rotate4(total_data)
     
-    return total_data + flip(total_data)
+    return total_data# + flip(total_data)
 
 def rotate4(data): # Rotates data 90 degrees 3 times, quadrupling the data, returns the new data.
     d_new = []

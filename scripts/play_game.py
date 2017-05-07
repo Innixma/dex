@@ -286,11 +286,11 @@ def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
             if agent.args.mode == 'gather':
                 print('Finished Gathering Data')
                 break
-            
-        if frame_saved > 1000:
-            frame_saved = 1000
-        if frame_saved < 300:
-            frame_saved = 300
+        frame_saved = int(frame_saved / 4)
+        if frame_saved > 400:
+            frame_saved = 400
+        if frame_saved < 60:
+            frame_saved = 60
         if agent.brain.brain_memory.isFull:
             agent.brain.optimize_batch(frame_saved)
             #for i in range(frame_saved):

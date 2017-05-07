@@ -110,3 +110,27 @@ class Gym_pong_wrapper(Gym_base_wrapper):
         s = self.env.reset()
         s = self.preprocess(s)
         return s
+        
+class Gym_breakout_wrapper(Gym_base_wrapper):
+    def __init__(self, problem):
+        super(Gym_breakout_wrapper, self).__init__(problem)
+        self.state_dim = list(self.reset().shape[:-1])
+        pass
+    
+    def step(self, a):
+        s_, r, t, info = self.env.step(a)
+        s_ = self.preprocess(s_)
+        return s_, r, t, info
+        
+    def preprocess(self, s):
+        s = color.rgb2gray(s).astype('float16')   
+        s = s.reshape(list(s.shape) + [1])
+        s = transf.downscale_local_mean(s, (2,2,1)) # Downsample
+        s = s[17:-8,:,:]
+        return s
+
+    def reset(self):
+        s = self.env.reset()
+        s = self.preprocess(s)
+        return s
+
