@@ -1,0 +1,54 @@
+{
+	// Online capabilities
+	"online": false,
+	// Official mode - if set to false, you won't be eligible for online scores - this setting ignores some of the customizable options
+	"official": false, 
+	"show_messages": false,
+	"change_styles": false,
+	"change_music": false,
+	"fullscreen": false,
+	"windowed_width": 168,
+	"windowed_height": 168,
+	
+	// FPS options
+	"static_frametime": false, // Ignored in official mode
+	"static_frametime_value": 1,
+	"limit_fps": false,
+	"vsync": false,
+	"show_fps": true,
+	
+	// Audio options
+	"no_sound": true,
+	"no_music": true,
+	"sound_volume": 100,
+	"music_volume": 75,
+	
+	// Player options
+	"player_speed": 9.45, // Ignored in official mode
+	"player_focus_speed": 4.625, // Ignored in official mode
+	"player_size": 20.0, // Ignored in official mode
+	"auto_restart": false,
+	
+	// Graphical options
+	"no_rotation": false, // Ignored in official mode
+	"no_background": true, // Ignored in official mode
+	"black_and_white": true, // Ignored in official mode
+	"pulse_enabled": false, // Ignored in official mode
+	"beatpulse_enabled": false, // Ignored in official mode
+	"3D_enabled": false,
+	"3D_multiplier": 1.0,
+	"3D_max_depth": 100,
+	"flash_enabled": true,
+	
+	// Cheats
+	"invincible": false, // Ignored in official mode
+	
+	// Inputs
+	"t_rotate_ccw":		[ ["kLeft"], ["kA"], ["bLeft"] ],
+	"t_rotate_cw":		[ ["kRight"], ["kD"], ["bRight"] ],
+	"t_focus":			[ ["kLShift"], ["bMiddle"] ],
+	"t_exit": 			[ ["kEscape"] ],
+	"t_force_restart": 	[ ["kR"], ["kUp"], ["bXButton1"], ["bXButton2"] ],
+	"t_restart":		[ ["kReturn"], ["kSpace"] ],
+	"t_screenshot":		[ ["kF12"] ]
+}
