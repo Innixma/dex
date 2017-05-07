@@ -90,7 +90,7 @@ incongruence_a3c = Args(
                         model='model_mid_cnn_42x42_pool'
                         )
 
-hex_base_a3c_load = Args(
+base_a3c_load = Args(
                         algorithm='a3c',
                         mode='train_old',
                         env=env,
@@ -103,7 +103,7 @@ hex_base_a3c_load = Args(
                         model='model_mid_cnn_42x42_pool'
                         )
 
-hex_thinkfast_a3c = Args(
+thinkfast_a3c = Args(
                         algorithm='a3c',
                         mode='train',
                         env=env,
@@ -115,7 +115,7 @@ hex_thinkfast_a3c = Args(
                         model='model_mid_cnn_42x42_pool'
                         )
 
-hex_incongruence_a3c_load = Args(
+incongruence_a3c_load = Args(
                         algorithm='a3c',
                         mode='run',
                         env=env,
