@@ -268,7 +268,50 @@ def playGameReal_a3c_multithread_init(args, agent_func):
         print(brain.brain_memory.total_saved, 'saved')
         print(brain.brain_memory.total_saved / (time.time() - start), 'saved per second')
 """
-                    
+
+def playGameReal_a3c_incremental_init(args, agent_func, state_dim, action_dim):
+    agent = agent_func(args, state_dim, action_dim, getattr(models,args.model))
+    hasSavedMemory = False
+    max_frame_saved = 300
+    return agent, hasSavedMemory, max_frame_saved
+
+def playGameReal_a3c_incremental(agent, env, state_dim, action_dim, hasSavedMemory, max_frame_saved):
+
+    pointer_start = agent.brain.brain_memory.curIndex + 0
+    frame, useRate, frame_saved = env.run(agent)
+    pointer_end = agent.brain.brain_memory.curIndex + 0
+    agent.metrics.display_metrics(frame, useRate, agent.memory.total_saved, agent.epsilon)
+                
+    if frame_saved > max_frame_saved:
+        print('New max time!')
+        max_frame_saved = frame_saved
+        
+        save_memory_subset(agent, pointer_start, pointer_end, frame_saved, skip=8)
+        save_weights(agent, 'frame_' + str(frame_saved))
+        
+    
+    if agent.h.save_rate < agent.save_iterator:
+        agent.save_iterator -= agent.h.save_rate
+        save_weights(agent, agent.run_count)
+        agent.metrics.save_metrics(agent.results_location)
+        agent.metrics.save_metrics_v(agent.results_location)
+        #agent.metrics.a3c.graph_all(agent.results_location)
+        #agent.metrics.save_metrics_training(agent.results_location)
+    
+    if agent.brain.brain_memory.isFull and hasSavedMemory == False:
+        hasSavedMemory = True
+        saveMemory_v2(agent)
+
+    frame_saved = int(frame_saved / 4)
+    if frame_saved > 400:
+        frame_saved = 400
+    if frame_saved < 60:
+        frame_saved = 60
+    if agent.brain.brain_memory.isFull:
+        agent.brain.optimize_batch(frame_saved)
+        
+    return hasSavedMemory, max_frame_saved
+            
 def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
 
     img_channels = args.hyper.img_channels

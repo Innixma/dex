@@ -30,7 +30,7 @@ class HexagonEmulator:
         self.window_size = [0,0]
         #self.window_offset = [(self.window_size[0]+10)*self.screen_number,0] # [0, 0]
         #self.capture_size = [0,0]
-        self.capture_size = screen_info.size
+        self.capture_size = np.copy(screen_info.size)
         self.window_offset = [(self.capture_size[0]+10)*self.screen_number,0] # [0, 0]
         self.capture_offset = [0,0]
         self.capture_zoom = screen_info.zoom

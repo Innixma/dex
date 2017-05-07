@@ -73,6 +73,10 @@ class Brain:
         self.initialized = True
             #    # avoid modifications
         #######################################
+    
+    def init_vars(self):
+        init_op = tf.global_variables_initializer()
+        self.session.run(init_op)
         
     def finalize_model(self):
         if self.finalized == True:

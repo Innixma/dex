@@ -15,7 +15,7 @@ screen = Screenparam(
 a3c_hyperspecific = Hyper_a3c(
                                        loss_v=0.5,
                                        loss_entropy=0.01,
-                                       brain_memory_size=10000
+                                       brain_memory_size=40000
                                        )
 
 gather_a3c_hyperspecific = Hyper_a3c(brain_memory_size=500)
@@ -31,10 +31,10 @@ env = Real_param(
 a3c_hyperparams = Hyperparam(
                              gamma=0.99,
                              batch=128,
-                             explore=10000,
+                             explore=20000,
                              epsilon_init=1,
-                             epsilon_final=0.00,
-                             memory_size=8,
+                             epsilon_final=0.05,
+                             memory_size=4,
                              save_rate=5000,
                              img_channels=1,
                              learning_rate=1e-3, # 2.5e-4
@@ -63,7 +63,7 @@ base_a3c = Args(
                         hyper=a3c_hyperparams,
                         directory='default',
                         memory_delay=4,
-                        model='model_mid_cnn_42x42'
+                        model='model_mid_cnn_42x42_pool'
                         )
 
 gather_a3c = Args(
@@ -75,14 +75,14 @@ gather_a3c = Args(
                         hyper=gather_a3c_hyperparams,
                         directory='default',
                         memory_delay=3.5,
-                        model='model_mid_cnn_42x42'
+                        model='model_mid_cnn_42x42_pool'
                         )
 
 incongruence_a3c = Args(
                         algorithm='a3c',
                         mode='train',
                         env=env,
-                        data='hex_rotfast',
+                        #data='hex_rotfast',
                         screen=screen,
                         hyper=a3c_hyperparams,
                         directory='default',
@@ -100,7 +100,7 @@ hex_base_a3c_load = Args(
                         directory='hex_a3c_base_hard_v1',
                         memory_delay=4,
                         run_count_load=629,
-                        model='model_mid_cnn_42x42'
+                        model='model_mid_cnn_42x42_pool'
                         )
 
 hex_thinkfast_a3c = Args(
@@ -112,7 +112,7 @@ hex_thinkfast_a3c = Args(
                         hyper=a3c_hyperparams,
                         directory='default',
                         memory_delay=3.5,
-                        model='model_mid_cnn_42x42'
+                        model='model_mid_cnn_42x42_pool'
                         )
 
 hex_incongruence_a3c_load = Args(
@@ -125,6 +125,6 @@ hex_incongruence_a3c_load = Args(
                         directory='hex_acer_rotfast_v2_1channel',
                         memory_delay=0.5,
                         run_count_load=1511,
-                        model='model_mid_cnn_42x42',
+                        model='model_mid_cnn_42x42_pool',
                         weight_override='model_frame_12452'
                         )

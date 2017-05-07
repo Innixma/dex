@@ -35,7 +35,8 @@ class Agent:
             
         self.brain.init_model()    
         load_weights(self)
-        self.brain.finalize_model()
+        if self.args.env.problem != 'Hexagon':
+            self.brain.finalize_model()
         
         save_class(self.args, self.data_location + 'args')
         
