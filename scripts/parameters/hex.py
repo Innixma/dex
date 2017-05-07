@@ -15,7 +15,7 @@ screen = Screenparam(
 a3c_hyperspecific = Hyper_a3c(
                                        loss_v=0.5,
                                        loss_entropy=0.01,
-                                       brain_memory_size=40000
+                                       brain_memory_size=10000
                                        )
 
 gather_a3c_hyperspecific = Hyper_a3c(brain_memory_size=500)
@@ -34,7 +34,7 @@ a3c_hyperparams = Hyperparam(
                              explore=10000,
                              epsilon_init=1,
                              epsilon_final=0.00,
-                             memory_size=1,
+                             memory_size=8,
                              save_rate=5000,
                              img_channels=1,
                              learning_rate=1e-3, # 2.5e-4

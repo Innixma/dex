@@ -6,7 +6,7 @@ from parameters.param_utils import Args, Hyperparam, Hyper_a3c, Hyper_ddqn, Gym_
 a3c_hyperspecific = Hyper_a3c(
                                        loss_v=0.5,
                                        loss_entropy=0.01,
-                                       brain_memory_size=16
+                                       brain_memory_size=128
                                        )
 
 ddqn_hyperspecific = Hyper_ddqn(
@@ -69,7 +69,7 @@ pong_ddqn = Args(
                         hyper=pong_ddqn_hyperparams,
                         directory='default',
                         memory_delay=4,
-                        model='model_mid_atari'
+                        model='model_mid_cnn_84x84_pool'
                         )
 
 breakout_a3c_hyperparams = Hyperparam(
@@ -77,8 +77,8 @@ breakout_a3c_hyperparams = Hyperparam(
                              batch=128,
                              explore=100000,
                              epsilon_init=1,
-                             epsilon_final=0.15,
-                             memory_size=2,
+                             epsilon_final=0.05,
+                             memory_size=1,
                              save_rate=100000,
                              img_channels=4,
                              learning_rate=1e-3,
@@ -92,7 +92,7 @@ breakout_a3c = Args(
                         data=None,
                         hyper=breakout_a3c_hyperparams,
                         directory='default',
-                        model='model_mid_atari'
+                        model='model_mid_cnn_84x84_pool'
                         )
 
 pong_a3c_hyperparams = Hyperparam(
@@ -115,7 +115,7 @@ pong_a3c = Args(
                         data=None,
                         hyper=pong_a3c_hyperparams,
                         directory='default',
-                        model='model_mid_atari'
+                        model='model_mid_cnn_84x84_pool'
                         )
 
 cart_a3c_hyperparams = Hyperparam(

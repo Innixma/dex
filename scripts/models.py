@@ -61,15 +61,29 @@ def model_mid_cnn_42x42(inputs):
 
 
 def model_mid_cnn_42x42_pool(inputs):
-    conv1 = Conv2D(32, (4, 4), strides=(1, 1), activation='relu', padding='same')(inputs)
+    conv1 = Conv2D(32, (5, 5), strides=(1, 1), activation='relu', padding='same')(inputs)
     pool1 = MaxPooling2D(pool_size=(2, 2), padding='same')(conv1)
     conv2 = Conv2D(64, (4, 4), strides=(1, 1), activation='relu', padding='same')(pool1)
     pool2 = MaxPooling2D(pool_size=(2, 2), padding='same')(conv2)
-    flatten = Flatten()(pool2)
+    conv3 = Conv2D(64, (3, 3), strides=(1, 1), activation='relu', padding='same')(pool2)
+    flatten = Flatten()(conv3)
     dense1 = Dense(512, activation='relu')(flatten)
     
     return dense1
         
+def model_mid_cnn_84x84_pool(inputs):
+    conv1 = Conv2D(32, (5, 5), strides=(1, 1), activation='relu', padding='same')(inputs)
+    pool1 = MaxPooling2D(pool_size=(2, 2), padding='same')(conv1)
+    conv2 = Conv2D(64, (5, 5), strides=(1, 1), activation='relu', padding='same')(pool1)
+    pool2 = MaxPooling2D(pool_size=(2, 2), padding='same')(conv2)
+    conv3 = Conv2D(64, (4, 4), strides=(1, 1), activation='relu', padding='same')(pool2)
+    pool3 = MaxPooling2D(pool_size=(2, 2), padding='same')(conv3)
+    conv4 = Conv2D(64, (3, 3), strides=(1, 1), activation='relu', padding='same')(pool3)
+    flatten = Flatten()(conv4)
+    dense1 = Dense(512, activation='relu')(flatten)
+    
+    return dense1
+    
     
 def model_mid_atari(inputs):
     conv1 = Conv2D(16, (8, 8), strides=(4, 4), activation='relu', padding='same')(inputs)

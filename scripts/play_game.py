@@ -240,6 +240,35 @@ def playGameGym_ddqn(args, agent_func):
                     #agent.metrics.save_metrics(agent.results_location)
                     #agent.metrics.save_metrics_training(agent.results_location)
 
+"""
+def playGameReal_a3c_multithread_init(args, agent_func):
+    agents, envs = init_agents(args, agent_func)
+    brain = agents[0].brain
+    threads = []
+    for i in range(MULTITHREAD):
+        threads.append(Multithread_agent(agents[i], envs[i]))
+        threads[-1].daemon = True
+
+    threads_brain = []
+
+    for i in range(MULTITHREAD_BRAIN):
+        threads_brain.append(Multithread_brain(brain))
+        threads_brain[-1].daemon = True
+        
+    for i in range(MULTITHREAD):
+        threads[i].start()
+        
+        
+    for i in range(MULTITHREAD_BRAIN):
+        threads_brain[i].start()
+        
+    start = time.time()
+    while True:
+        time.sleep(20)
+        print(brain.brain_memory.total_saved, 'saved')
+        print(brain.brain_memory.total_saved / (time.time() - start), 'saved per second')
+"""
+                    
 def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
 
     img_channels = args.hyper.img_channels
