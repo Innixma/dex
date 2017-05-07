@@ -2,7 +2,7 @@
 # Contains functions for game play loops
 
 from environment import Environment_gym, Environment_gym_rgb, Environment_realtime, Environment_realtime_a3c
-from data_utils import saveAll, saveClass, loadClass, save_weights, saveMemory_v2, loadMemory_v2, save_memory_subset
+from data_utils import saveAll, save_class, loadClass, save_weights, saveMemory_v2, loadMemory_v2, save_memory_subset
 import time
 try:
     import OpenHexagonEmulator
@@ -277,12 +277,15 @@ def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
             save_weights(agent, agent.run_count)
             agent.metrics.save_metrics(agent.results_location)
             agent.metrics.save_metrics_v(agent.results_location)
-            agent.metrics.a3c.graph_all(agent.results_location)
+            #agent.metrics.a3c.graph_all(agent.results_location)
             #agent.metrics.save_metrics_training(agent.results_location)
         
         if agent.brain.brain_memory.isFull and hasSavedMemory == False:
             hasSavedMemory = True
             saveMemory_v2(agent)
+            if agent.args.mode == 'gather':
+                print('Finished Gathering Data')
+                break
             
         if frame_saved > 1000:
             frame_saved = 1000
@@ -305,7 +308,7 @@ def playGameReal_ddqn(args, agent_func, screen_number=0, screen_id=-1):
     
     agent = agent_func(args, state_dim, action_dim, getattr(models,args.hyper.model))
     
-    if args.data != 'default':
+    if args.data:
         # Load Memory
         loadMemory_v2(agent, args.data)
         

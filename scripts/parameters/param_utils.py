@@ -91,25 +91,28 @@ class Screenparam:
                  app=None,
                  size=[140,140],
                  zoom=[0,0],
-                 framerate=30
+                 framerate=30,
+                 scale=1
                  ):
         self.app = app
         self.size = size
         self.zoom = zoom
         self.framerate = framerate
+        self.scale = scale
         
 class Args:
     def __init__(self,
                  algorithm,
                  mode='train',
                  env='real',
-                 data='default',
-                 screen='default',
-                 hyper='default',
+                 data=None,
+                 screen=None,
+                 hyper=None,
                  directory='default',
                  memory_delay=4,
                  run_count_load=0, # Temp
-                 model=None
+                 model=None,
+                 weight_override=None
                  ):
         self.algorithm = algorithm
         self.mode = mode
@@ -120,5 +123,5 @@ class Args:
         self.directory = directory
         self.memory_delay = memory_delay
         self.run_count_load = run_count_load
-        self.weight_override = None
+        self.weight_override = weight_override
         self.model = model

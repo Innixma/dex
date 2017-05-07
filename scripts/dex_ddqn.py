@@ -15,7 +15,7 @@ from __future__ import print_function
 #import threading
 
 # Utilities
-from param_const import gym_cart_ddqn, hex_base, hex_base_gather, gym_pong_ddqn
+from parameters import hex, gym
 import play_game
 import agent_ddqn
 #import agent_random # Currently broken due to change in memory class
@@ -28,9 +28,6 @@ def main(args):
     # TODO: Use finally clause to save model weights
 
 if __name__ == "__main__":
-    #args = hex_base
-    #args = hex_base_gather
-    args = gym_cart_ddqn
-    #args = gym_pong_ddqn
+    args = gym.cart_ddqn
     main(args) 
 

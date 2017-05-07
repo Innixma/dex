@@ -36,7 +36,8 @@ class Memory: # Improved memory class
         
     def add(self, s, a, r, s_, t): # Add multiple
         n = s.shape[0]
-        
+        if n > self.max_size:
+            self.curIndex = 0
         newIndex = self.curIndex + n
         
         if newIndex >= self.max_size: # Over capacity
@@ -47,12 +48,13 @@ class Memory: # Improved memory class
             self.r [self.curIndex:self.max_size] = r [:split]
             self.s_[self.curIndex:self.max_size] = s_[:split]
             self.t [self.curIndex:self.max_size] = t [:split]
-
-            self.s [:newIndex] = s [split:]
-            self.a [:newIndex] = a [split:]
-            self.r [:newIndex] = r [split:]
-            self.s_[:newIndex] = s_[split:]
-            self.t [:newIndex] = t [split:]
+            
+            if n <= self.max_size:
+                self.s [:newIndex] = s [split:]
+                self.a [:newIndex] = a [split:]
+                self.r [:newIndex] = r [split:]
+                self.s_[:newIndex] = s_[split:]
+                self.t [:newIndex] = t [split:]
 
         else:
             self.s [self.curIndex:newIndex] = s
@@ -60,7 +62,9 @@ class Memory: # Improved memory class
             self.r [self.curIndex:newIndex] = r
             self.s_[self.curIndex:newIndex] = s_
             self.t [self.curIndex:newIndex] = t
-               
+
+        if n > self.max_size:
+            n = self.max_size
         self.increment_index_n(n)
 
 

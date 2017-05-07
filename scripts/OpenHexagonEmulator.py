@@ -15,6 +15,7 @@ class HexagonEmulator:
 
     def __init__(self, screen_info, screen_id=-1, screen_number=0, rewards=[1,-1], mode='standard'): # window_size = x,y
         self.keys = np.array(['none', 'left_arrow', 'right_arrow'])
+        self.scale = screen_info.scale
         self.action_dim = 3
         self.application = screen_info.app
         self.screen_id = screen_id
@@ -25,9 +26,12 @@ class HexagonEmulator:
         else:
             self.game_window = self.screen_id
         
-        self.window_size = screen_info.size
-        self.window_offset = [(self.window_size[0]+10)*self.screen_number,0] # [0, 0]
-        self.capture_size = [0,0]
+        #self.window_size = screen_info.size
+        self.window_size = [0,0]
+        #self.window_offset = [(self.window_size[0]+10)*self.screen_number,0] # [0, 0]
+        #self.capture_size = [0,0]
+        self.capture_size = screen_info.size
+        self.window_offset = [(self.capture_size[0]+10)*self.screen_number,0] # [0, 0]
         self.capture_offset = [0,0]
         self.capture_zoom = screen_info.zoom
         self.reward_alive = rewards[0]
@@ -35,10 +39,10 @@ class HexagonEmulator:
         self.mode = mode
         self.alive = False
 
-        self.get_application_focus()
+        
         
         self.configure()
-        
+        self.get_application_focus()
         
         self.hwnd = win32gui.GetDesktopWindow()
         self.wDC = win32gui.GetWindowDC(self.hwnd)
@@ -52,8 +56,13 @@ class HexagonEmulator:
         self.prevKey = 'enter'
         
         self.state_dim = np.copy(self.capture_size)
-        #self.state_dim[0] = int(self.state_dim[0]/2)
-        #self.state_dim[1] = int(self.state_dim[1]/2)
+        self.state_dim = [self.state_dim[1], self.state_dim[0]]
+        
+        if self.scale != 1:
+            self.state_dim[0] = int(self.state_dim[0]/self.scale)
+            self.state_dim[1] = int(self.state_dim[1]/self.scale)
+            
+        print(self.state_dim)
     #==============================================================================
     
     def start_game(self):
@@ -122,11 +131,24 @@ class HexagonEmulator:
         #win32gui.SetForegroundWindow(hwnd)
         time.sleep(0.5)
     
-        self.capture_offset[0] = 10
-        self.capture_offset[1] = 31
+        #self.capture_offset[0] = 10
+        #self.capture_offset[1] = 31
+        self.capture_offset[0] = 9
+        self.capture_offset[1] = 32
         
-        self.capture_size[0] = self.window_size[0] - self.capture_offset[0] - 10
-        self.capture_size[1] = self.window_size[1] - self.capture_offset[1] - 10
+        self.window_offset = [10,10]
+
+        self.window_size[0] = self.capture_size[0] + self.capture_offset[0] + 9
+        self.window_size[1] = self.capture_size[1] + self.capture_offset[1] + 9
+
+        print(self.capture_size)
+        print(self.window_size)
+
+        #self.window_size[0] += 21
+        #self.window_size[1] += 41
+        
+        #self.capture_size[0] = self.window_size[0] - self.capture_offset[0] - 10
+        #self.capture_size[1] = self.window_size[1] - self.capture_offset[1] - 10
         
         
         # Center on image
@@ -181,7 +203,8 @@ class HexagonEmulator:
         # Following line commented out Feb 25 2017, due to potential issues caused.
         #tmpImage = skimage.exposure.rescale_intensity(tmpImage, out_range=(0, 255))
 
-        #tmpImage = transf.downscale_local_mean(tmpImage, (2,2)) # Downsample
+        if self.scale != 1:
+            tmpImage = transf.downscale_local_mean(tmpImage, (self.scale,self.scale)) # Downsample
         
         tmpImage = tmpImage.reshape(tmpImage.shape[0], tmpImage.shape[1], 1) # Tensorflow
         return tmpImage

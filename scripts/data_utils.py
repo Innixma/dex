@@ -63,8 +63,9 @@ def load_weights(agent, filename_input=None): # TODO: Update this function
             agent.epsilon = agent.h.epsilon_init
             print ("Now we load weight from " + agent.results_location + filename + '.h5')
             agent.brain.model.load_weights(agent.results_location + filename + '.h5')
-
             print ("Weights loaded successfully, training")
+        elif agent.args.mode == 'gather': # Gather data, then exit
+            print('Gathering Data')
         else: # Train new
             print('Training new network!')
             agent.epsilon = agent.h.epsilon_init
@@ -83,8 +84,8 @@ def saveAll(agent):
     saveMemory_v2(agent)
     hyperfile = agent.data_location + 'hyper'
     screenfile = agent.data_location + 'screen'
-    saveClass(agent.h, hyperfile)
-    saveClass(agent.args.screen, screenfile)
+    save_class(agent.h, hyperfile)
+    save_class(agent.args.screen, screenfile)
 
 # For Memory_v2 agents
 def saveMemory_v2(agent):
@@ -138,7 +139,7 @@ def saveMemory(agent):
 
     
 # Saves class info
-def saveClass(object_, location):
+def save_class(object_, location):
     with open(location,"wb") as file:
         pickle.dump(object_, file)
 

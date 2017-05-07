@@ -7,20 +7,20 @@ import visualization
 
 from data_utils import loadMemory_direct
 from agent_a3c import Agent
-from param_const import hex_base_a3c_load
+from parameters.hex import base_a3c_load
 import models
 
-from param_utils import Args, Hyperparam, Screenparam, Hyper_a3c
+from parameters.param_utils import Args, Hyperparam, Screenparam, Hyper_a3c
 
-args = hex_base_a3c_load
+args = base_a3c_load
 state_dim = [96, 96, 2]
 action_dim = 3
 skip = 1
 memory_location = '../data/' + args.directory + '/'
 extra = '_frame_2577'
 
-hex_base_a3c_load.weight_override = 'model_frame_2577'
-agent = Agent(hex_base_a3c_load, state_dim, action_dim, modelFunc=models.model_mid_cnn, visualization=True)
+base_a3c_load.weight_override = 'model_frame_2577'
+agent = Agent(base_a3c_load, state_dim, action_dim, modelFunc=models.model_mid_cnn, visualization=True)
 s, a, r, s_, t = loadMemory_direct(memory_location, extra)
 
 #prevVal = 0

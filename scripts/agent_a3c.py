@@ -5,7 +5,7 @@ import numpy as np
 from memory import Memory
 from metrics import Metrics
 from brain_a3c import Brain
-from data_utils import load_weights
+from data_utils import load_weights, save_class
 import random
 
 class Agent:
@@ -29,11 +29,16 @@ class Agent:
         self.memory = Memory(self.h.memory_size, self.state_dim, 1)
         if not brain:
             self.brain = Brain(self, modelFunc)
-            load_weights(self)
+             
         else:
             self.brain = brain
             
-
+        self.brain.init_model()    
+        load_weights(self)
+        self.brain.finalize_model()
+        
+        save_class(self.args, self.data_location + 'args')
+        
     def update_epsilon(self):
         if self.epsilon > self.h.epsilon_final:
             self.epsilon -= (self.h.epsilon_init - self.h.epsilon_final) / self.h.explore

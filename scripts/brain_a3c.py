@@ -11,6 +11,7 @@ from keras.optimizers import SGD , Adam , RMSprop
 import tensorflow as tf
 import models
 
+from data_utils import loadMemory_direct
 from memory import Memory
 import numpy as np
 import data_aug
@@ -30,6 +31,8 @@ class Brain:
     train_queue = [ [], [], [], [], [] ]    # s, a, r, s', s' terminal mask
     lock_queue = threading.Lock()
     def __init__(self, agent, modelFunc=None):
+        self.initialized = False
+        self.finalized = False
         self.c = 0
         self.agent = agent
         self.state_dim = self.agent.state_dim
@@ -46,13 +49,21 @@ class Brain:
         
         self.env = self.agent.args.env
         self.metrics = self.agent.metrics
-        self.brain_memory = Memory(self.brain_memory_size, self.state_dim, self.action_dim)
         
+        self.brain_memory = Memory(self.brain_memory_size, self.state_dim, self.action_dim)
+        if self.agent.args.data: # Load memory
+            s, a, r, s_, t = loadMemory_direct('../data/' + self.agent.args.data + '/')
+            self.brain_memory.add(s, a, r, s_, t)
+            
+            
         self.NONE_STATE = np.zeros(self.state_dim)
         
         self.visualization = agent.visualization
         self.model = self.create_model(modelFunc)
         
+    def init_model(self):
+        if self.initialized == True:
+            return
         if self.visualization == False:
         #######################################
             self.session = tf.Session()
@@ -62,11 +73,16 @@ class Brain:
     
             self.session.run(tf.global_variables_initializer())
             self.default_graph = tf.get_default_graph()
-            self.default_graph.finalize()    # avoid modifications
+            
+        self.initialized = True
+            #    # avoid modifications
         #######################################
         
-        
-        
+    def finalize_model(self):
+        if self.finalized == True:
+            return
+        self.default_graph.finalize()
+        self.finalized = True
         #for layer in self.model.layers:
         #    weights = layer.get_weights()
         #    print(np.sum(np.sum(weights)))
@@ -189,7 +205,7 @@ class Brain:
             print('\r', 'Learning', '(', batch_count, '/', batch_count, ')')
         
     def train_augmented(self, s, a, r, s_):
-        if self.env == 'real':
+        if self.env.problem == 'Hexagon':
             if s_ is None:
                 self.train_push_all_augmented(data_aug.full_augment([[s, a, r, self.NONE_STATE, 0.]]))
             else:    

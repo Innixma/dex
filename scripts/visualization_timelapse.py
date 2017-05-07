@@ -1,9 +1,9 @@
 
 
-from data_utils import loadMemory_v2, loadMemory_direct
+from data_utils import loadMemory_direct
 from data_utils import load_weights
 from agent_a3c import Agent
-from param_const import hex_base_a3c_load, hex_base_a3c
+from parameters.hex import base_a3c
 import models
 
 import scipy.misc as smp
@@ -11,12 +11,6 @@ import cv2
 import numpy as np
 
 import visualization
-
-#from keras.preprocessing.image import img_to_array
-#from vis.utils import utils
-#from vis.utils.vggnet import VGG16
-#from vis.visualization import visualize_saliency
-#from vis.visualization import visualize_cam
 
 from os import listdir
 from os.path import isfile, join
@@ -58,7 +52,7 @@ def format_results(images, width=10, scale=1):
 directory = 'hex_acer_hexreal_v1'
 directory_mem = 'hex_acer_hexreal_v1'
 
-args = hex_base_a3c
+args = base_a3c
 agent_func = Agent
 
 state_dim = [96, 96, 2]
