@@ -7,8 +7,10 @@ import skimage.transform as transf
 from skimage import color
 
 import importlib
-
-import gym
+try:
+    import gym
+except:
+    print('Gym not found...')
 
 class Real_base_wrapper(object):
     def __init__(self, problem, module_name, class_name, screen_info):
