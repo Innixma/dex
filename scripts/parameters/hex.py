@@ -36,7 +36,7 @@ a3c_hyperparams = Hyperparam(
                              epsilon_final=0.05,
                              memory_size=4,
                              save_rate=5000,
-                             img_channels=1,
+                             img_channels=2,
                              learning_rate=1e-3, # 2.5e-4
                              extra=a3c_hyperspecific,
                            )

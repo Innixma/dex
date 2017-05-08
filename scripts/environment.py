@@ -107,7 +107,7 @@ class Environment_realtime_a3c:
             new_shape = [1] + list(s.shape)
             self.base_frame = s.reshape(new_shape)
         
-        v_episode = []
+        #v_episode = []
         t = 0
         while t == 0:
             self.framerate_check(start_time, frame)
@@ -125,7 +125,7 @@ class Environment_realtime_a3c:
                 agent.replay()
                 useRate[a] += 1
                 frame_saved += 1
-                v_episode.append(v_cur[0][0])
+                #v_episode.append(v_cur[0][0])
         
             s = s_
             frame += 1
@@ -146,7 +146,7 @@ class Environment_realtime_a3c:
         v = agent.brain.predict_v(self.base_frame)[0][0]
         print('V:', str(v), ', catchup:', str(self.catchup_frames))
         agent.metrics.V.append(v)
-        agent.metrics.V_episode.extend(v_episode)
+        #agent.metrics.V_episode.extend(v_episode)
         return frame, useRate, frame_saved # Metrics
 
 class Environment_realtime:

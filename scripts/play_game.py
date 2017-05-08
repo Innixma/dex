@@ -294,7 +294,7 @@ def playGameReal_a3c_incremental(agent, env, state_dim, action_dim, hasSavedMemo
         agent.save_iterator -= agent.h.save_rate
         save_weights(agent, agent.run_count)
         agent.metrics.save_metrics(agent.results_location)
-        agent.metrics.save_metrics_v(agent.results_location)
+        #agent.metrics.save_metrics_v(agent.results_location)
         #agent.metrics.a3c.graph_all(agent.results_location)
         #agent.metrics.save_metrics_training(agent.results_location)
     
