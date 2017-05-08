@@ -16,6 +16,7 @@ import agent_a3c
 import time
 import numpy as np
 import copy
+from metrics import Metrics
 from data_utils import save_weights
 
 class Incremental:
@@ -66,7 +67,11 @@ class Incremental:
                     time.sleep(0.1)
                 self.curlevel = idxs[i+1]
             
-            save_weights(agent, 'id_' + str(i))
+            save_weights(agent, 'id_' + str(i)) # Save weights
+            agent.metrics.save(agent.results_location, 'metrics_id_' + str(i)) # Save metrics
+            agent.metrics.runs.graph(agent.results_location, 'runs_id_' + str(i))
+            agent.metrics = Metrics(agent.metrics.type) # Reset metrics
+            agent.brain.metrics = agent.metrics
             
         agent.brain.init_vars() # Reset network    
     
@@ -74,21 +79,35 @@ class Incremental:
 if __name__ == "__main__":
     
     levels = [
-              'base',
-              'base_hard',
-              'rotation',
-              'hexagon',
-              'hexagon_rotation',
-              'hexagon_extreme',
-              'hexagon_real',
-              'think_fast',
-              'rotation_fast'
+              'base_1',
+              'base_2',
+              'base_3',
+              'rotation_1',
+              'rotation_2',
+              'rotation_3',
+              'rotation_4',
+              'rotation_5',
+              'rotation_6',
+              'rotation_7',
+              'hexagon_1',
+              'hexagon_2',
+              'hexagon_3',
+              'hexagon_4',
+              'thinkfast'
               ]
     
-    incremental_levels1 = ['base', 'base_hard']
-    incremental_levels2 = ['base_hard', 'base_hard']
-    incremental_levels3 = ['hexagon_rotation', 'hexagon_real']
-    incremental_levels4 = ['hexagon_real', 'hexagon_real']
+    incremental_levels1 = ['base_1', 'base_2', 'base_3']
+    incremental_levels2 = [
+                          'rotation_1',
+                          'rotation_2',
+                          'rotation_3',
+                          'rotation_4',
+                          'rotation_5',
+                          'rotation_6',
+                          'rotation_7'
+                          ]
+    incremental_levels3 = ['hexagon_2', 'hexagon_4']
+
     break_time = 3600   
     curlevel = 0
     level_idx = 0

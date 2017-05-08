@@ -1,0 +1,30 @@
+{
+	// Style data id
+	"id": "thinkfast",
+
+	// Hue options
+	"hue_min": 0,
+	"hue_max": 360,
+	"hue_ping_pong": false,
+	"hue_increment": 0.5,
+	
+	// Pulse options
+	"pulse_min": 0.0,
+	"pulse_max": 1.5,
+	"pulse_increment": 0.025,
+
+	// 3D options
+	"3D_depth": 3,
+	"3D_skew": 0.25,
+	"3D_spacing": 100,
+	
+	// Main color
+	"main": { "main": true, "dynamic": true, "value": [255, 255, 255, 255], "pulse": [0, 0, 0, 0] },
+
+	// Background colors
+	"colors":
+	[
+		{ "dynamic": true, "dynamic_offset": false, "dynamic_darkness": 5.0, "value": [0, 0, 0, 255], "pulse": [0, 0, 0, 255]},
+		{ "dynamic": true, "dynamic_offset": false, "dynamic_darkness": 2.5, "value": [0, 0, 0, 255], "pulse": [0, 0, 0, 255]}
+	]
+}

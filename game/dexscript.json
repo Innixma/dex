@@ -31,11 +31,11 @@
 	
 	// Graphical options
 	"no_rotation": false, // Ignored in official mode
-	"no_background": true, // Ignored in official mode
-	"black_and_white": true, // Ignored in official mode
-	"pulse_enabled": false, // Ignored in official mode
-	"beatpulse_enabled": false, // Ignored in official mode
-	"3D_enabled": false,
+	"no_background": false, // Ignored in official mode
+	"black_and_white": false, // Ignored in official mode
+	"pulse_enabled": true, // Ignored in official mode
+	"beatpulse_enabled": true, // Ignored in official mode
+	"3D_enabled": true,
 	"3D_multiplier": 1.0,
 	"3D_max_depth": 100,
 	"flash_enabled": true,

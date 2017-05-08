@@ -163,7 +163,7 @@ def playGameGym_a3c_multithread(agent, env):
                 save_weights(agent, agent.run_count)
                 #agent.metrics.a3c.graph_all(agent.results_location)
                 #if agent.mode == 'train': # Fix this later, not correct
-                        #agent.metrics.save_metrics(agent.results_location)
+                        #agent.metrics.runs.graph(agent.results_location)
                         #agent.metrics.save_metrics_training(agent.results_location)
     
     
@@ -201,7 +201,7 @@ def playGameGym_a3c(args, agent_func):
             save_weights(agent, agent.run_count)
             agent.metrics.a3c.graph_all(agent.results_location)
             #if agent.mode == 'train': # Fix this later, not correct
-                    #agent.metrics.save_metrics(agent.results_location)
+                    #agent.metrics.runs.graph(agent.results_location)
                     #agent.metrics.save_metrics_training(agent.results_location)
     """
 def playGameGym_ddqn(args, agent_func):
@@ -237,7 +237,7 @@ def playGameGym_ddqn(args, agent_func):
             agent.save_iterator -= agent.h.save_rate
             save_weights(agent)
             #if agent.mode == 'train': # Fix this later, not correct
-                    #agent.metrics.save_metrics(agent.results_location)
+                    #agent.metrics.runs.graph(agent.results_location)
                     #agent.metrics.save_metrics_training(agent.results_location)
 
 """
@@ -293,7 +293,7 @@ def playGameReal_a3c_incremental(agent, env, state_dim, action_dim, hasSavedMemo
     if agent.h.save_rate < agent.save_iterator:
         agent.save_iterator -= agent.h.save_rate
         save_weights(agent, agent.run_count)
-        agent.metrics.save_metrics(agent.results_location)
+        agent.metrics.runs.graph(agent.results_location)
         #agent.metrics.save_metrics_v(agent.results_location)
         #agent.metrics.a3c.graph_all(agent.results_location)
         #agent.metrics.save_metrics_training(agent.results_location)
@@ -347,8 +347,8 @@ def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
         if agent.h.save_rate < agent.save_iterator:
             agent.save_iterator -= agent.h.save_rate
             save_weights(agent, agent.run_count)
-            agent.metrics.save_metrics(agent.results_location)
-            agent.metrics.save_metrics_v(agent.results_location)
+            agent.metrics.runs.graph(agent.results_location)
+            #agent.metrics.save_metrics_v(agent.results_location)
             #agent.metrics.a3c.graph_all(agent.results_location)
             #agent.metrics.save_metrics_training(agent.results_location)
         
@@ -365,11 +365,6 @@ def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
             frame_saved = 60
         if agent.brain.brain_memory.isFull:
             agent.brain.optimize_batch(frame_saved)
-            #for i in range(frame_saved):
-            #    if i % 10 == 0:
-            #        print('\r', 'Learning', '(', i, '/', frame_saved, ')', end="")
-            #    agent.brain.optimize()
-            #print('\r', 'Learning', '(', frame_saved, '/', frame_saved, ')')
             
 def playGameReal_ddqn(args, agent_func, screen_number=0, screen_id=-1):
     
@@ -418,7 +413,7 @@ def playGameReal_ddqn(args, agent_func, screen_number=0, screen_id=-1):
             agent.save_iterator -= agent.h.save_rate
             save_weights(agent)
             if agent.mode == 'train': # Fix this later, not correct
-                agent.metrics.save_metrics(agent.results_location)
+                agent.metrics.runs.graph(agent.results_location)
                 agent.metrics.save_metrics_training(agent.results_location)
 
 def gatherMemory(args, agent_func):

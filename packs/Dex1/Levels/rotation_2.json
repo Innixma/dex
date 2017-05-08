@@ -1,0 +1,49 @@
+{
+	// Level information
+	"id": "rotation_2",
+	"name": "Rotation 2",
+	"description": "Simple, with rotation",
+	"author": "Innixma",
+	"menu_priority": 2002,
+	"selectable": true,
+	
+	// Style
+	"style_id": "rotation",
+	
+	// Music
+	"music_id": "haveAnother",
+	
+	// Lua
+	"lua_file": "defaultLevels/base_1.lua",
+	
+	// Difficulty multipliers
+	"difficulty_multipliers": [1.5, 2, 2.5, 3, 0.5, 5],
+	
+	// Basic values
+	"speed_multiplier": 5,
+	"speed_increment": 0.125,
+	"rotation_speed": 0.4,
+	"rotation_increment": 0.02,
+	"delay_multiplier": 1.00,
+	"delay_increment": -0.01,
+	"fast_spin": 0.00,
+	"sides": 4,
+	"sides_min": 4,
+	"sides_max": 4,
+	"increment_time": 15,
+	"rotation_speed_max": 1,
+	
+	"pulse_min": 60,
+	"pulse_max": 60,
+	"pulse_speed": 1.2,
+	"pulse_speed_r": 1,
+	"pulse_delay_max": 23.9,
+	
+	"beatpulse_max": 0,
+	"beatpulse_delay_max": 24.8,
+	
+	// Events
+	"events":
+	[
+	]
+}

@@ -4,17 +4,20 @@
 import numpy as np
 import graphHelper
 import sys
+from data_utils import save_class, loadClass
 
 class Metrics: # TODO: Save this to a pickle file?
     def __init__(self, metric_type='a3c'):
-        self.survival_times = []
-        self.survival_times_last_10 = []
-        self.survival_times_full_mean = []
+        self.type = metric_type
+        #self.survival_times = []
+        #self.survival_times_last_10 = []
+        #self.survival_times_full_mean = []
+        self.runs = MetricInfoSurvival(name='survival')
         self.Q = []
         self.loss = []
-        self.total_size = 0 
-        self.size = 0
-        self.max_survival = -1
+        #self.total_size = 0 
+        #self.size = 0
+        #self.max_survival = -1
         self.V = []
         self.V_episode = []
 
@@ -22,22 +25,31 @@ class Metrics: # TODO: Save this to a pickle file?
             self.a3c = A3C_Metrics()
         else:
             self.a3c = None
-   
+            
+    def save(self, save_location, name=None):
+        if name == None:
+            name = ''
+            
+        save_class(self, save_location + name + '.dat')    
+        
+    """
     def update(self, survival_time):
         self.size += 1
         self.total_size += 1
         if survival_time > self.max_survival:
             self.max_survival = survival_time
-        self.survival_times.append(survival_time)
-        self.survival_times_last_10.append(np.mean(self.survival_times[-10:]))
-        self.survival_times_full_mean.append(np.mean(self.survival_times)) # make this better...
-
+            
+        #self.survival_times.append(survival_time)
+        #self.survival_times_last_10.append(np.mean(self.survival_times[-10:]))
+        #self.survival_times_full_mean.append(np.mean(self.survival_times)) # make this better...
+    """
+    
     def display_metrics(self, frame, useRate, total_saved=0, epsilon=0):
             if np.sum(useRate) != 0:
                 useRate = useRate/np.sum(useRate)
-            framerate = frame/self.survival_times[-1]
-            print('R' + str(self.total_size) + ': ' + "%.2f" % self.survival_times[-1] + 's' + ', %.2f fps' % framerate + ', key: ', ['%.2f' % k for k in useRate], end='')
-            print(' Mean: %.2f' % self.survival_times_full_mean[-1], 'Last 10: %.2f' % self.survival_times_last_10[-1], 'Max: %.2f' % self.max_survival, "TS", total_saved, "E %.2f" % epsilon)
+            framerate = frame/self.runs.times[-1]
+            print('R' + str(self.runs.total_size) + ': ' + "%.2f" % self.runs.times[-1] + 's' + ', %.2f fps' % framerate + ', key: ', ['%.2f' % k for k in useRate], end='')
+            print(' Mean: %.2f' % self.runs.mean[-1], 'Last 10: %.2f' % self.runs.last10[-1], 'Max: %.2f' % self.runs.max, "TS", total_saved, "E %.2f" % epsilon)
             
             sys.stdout.flush()
             
@@ -49,9 +61,46 @@ class Metrics: # TODO: Save this to a pickle file?
         graphHelper.graphSimple([np.arange(len(self.V))], [self.V], ['Value'], 'Value', 'Value', 'Run', savefigName=save_location + 'V')
         graphHelper.graphSimple([np.arange(len(self.V_episode))], [self.V_episode], ['Value'], 'Value', 'Value', 'Frame', savefigName=save_location + 'V_episode')
         
-    def save_metrics(self, save_location):
+    #def save_metrics(self, save_location):
+    #    # TODO: Remove these logs, just export the data directly
+    #    graphHelper.graphSimple([np.arange(self.size),np.arange(self.size),np.arange(self.size)], [self.survival_times, self.survival_times_last_10, self.survival_times_full_mean], ['Survival Time', 'Survival Rolling 10 Mean', 'Survival Mean'], 'Survival Times', 'Time(s)', 'Run', savefigName=save_location + 'survival')
+
+class MetricInfoSurvival:
+    def __init__(self, total_size=0, name='survival'):
+        self.name = name
+        self.total_size = total_size
+        self.size = 0
+        self.max = -1
+        self.mean = []
+        self.last10 = []
+        self.times = []
+
+    def update(self, time):
+        if self.max < time:
+            self.max = time
+        
+        self.times.append(time)
+        self.last10.append(np.mean(self.times[-10:]))
+        
+        if self.size == 0:
+            self.mean.append(time)
+        else:
+            self.mean.append((self.mean[-1] * self.size + time) / (self.size+1))
+        
+        self.size += 1
+        self.total_size += 1
+        
+
+        
+    def graph(self, save_location, name=None):
+        if name == None:
+            name = self.name
         # TODO: Remove these logs, just export the data directly
-        graphHelper.graphSimple([np.arange(self.size),np.arange(self.size),np.arange(self.size)], [self.survival_times, self.survival_times_last_10, self.survival_times_full_mean], ['Survival Time', 'Survival Rolling 10 Mean', 'Survival Mean'], 'Survival Times', 'Time(s)', 'Run', savefigName=save_location + 'survival')
+        graphRange = np.arange(self.total_size - self.size, self.total_size)
+        graphHelper.graphSimple([graphRange, graphRange, graphRange],
+                                 [self.times, self.last10, self.mean],
+                                 ['Time', 'Rolling 10 Mean', 'Mean'],
+                                 'Survival Times', 'Time(s)', 'Run', savefigName=save_location + name)
         
 class MetricInfo:
     def __init__(self, name):

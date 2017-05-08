@@ -137,7 +137,6 @@ def saveMemory(agent):
     #return #a
 """
 
-    
 # Saves class info
 def save_class(object_, location):
     with open(location,"wb") as file:

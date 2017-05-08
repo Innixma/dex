@@ -141,7 +141,7 @@ class Environment_realtime_a3c:
         survival_time = time.time() - start_time
         agent.run_count += 1
         
-        agent.metrics.update(survival_time)
+        agent.metrics.runs.update(survival_time)
         
         v = agent.brain.predict_v(self.base_frame)[0][0]
         print('V:', str(v), ', catchup:', str(self.catchup_frames))
@@ -207,7 +207,7 @@ class Environment_realtime:
         survival_time = time.time() - start_time
         agent.run_count += 1
         
-        agent.metrics.update(survival_time)
+        agent.metrics.runs.update(survival_time)
         
         if agent.memory.total_saved > agent.h.extra.observe:
             if agent.mode == 'observe':

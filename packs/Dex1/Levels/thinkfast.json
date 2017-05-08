@@ -1,0 +1,49 @@
+{
+	// Level information
+	"id": "thinkfast",
+	"name": "Think fast",
+	"description": "There's a lot of walls...",
+	"author": "SkyMidnight",
+	"menu_priority": 9001,
+	"selectable": true,
+	
+	// Style
+	"style_id": "thinkfast",
+	
+	// Music
+	"music_id": "haveAnother",
+	
+	// Lua
+	"lua_file": "defaultLevels/life.lua",
+	
+	// Difficulty multipliers
+	"difficulty_multipliers": [],
+	
+	// Basic values
+	"speed_multiplier": 1,
+	"speed_increment": 0.0,	
+	"rotation_speed": 0.1,
+	"rotation_increment": 0.0,
+	"delay_multiplier": 1.00,
+	"delay_increment": -0.01,
+	"fast_spin": 0,
+	"sides": 6,
+	"sides_min": 6,
+	"sides_max": 6,
+	"increment_time": 60,
+	"rotation_speed_max": 0.5,
+	
+	"pulse_min": 200,
+	"pulse_max": 200,
+	"pulse_speed": 5,
+	"pulse_speed_r": 1,
+	"pulse_delay_max": 1,
+	
+	"beatpulse_max": 5,
+	"beatpulse_delay_max": 0.341,
+	
+	// Events
+	"events":
+	[
+	]
+}
