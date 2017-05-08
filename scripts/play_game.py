@@ -292,8 +292,11 @@ def playGameReal_a3c_incremental(agent, env, state_dim, action_dim, hasSavedMemo
     
     if agent.h.save_rate < agent.save_iterator:
         agent.save_iterator -= agent.h.save_rate
-        save_weights(agent, agent.run_count)
-        agent.metrics.runs.graph(agent.results_location)
+        if agent.args.mode != 'gather':
+            save_weights(agent, agent.run_count)
+            agent.metrics.save(agent.results_location, 'metrics')
+            agent.metrics.runs.graph(agent.results_location)
+        
         #agent.metrics.save_metrics_v(agent.results_location)
         #agent.metrics.a3c.graph_all(agent.results_location)
         #agent.metrics.save_metrics_training(agent.results_location)
@@ -308,7 +311,8 @@ def playGameReal_a3c_incremental(agent, env, state_dim, action_dim, hasSavedMemo
     if frame_saved < 60:
         frame_saved = 60
     if agent.brain.brain_memory.isFull:
-        agent.brain.optimize_batch(frame_saved)
+        if agent.args.mode != 'gather':
+            agent.brain.optimize_batch(frame_saved)
         
     return hasSavedMemory, max_frame_saved
             
@@ -347,6 +351,7 @@ def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
         if agent.h.save_rate < agent.save_iterator:
             agent.save_iterator -= agent.h.save_rate
             save_weights(agent, agent.run_count)
+            agent.metrics.save(agent.results_location, 'metrics')
             agent.metrics.runs.graph(agent.results_location)
             #agent.metrics.save_metrics_v(agent.results_location)
             #agent.metrics.a3c.graph_all(agent.results_location)
@@ -413,6 +418,7 @@ def playGameReal_ddqn(args, agent_func, screen_number=0, screen_id=-1):
             agent.save_iterator -= agent.h.save_rate
             save_weights(agent)
             if agent.mode == 'train': # Fix this later, not correct
+                agent.metrics.save(agent.results_location, 'metrics')
                 agent.metrics.runs.graph(agent.results_location)
                 agent.metrics.save_metrics_training(agent.results_location)
 

@@ -123,6 +123,6 @@ if __name__ == "__main__":
     hex.incongruence_a3c.directory = 'incremental_3'
     incremental.incremental_learn(hex.incongruence_a3c, incremental_levels3)
     
-    hex.incongruence_a3c.directory = 'incremental_4'
-    incremental.incremental_learn(hex.incongruence_a3c, incremental_levels4)
+    ##hex.incongruence_a3c.directory = 'incremental_4'
+    #incremental.incremental_learn(hex.incongruence_a3c, incremental_levels4)
     

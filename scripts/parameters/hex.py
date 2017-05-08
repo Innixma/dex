@@ -43,7 +43,7 @@ a3c_hyperparams = Hyperparam(
 
 gather_a3c_hyperparams = Hyperparam(
                              gamma=0.99,
-                             batch=64,
+                             batch=128,
                              explore=1000000,
                              epsilon_init=1,
                              epsilon_final=1,
@@ -74,7 +74,7 @@ gather_a3c = Args(
                         screen=screen,
                         hyper=gather_a3c_hyperparams,
                         directory='default',
-                        memory_delay=3.5,
+                        memory_delay=1,
                         model='model_mid_cnn_42x42_pool'
                         )
 
