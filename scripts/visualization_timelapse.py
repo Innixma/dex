@@ -33,6 +33,9 @@ def format_results(images, width=10, scale=1):
 
     rows = int(length/width)+1
 
+    if length/width == int(length/width):
+            rows -= 1
+            
     new_array = np.zeros([dim[0]*rows] + [dim[1]*width] + [3], dtype='uint8')
     print(new_array.shape)
     

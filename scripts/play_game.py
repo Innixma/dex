@@ -286,7 +286,7 @@ def playGameReal_a3c_incremental(agent, env, state_dim, action_dim, hasSavedMemo
         print('New max time!')
         max_frame_saved = frame_saved
         
-        save_memory_subset(agent, pointer_start, pointer_end, frame_saved, skip=8)
+        save_memory_subset(agent, pointer_start, pointer_end, frame_saved, skip=1)
         save_weights(agent, 'frame_' + str(frame_saved))
         
     
@@ -305,14 +305,16 @@ def playGameReal_a3c_incremental(agent, env, state_dim, action_dim, hasSavedMemo
         hasSavedMemory = True
         saveMemory_v2(agent)
 
-    frame_saved = int(frame_saved / 4)
-    if frame_saved > 400:
-        frame_saved = 400
-    if frame_saved < 60:
-        frame_saved = 60
+    frame_saved = int(frame_saved)
+    if frame_saved > 3000:
+        frame_saved = 3000
+    if frame_saved < 300:
+        frame_saved = 300
+    batch_count = int(90000/frame_saved)
+    batch_count = 75
     if agent.brain.brain_memory.isFull:
-        if agent.args.mode != 'gather':
-            agent.brain.optimize_batch(frame_saved)
+        if agent.args.mode != 'gather' and agent.args.mode != 'run':
+            agent.brain.optimize_batch(batch_count)
         
     return hasSavedMemory, max_frame_saved
             
@@ -333,7 +335,7 @@ def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
     hasSavedMemory = False
     
     max_frame_saved = 300
-    
+    total_saved = 0
     while (True):
         pointer_start = agent.brain.brain_memory.curIndex + 0
         frame, useRate, frame_saved = env.run(agent)
@@ -363,12 +365,15 @@ def playGameReal_a3c(args, agent_func, screen_number=0, screen_id=-1):
             if agent.args.mode == 'gather':
                 print('Finished Gathering Data')
                 break
-        frame_saved = int(frame_saved / 4)
-        if frame_saved > 400:
-            frame_saved = 400
-        if frame_saved < 60:
-            frame_saved = 60
+        frame_saved = int(frame_saved)
+        if frame_saved > 1000:
+            frame_saved = 1000
+        if frame_saved < 300:
+            frame_saved = 300
+        if total_saved > 100000:
+            frame_saved = int(frame_saved / 4)
         if agent.brain.brain_memory.isFull:
+            total_saved += frame_saved
             agent.brain.optimize_batch(frame_saved)
             
 def playGameReal_ddqn(args, agent_func, screen_number=0, screen_id=-1):

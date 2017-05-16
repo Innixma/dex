@@ -43,6 +43,8 @@ class Agent:
     def update_epsilon(self):
         if self.epsilon > self.h.epsilon_final:
             self.epsilon -= (self.h.epsilon_init - self.h.epsilon_final) / self.h.explore
+            if self.epsilon < self.h.epsilon_final:
+                self.epsilon = self.h.epsilon_final
             
     def act(self, s):
         if random.random() < self.epsilon:

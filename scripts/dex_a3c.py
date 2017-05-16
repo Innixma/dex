@@ -16,6 +16,7 @@ from __future__ import print_function
 from parameters import hex, gym
 import play_game
 import agent_a3c
+import copy
 
 #%%
 
@@ -34,5 +35,7 @@ if __name__ == "__main__":
     args = hex.incongruence_a3c
     #args = hex_incongruence_a3c_load
     #args = hex_pi_acer_load
+    
+    args = copy.deepcopy(args)
     main(args) 
 

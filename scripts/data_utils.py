@@ -66,6 +66,10 @@ def load_weights(agent, filename_input=None): # TODO: Update this function
             print ("Weights loaded successfully, training")
         elif agent.args.mode == 'gather': # Gather data, then exit
             print('Gathering Data')
+            if agent.args.weight_override:
+                agent.epsilon = agent.h.epsilon_init
+                print ("Now we load weight from " + agent.results_location + filename + '.h5')
+                agent.brain.model.load_weights(agent.results_location + filename + '.h5')
         else: # Train new
             print('Training new network!')
             agent.epsilon = agent.h.epsilon_init

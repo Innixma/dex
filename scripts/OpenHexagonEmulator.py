@@ -5,7 +5,7 @@ import win32gui, win32ui, win32con, win32api, win32com.client
 import numpy as np
 import time
 import terminal_detection          
-import convert_to_polar
+#import convert_to_polar
 import scipy.misc as smp
 import skimage as skimage
 from skimage import color
