@@ -6,7 +6,6 @@ import numpy as np
 
 from data_utils import loadMemory_direct
 from agent_a3c import Agent
-from param_const import hex_base_a3c_load
 import models
 
 from vis.losses import ActivationMaximization

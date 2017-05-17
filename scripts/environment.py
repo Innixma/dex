@@ -66,6 +66,41 @@ class Environment_gym_rgb:
             if t:
                 return R, 1
 
+class Environment_realtime_collect:
+    def __init__(self, env_info):
+        self.env = env_info.generate_env()
+        self.timelapse = 1
+        
+    def framerate_check(self, start_time, frame):
+        if time.time() - start_time < (self.timelapse * frame): # Cap framerate
+            time.sleep(self.timelapse - (time.time() % self.timelapse))
+        else:
+            self.catchup_frames += 1
+        
+    def init_run(self, img_channels):
+        x = self.env.env.captureIm()
+
+        return(x)
+            
+    def run(self):
+        self.catchup_frames = -1
+        frame = 0
+        
+        self.timelapse = 1/50
+        
+        self.env.start_game()
+        start_time = time.time()
+
+        frames_list = []
+        for i in range(400):
+            self.framerate_check(start_time, frame)
+
+            x = self.env.env.captureIm()
+            frames_list.append(x)
+        
+        frame += 1
+        return frames_list # Metrics
+        
 class Environment_realtime_a3c:
     def __init__(self, env_info, idx=0):
         self.idx = idx

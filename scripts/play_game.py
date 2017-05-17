@@ -311,7 +311,7 @@ def playGameReal_a3c_incremental(agent, env, state_dim, action_dim, hasSavedMemo
     if frame_saved < 300:
         frame_saved = 300
     batch_count = int(90000/frame_saved)
-    batch_count = 75
+    batch_count = 15 # 75
     if agent.brain.brain_memory.isFull:
         if agent.args.mode != 'gather' and agent.args.mode != 'run':
             agent.brain.optimize_batch(batch_count)

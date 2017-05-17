@@ -12,6 +12,15 @@ screen = Screenparam(
                          scale=4
                          )
 
+screen_test = Screenparam(
+                         app='Open Hexagon 1.92 - by vittorio romeo',
+                         size=[376,376],
+                         #zoom=[12,2],
+                         zoom=[20,20],
+                         framerate=50,
+                         scale=1
+                         )
+
 a3c_hyperspecific = Hyper_a3c(
                                        loss_v=0.5,
                                        loss_entropy=0.01,

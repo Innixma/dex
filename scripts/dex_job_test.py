@@ -74,6 +74,8 @@ phases = full_schedule.phase
 
 # Temporary
 phases[0] = []
+phases[1] = phases[1][6:]
+
 
 break_time = 3600
 
