@@ -2,7 +2,11 @@
 
 This is a deep learning repository containing state-of-the-art algorithms that run out of the box on Keras.
 
-![Demo](videos/dex_rotation3_222s_inc.gif)
+![Demo](https://gifyu.com/image/bnjP)
+
+![Demo2](https://gifyu.com/image/bnjX)
+
+![Demo3](https://gifyu.com/image/bn02)
 
 It is compatible with OpenAI Gym, as well as a custom environment 'Open Hexagon' played with screen pixel information, which is included with the repo.
 
