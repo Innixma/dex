@@ -1,18 +1,20 @@
-# Deep Hexagon
+# Deep Hexagon (WIP)
+
+Deep Hexagon (dex) is the first reinforcement learning environment toolkit specialized for continual learning. It contains hundreds of environments ranging drastically in difficulty.
 
 This is a deep learning repository containing state-of-the-art algorithms that run out of the box on Keras.
 
-![Demo](https://gifyu.com/images/dex_rotation3_222s_inc.gif)
+![Demo](https://github.com/Innixma/dex-videos/tree/master/videos/dex_rotation3_222s_inc.gif)
 
-![Demo2](https://gifyu.com/images/dex_environment_showcase.gif)
+![Demo2](https://github.com/Innixma/dex-videos/tree/master/videos/dex_environment_showcase.gif)
 
-![Demo3](https://gifyu.com/images/dex_saliency_showcase.gif)
+![Demo3](https://github.com/Innixma/dex-videos/tree/master/videos/dex_saliency_showcase.gif)
 
 It is compatible with OpenAI Gym, as well as a custom environment 'Open Hexagon' played with screen pixel information, which is included with the repo.
 
 It can also be generalized to any program, given a proper emulator. (WIP)
 
-- [Videos] (https://www.youtube.com/channel/UCvC0mlbgqEURZF7IkQKfbYg)
+- Videos: https://www.youtube.com/channel/UCvC0mlbgqEURZF7IkQKfbYg
 - License: MIT
 
 ## Requirements
