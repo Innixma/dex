@@ -6,10 +6,6 @@ This is a deep learning repository containing state-of-the-art algorithms that r
 
 ![Demo](https://github.com/Innixma/dex-videos/tree/master/videos/dex_rotation3_222s_inc.gif)
 
-![Demo2](https://github.com/Innixma/dex-videos/tree/master/videos/dex_environment_showcase.gif)
-
-![Demo3](https://github.com/Innixma/dex-videos/tree/master/videos/dex_saliency_showcase.gif)
-
 It is compatible with OpenAI Gym, as well as a custom environment 'Open Hexagon' played with screen pixel information, which is included with the repo.
 
 It can also be generalized to any program, given a proper emulator. (WIP)
