@@ -16,7 +16,7 @@ class Hyperparam:
                  learning_rate=0.00025, # Fine
                  extra=None, # Fine
                  ):
-        
+
         self.gamma = gamma # ALL
         self.batch = batch # ALL
         self.explore = explore # ALL
@@ -27,7 +27,7 @@ class Hyperparam:
         self.img_channels = img_channels # ALL
         self.learning_rate = learning_rate # ALL
         self.extra = extra # Additional hyperparmeters for algorithms
-        
+
 class Hyper_a3c: # Additional hyperparameters for a3c
     def __init__(
                  self,
@@ -35,7 +35,7 @@ class Hyper_a3c: # Additional hyperparameters for a3c
                  loss_entropy=0.01,
                  brain_memory_size=8
                  ):
-        
+
         self.loss_v = loss_v
         self.loss_entropy = loss_entropy
         self.brain_memory_size = brain_memory_size
@@ -47,7 +47,7 @@ class Hyper_ddqn: # Additional hyperparameters for ddqn
                  observe=100,
                  update_rate=1000,
                  ):
-        
+
         self.observe = observe
         self.update_rate = update_rate
 
@@ -61,10 +61,10 @@ class Gym_param:
         self.wrapper = wrapper
 
     def generate_env(self):
-        import env_wrappers
-        return getattr(env_wrappers,self.wrapper)(self.problem)
-       
-        
+        from environments import env_wrappers
+        return getattr(env_wrappers, self.wrapper)(self.problem)
+
+
 class Real_param:
     def __init__(self,
                  problem='Hexagon',
@@ -79,12 +79,12 @@ class Real_param:
         self.module_name = module_name
         self.class_name = class_name
         self.game_args = game_args
-        
+
     def generate_env(self):
-        import env_wrappers
-        return getattr(env_wrappers,self.wrapper)(self.problem, self.module_name, self.class_name, self.game_args)
-                
-        
+        from environments import env_wrappers
+        return getattr(env_wrappers, self.wrapper)(self.problem, self.module_name, self.class_name, self.game_args)
+
+
 class Screenparam:
     def __init__(
                  self,
@@ -99,7 +99,7 @@ class Screenparam:
         self.zoom = zoom
         self.framerate = framerate
         self.scale = scale
-        
+
 class Args:
     def __init__(self,
                  algorithm,

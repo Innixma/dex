@@ -32,7 +32,7 @@ gather_a3c_hyperspecific = Hyper_a3c(brain_memory_size=500)
 env = Real_param(
                      problem='Hexagon',
                      wrapper='Real_base_wrapper',
-                     module_name='OpenHexagonEmulator',
+                     module_name='environments.hexagon.openHexagonEmulator',
                      class_name='HexagonEmulator',
                      game_args=screen
                      )
