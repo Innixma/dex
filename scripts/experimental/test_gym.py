@@ -4,12 +4,12 @@
 import cv2
 import numpy as np
 
-from environments.environment import Environment_gym_rgb
+from environments.environment import EnvironmentGymRgb
 from parameters import gym
 
 args = gym.breakout_a3c
 
-env = Environment_gym_rgb(args.env, 0)
+env = EnvironmentGymRgb(args.env, 0)
 
 seed_img = env.env.reset()
 

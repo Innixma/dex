@@ -7,28 +7,26 @@ from keras.optimizers import Adam
 from agents import models
 
 
-def hubert_loss(y_true, y_pred): # sqrt(1+a^2)-1
+def hubert_loss(y_true, y_pred):  # sqrt(1+a^2)-1
     err = y_pred - y_true
     return K.sqrt(1+K.square(err))-1
 
 
-# Class concept from Jaromir Janisch, 2016
-# https://jaromiru.com/2016/09/27/lets-make-a-dqn-theory/
 class Brain:
-    def __init__(self, agent, modelFunc=None):
+    def __init__(self, agent, model_func=None):
         self.agent = agent
         self.state_dim = self.agent.state_dim
         self.action_dim = self.agent.action_dim
 
-        self.model = self.create_model(modelFunc)
-        self.model_ = self.create_model(modelFunc)
+        self.model = self.create_model(model_func)
+        self.model_ = self.create_model(model_func)
 
-        self.updateTargetModel()
+        self.update_target_model()
 
-    def create_model(self, modelFunc=None):
-        if not modelFunc:
-            modelFunc = models.model_mid_default
-        model = models.model_start(self.state_dim, self.action_dim, models.model_top_ddqn, modelFunc)
+    def create_model(self, model_func=None):
+        if not model_func:
+            model_func = models.model_mid_default
+        model = models.model_start(self.state_dim, self.action_dim, models.model_top_ddqn, model_func)
 
         adam = Adam(lr=self.agent.h.learning_rate)
         model.compile(loss=hubert_loss,optimizer=adam)
@@ -47,12 +45,12 @@ class Brain:
         else:
             return self.model.predict(s)
 
-    def predictOne(self, s, target=False):
+    def predict_one(self, s, target=False):
         dim = [1] + self.state_dim
         return self.predict(s.reshape(dim), target=target).flatten()
-        #return self.predict(s, target=target).flatten()
+        # return self.predict(s, target=target).flatten()
 
-    def updateTargetModel(self):
+    def update_target_model(self):
         self.model_.set_weights(self.model.get_weights())
 
 

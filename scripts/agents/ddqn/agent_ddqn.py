@@ -30,7 +30,7 @@ class Agent:
         self.mode = 'observe'
 
         load_weights(self)
-        self.brain.updateTargetModel()
+        self.brain.update_target_model()
 
     def update_epsilon(self):
         if self.epsilon > self.h.epsilon_final and self.memory.total_saved > self.h.extra.observe:
@@ -40,13 +40,13 @@ class Agent:
         if self.update_iterator >= self.h.extra.update_rate:
             self.update_iterator -= self.h.extra.update_rate
             print('Updating Target Network')
-            self.brain.updateTargetModel()
+            self.brain.update_target_model()
 
     def act(self, s):
         if random.random() < self.epsilon:
             return random.randrange(0, self.action_dim)
         else:
-            return np.argmax(self.brain.predictOne(s))
+            return np.argmax(self.brain.predict_one(s))
 
     def observe(self, s, a, r, s_, t):
         self.memory.add_single(s, a, r, s_, t)
@@ -61,7 +61,7 @@ class Agent:
         s, a, r, s_, t = self.memory.sample_data(self.h.batch)
 
         targets = self.brain.predict(s)
-        targets_ = self.brain.predict(s_, target=False) # Target Network!
+        targets_ = self.brain.predict(s_, target=False)  # Target Network!
         pTarget_ = self.brain.predict(s_, target=True)
         Q_size = self.h.batch - np.sum(t)
         if Q_size == 0:
@@ -72,7 +72,7 @@ class Agent:
                 targets[i, a[i]] = r[i]
             else:
                 Q_sa_total += np.max(targets_[i])
-                targets[i, a[i]] = r[i] + self.h.gamma * pTarget_[i][np.argmax(targets_[i])] # double DQN
+                targets[i, a[i]] = r[i] + self.h.gamma * pTarget_[i][np.argmax(targets_[i])]  # double DQN
 
         loss = self.brain.train(s, targets)
         Q_sa_total = Q_sa_total/Q_size

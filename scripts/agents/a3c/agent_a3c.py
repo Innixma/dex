@@ -12,7 +12,7 @@ from utils.data_utils import load_weights, save_class
 
 
 class Agent:
-    def __init__(self, args, state_dim, action_dim, modelFunc=None, visualization=False, brain=None, idx=0):
+    def __init__(self, args, state_dim, action_dim, model_func=None, visualization=False, brain=None, idx=0):
         self.idx = idx
         self.state_dim = state_dim
         self.action_dim = action_dim
@@ -31,7 +31,7 @@ class Agent:
         self.metrics = Metrics()
         self.memory = Memory(self.h.memory_size, self.state_dim, 1)
         if not brain:
-            self.brain = Brain(self, modelFunc)
+            self.brain = Brain(self, model_func)
 
         else:
             self.brain = brain
@@ -56,7 +56,7 @@ class Agent:
             pr = self.brain.predict_p(np.array([s]))
             a = np.random.choice(self.action_dim, p=pr[0])
             return a
-            #return np.argmax(self.brain.predict_p(np.array([s])))
+            # return np.argmax(self.brain.predict_p(np.array([s])))
 
     def act_v(self, s):
         pr, v = self.brain.predict(np.array([s]))
@@ -65,7 +65,7 @@ class Agent:
         else:
             a = np.random.choice(self.action_dim, p=pr[0])
             return a, v
-            #return np.argmax(p), v
+            # return np.argmax(p), v
 
     def observe(self, s, a, r, s_, t):
         self.memory.add_single(s, a, r, s_, t)
@@ -80,15 +80,15 @@ class Agent:
         if t:
             s_ = None
 
-        self.R = ( self.R + r * self.h.gamma_n ) / self.h.gamma
+        self.R = (self.R + r * self.h.gamma_n) / self.h.gamma
 
         if s_ is None:
             if self.memory.size < self.memory.max_size:
-                self.memory.reset() # Don't train, R is inaccurate
+                self.memory.reset()  # Don't train, R is inaccurate
             for i in range(self.memory.size, 0, -1):
                 s, a, r, _, _ = self.memory.get_last_n(i)
                 self.brain.train_augmented(s, a, self.R, None)
-                self.R = ( self.R - r ) / self.h.gamma
+                self.R = (self.R - r) / self.h.gamma
             self.R = 0
             self.memory.reset()
 

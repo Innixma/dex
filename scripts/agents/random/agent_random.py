@@ -29,8 +29,8 @@ class Agent:
 
         results_location = G.RESULT_FOLDER_FULL + '/' + self.args.directory
         data_location = G.DATA_FOLDER_FULL + '/' + self.args.directory
-        os.makedirs(results_location,exist_ok=True) # Generates results folder
-        os.makedirs(data_location,exist_ok=True) # Generates data folder
+        os.makedirs(results_location,exist_ok=True)  # Generates results folder
+        os.makedirs(data_location,exist_ok=True)  # Generates data folder
         self.results_location = results_location + '/'
         self.data_location = data_location + '/'
 

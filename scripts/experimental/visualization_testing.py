@@ -7,7 +7,7 @@ import visualization
 from agents import models
 from agents.a3c.agent_a3c import Agent
 from parameters.hex import base_a3c_load
-from utils.data_utils import loadMemory_direct
+from utils.data_utils import load_memory_direct
 
 args = base_a3c_load
 state_dim = [96, 96, 2]
@@ -17,8 +17,8 @@ memory_location = '../data/' + args.directory + '/'
 extra = '_frame_2577'
 
 base_a3c_load.weight_override = 'model_frame_2577'
-agent = Agent(base_a3c_load, state_dim, action_dim, modelFunc=models.model_mid_cnn, visualization=True)
-s, a, r, s_, t = loadMemory_direct(memory_location, extra)
+agent = Agent(base_a3c_load, state_dim, action_dim, model_func=models.model_mid_cnn, visualization=True)
+s, a, r, s_, t = load_memory_direct(memory_location, extra)
 
 #prevVal = 0
 imminent_idx = []

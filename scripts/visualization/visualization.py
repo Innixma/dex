@@ -19,6 +19,7 @@ def deprocess_image(img):
     img = np.clip(img, 0, 255).astype('uint8')
     return img
 
+
 def visualize_saliency(model, layer_idx, filter_indices,
                        seed_img, text=None, overlay=False):
     heatmap = generate_heatmap(model, layer_idx, filter_indices, seed_img)
@@ -34,13 +35,14 @@ def visualize_saliency(model, layer_idx, filter_indices,
         new_img *= 255
         new_img = np.clip(new_img, 0, 255)
         new_img = new_img.astype('uint8')
-        #new_img = seed_img
+        # new_img = seed_img
 
         overlayed_image = combine_images(new_img, 0.7, heatmap_colored, 0.7)
         if text:
             text_image = add_text_to_image(overlayed_image, text)
 
     return heatmap, heatmap_colored, overlayed_image, text_image
+
 
 def generate_heatmap(model, layer_idx, filter_indices, seed_img):
     losses = [
@@ -68,14 +70,17 @@ def generate_heatmap(model, layer_idx, filter_indices, seed_img):
 
     return heatmap
 
+
 def heatmap_to_color(heatmap, threshold=51):
     heatmap_colored = cv2.applyColorMap(np.uint8(heatmap), cv2.COLORMAP_JET)
     heatmap_colored[heatmap <= threshold] = 0
     return heatmap_colored
 
+
 def combine_images(img1, weight1, img2, weight2):
     output = cv2.addWeighted(img1, weight1, img2, weight2, 0)
     return output
+
 
 def add_text_to_image(img, text):
     new_img = np.copy(img)
@@ -83,11 +88,11 @@ def add_text_to_image(img, text):
 
     return new_img
 
-def generate_saliceny_map(model, seed_imgs, show=True, text=None):
-    """Generates a heatmap indicating the pixels that contributed the most towards
-    maximizing the filter output. First, the class prediction is determined, then we generate heatmap
-    to visualize that class.
-    """
+
+def generate_saliency_map(model, seed_imgs, show=True, text=None):
+    # Generates a heatmap indicating the pixels that contributed the most towards
+    # maximizing the filter output. First, the class prediction is determined, then we generate heatmap
+    # to visualize that class.
 
     layer_name = 'action' # The name of the layer we want to visualize
     layer_idx = [idx for idx, layer in enumerate(model.layers) if layer.name == layer_name][0]
@@ -97,19 +102,19 @@ def generate_saliceny_map(model, seed_imgs, show=True, text=None):
     overlayed_images = []
     text_images = []
     i = -1
-    maxIter = len(seed_imgs)
+    max_iter = len(seed_imgs)
     for seed_img in seed_imgs:
         i += 1
         if i % 10 == 0:
-            print('\r', 'Generating', '(', i, '/', maxIter, ')', end="")
+            print('\r', 'Generating', '(', i, '/', max_iter, ')', end="")
 
         if text:
-            curText = text[i]
+            cur_text = text[i]
         else:
-            curText = None
+            cur_text = None
 
         pred_class = np.argmax(model.predict(np.array([seed_img]))[0])
-        heatmap, heatmap_colored, overlayed_image, text_image = visualize_saliency(model, layer_idx, [pred_class], seed_img, text=curText, overlay=True)
+        heatmap, heatmap_colored, overlayed_image, text_image = visualize_saliency(model, layer_idx, [pred_class], seed_img, text=cur_text, overlay=True)
 
         heatmaps.append(heatmap)
         heatmaps_c.append(heatmap_colored)
@@ -119,7 +124,7 @@ def generate_saliceny_map(model, seed_imgs, show=True, text=None):
             cv2.imshow('Saliency', overlayed_image)
             cv2.waitKey(0)
 
-    print('\r', 'Generating', '(', maxIter, '/', maxIter, ')')
+    print('\r', 'Generating', '(', max_iter, '/', max_iter, ')')
     return heatmaps, heatmaps_c, overlayed_images, text_images
 """
 args = hex_base_a3c_load
@@ -151,37 +156,39 @@ print('Model loaded.')
 
 heatmaps, heatmaps_c, overlayed_images, text_images = generate_saliceny_map(model, life_s, show=False)
 """
+
+
 def make_video(images, filename='opt_progress3.gif', fps=10, loop=1):
     writer = imageio.get_writer(filename, mode='I', loop=1, fps=10)
     c = 0
-    numIter = len(images)
+    num_iter = len(images)
     for img in images:
         c += 1
         if c % 10 == 0:
-            print(c, '/', numIter)
+            print(c, '/', num_iter)
         writer.append_data(img)
     writer.close()
     print('Done!')
 
+
 def rescale_images(images, scale=8):
-    numIter = len(images)
+    num_iter = len(images)
     dim = np.array(list(images[0].shape[:2]))
     new_dims = tuple(dim*scale + [3])
     resized_images = []
-    for i in range(numIter):
+    for i in range(num_iter):
         resized = cv2.resize(images[i], new_dims, interpolation = cv2.INTER_AREA)
         resized_images.append(resized)
     return resized_images
 
 
 def concat_3_videos(images1, images2, images3):
-    numIter = len(images1)
+    num_iter = len(images1)
     dim = list(images1[0].shape[:2])
 
     size = dim[0]
 
     new_size = size*2
-
 
     total_dim = tuple([new_size, new_size, 3])
     mid = int(size/2)
@@ -189,7 +196,7 @@ def concat_3_videos(images1, images2, images3):
     print(total_dim)
     print(size)
     new_imgs = []
-    for i in range(numIter):
+    for i in range(num_iter):
         new_img = np.zeros(total_dim, dtype='uint8')
         new_img[:size, :size, :] = images1[i]
         new_img[:size, size:, :] = images2[i]
@@ -197,15 +204,16 @@ def concat_3_videos(images1, images2, images3):
         new_imgs.append(new_img)
     return new_imgs
 
+
 def make_video_complex(images1, images2, filename='opt_progress2.gif', fps=10, loop=1):
     writer = imageio.get_writer(filename, mode='I', loop=1, fps=10)
 
-    numIter = len(images1)
+    num_iter = len(images1)
     dim = np.array(list(images1[0].shape[:2]))
     new_dims = tuple(dim*8 + [3])
-    for i in range(numIter):
+    for i in range(num_iter):
         if i % 10 == 0:
-            print(i, '/', numIter)
+            print(i, '/', num_iter)
 
         resized1 = cv2.resize(images1[i], new_dims, interpolation = cv2.INTER_AREA)
         resized2 = cv2.resize(images2[i], new_dims, interpolation = cv2.INTER_AREA)

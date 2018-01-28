@@ -16,8 +16,8 @@ import numpy as np
 
 from agents.a3c import agent_a3c
 from agents.metrics import Metrics
-from environments.environment import Environment_realtime_a3c
-from environments.play_game import playGameReal_a3c_incremental_init, playGameReal_a3c_incremental
+from environments.environment import EnvironmentRealtimeA3C
+from environments.play_game import play_game_real_a3c_incremental_init, play_game_real_a3c_incremental
 from utils.data_utils import save_weights
 
 
@@ -30,7 +30,7 @@ class GameController:
         self.levels = copy.deepcopy(levels)
         self.size = len(self.levels)
         self.idx = 0
-        self.env = Environment_realtime_a3c(self.args.env)
+        self.env = EnvironmentRealtimeA3C(self.args.env)
 
     def switch(self, level):
         if isinstance(level, int):
@@ -190,12 +190,15 @@ class GameScheduler:
 
         self.controller.switch(level)
 
-        agent, hasSavedMemory, max_frame_saved = playGameReal_a3c_incremental_init(args, agent_a3c.Agent, self.state_dim, self.action_dim)
+        agent, hasSavedMemory, max_frame_saved = play_game_real_a3c_incremental_init(args, agent_a3c.Agent,
+                                                                                     self.state_dim, self.action_dim)
 
 
         time_start = time.time()
         while True:
-            hasSavedMemory, max_frame_saved = playGameReal_a3c_incremental(agent, self.env, self.state_dim, self.action_dim, hasSavedMemory, max_frame_saved)
+            hasSavedMemory, max_frame_saved = play_game_real_a3c_incremental(agent, self.env, self.state_dim,
+                                                                             self.action_dim, hasSavedMemory,
+                                                                             max_frame_saved)
             if agent.args.mode == 'gather':
                 if hasSavedMemory:
                     break

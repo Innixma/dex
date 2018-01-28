@@ -1,27 +1,27 @@
 # By Nick Erickson
 # Contains parameters for games and levels
 
-from parameters.param_utils import Args, Hyperparam, Hyper_a3c, Hyper_ddqn, Gym_param
+from parameters.param_utils import Args, Hyperparam, HyperA3C, HyperDDQN, GymParam
 
-a3c_hyperspecific = Hyper_a3c(
+a3c_hyperspecific = HyperA3C(
                                        loss_v=0.5,
                                        loss_entropy=0.01,
                                        brain_memory_size=128
                                        )
 
-ddqn_hyperspecific = Hyper_ddqn(
+ddqn_hyperspecific = HyperDDQN(
                                 observe=7500,
                                 update_rate=1000,
                                 )
 
-cart_env = Gym_param()
-pong_env = Gym_param(
+cart_env = GymParam()
+pong_env = GymParam(
                          problem='Pong-v0',
-                         wrapper='Gym_pong_wrapper'
+                         wrapper='GymPongWrapper'
                          )
-breakout_env = Gym_param(
+breakout_env = GymParam(
                          problem='Breakout-v0',
-                         wrapper='Gym_breakout_wrapper'
+                         wrapper='GymBreakoutWrapper'
                          )
 
 cart_ddqn_hyperparams = Hyperparam(

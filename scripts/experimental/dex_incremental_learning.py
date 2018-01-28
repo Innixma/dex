@@ -11,8 +11,8 @@ import time
 
 from agents.a3c import agent_a3c
 from agents.metrics import Metrics
-from environments.environment import Environment_realtime_a3c
-from environments.play_game import playGameReal_a3c_incremental_init, playGameReal_a3c_incremental
+from environments.environment import EnvironmentRealtimeA3C
+from environments.play_game import play_game_real_a3c_incremental_init, play_game_real_a3c_incremental
 from parameters import hex
 from utils.data_utils import save_weights
 
@@ -22,7 +22,7 @@ from utils.data_utils import save_weights
 
 class Incremental:
     def __init__(self, levels, break_time, args):
-        self.env = Environment_realtime_a3c(args.env)
+        self.env = EnvironmentRealtimeA3C(args.env)
         self.action_dim = self.env.env.action_dim()
         self.state_dim = list(self.env.env.state_dim()) + [args.hyper.img_channels]
         self.levels = levels
@@ -32,7 +32,8 @@ class Incremental:
 
     def incremental_learn(self, args, levels_list):
         args = copy.deepcopy(args)
-        agent, hasSavedMemory, max_frame_saved = playGameReal_a3c_incremental_init(args, agent_a3c.Agent, self.state_dim, self.action_dim)
+        agent, hasSavedMemory, max_frame_saved = play_game_real_a3c_incremental_init(args, agent_a3c.Agent,
+                                                                                     self.state_dim, self.action_dim)
         length = len(levels_list)
         idxs = []
         idx_diff = []
@@ -56,7 +57,9 @@ class Incremental:
         for i in range(length):
             time_start = time.time()
             while True:
-                hasSavedMemory, max_frame_saved = playGameReal_a3c_incremental(agent, self.env, self.state_dim, self.action_dim, hasSavedMemory, max_frame_saved)
+                hasSavedMemory, max_frame_saved = play_game_real_a3c_incremental(agent, self.env, self.state_dim,
+                                                                                 self.action_dim, hasSavedMemory,
+                                                                                 max_frame_saved)
                 if time.time() - time_start > break_time:
                     break
             if i != length - 1:
@@ -82,7 +85,7 @@ class Gather_mult:
         self.levelpairs = levelpairs
         self.weights = weights
         self.directory = directory
-        self.env = Environment_realtime_a3c(self.args.env)
+        self.env = EnvironmentRealtimeA3C(self.args.env)
         self.action_dim = self.env.env.action_dim()
         self.state_dim = list(self.env.env.state_dim()) + [self.args.hyper.img_channels]
         self.levels = levels
@@ -123,12 +126,16 @@ class Gather_mult:
             args.directory = self.directory[0] #self.directory[trained_index]
             args.weight_override = self.weights[i]
 
-            agent, hasSavedMemory, max_frame_saved = playGameReal_a3c_incremental_init(args, agent_a3c.Agent, self.state_dim, self.action_dim)
+            agent, hasSavedMemory, max_frame_saved = play_game_real_a3c_incremental_init(args, agent_a3c.Agent,
+                                                                                         self.state_dim,
+                                                                                         self.action_dim)
 
 
 
             while True:
-                hasSavedMemory, max_frame_saved = playGameReal_a3c_incremental(agent, self.env, self.state_dim, self.action_dim, hasSavedMemory, max_frame_saved)
+                hasSavedMemory, max_frame_saved = play_game_real_a3c_incremental(agent, self.env, self.state_dim,
+                                                                                 self.action_dim, hasSavedMemory,
+                                                                                 max_frame_saved)
                 if hasSavedMemory:
                     break
 

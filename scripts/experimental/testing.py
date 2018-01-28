@@ -6,7 +6,7 @@ from param_const import hex_base_a3c
 
 from agents import models
 from agents.a3c.agent_a3c import Agent as Agent_a3c
-from utils.data_utils import loadMemory_v2
+from utils.data_utils import load_memory_v2
 
 
 def zca_whitening_matrix(X):
@@ -37,7 +37,7 @@ memory_location = '../data/hex_hexreal_test/'
 
 #agent = Agent(hex_base_gather, state_dim, action_dim)
 agent = Agent_a3c(hex_base_a3c, state_dim, action_dim, modelFunc=models.CNN_a3c)
-loadMemory_v2(agent, memory_location)
+load_memory_v2(agent, memory_location)
 
 data = agent.brain.brain_memory.s
 

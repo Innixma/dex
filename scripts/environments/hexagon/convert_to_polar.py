@@ -5,11 +5,12 @@ import scipy.ndimage
 
 
 def main():
-    from environments.hexagon import openHexagonEmulator
+    from environments.hexagon import open_hexagon_emulator
 
-    img = openHexagonEmulator.captureIm()
+    img = open_hexagon_emulator.captureIm()
     plot_cart_image(img)
     plot_polar_image(img)
+
 
 def plot_polar_image(data, origin=None):
     """Plots an image reprojected into polar coordinages with the origin
@@ -22,6 +23,7 @@ def plot_polar_image(data, origin=None):
     plt.title('Image in Polar Coordinates')
     plt.savefig('polar_img.png')
 
+
 def plot_cart_image(data, origin=None):
     """Plots an image reprojected into polar coordinages with the origin
     at "origin" (a tuple of (x0, y0), defaults to the center of the image)"""
@@ -32,6 +34,7 @@ def plot_cart_image(data, origin=None):
     plt.ylabel('Height')
     plt.title('Image in Cartesian Coordinates')
     plt.savefig('cartesian_img.png')
+
 
 def index_coords(data, origin=None):
     """Creates x & y coords for the indicies in a numpy array "data".
@@ -47,10 +50,12 @@ def index_coords(data, origin=None):
     y -= origin_y
     return x, y
 
+
 def cart2polar(x, y):
     r = np.sqrt(x**2 + y**2)
     theta = np.arctan2(y, x)
     return r, theta
+
 
 def polar2cart(r, theta):
     x = r * np.cos(theta)
@@ -76,9 +81,10 @@ def bin_by(x, y, nbins=30):
 
     return output, bins
 
+
 def reproject_image_into_polar(data, origin=None):
-    """Reprojects a 3D numpy array ("data") into a polar coordinate system.
-    "origin" is a tuple of (x0, y0) and defaults to the center of the image."""
+    # Reprojects a 3D numpy array ("data") into a polar coordinate system.
+    # "origin" is a tuple of (x0, y0) and defaults to the center of the image.
     ny, nx = data.shape[:2]
     if origin is None:
         origin = (nx//2, ny//2)

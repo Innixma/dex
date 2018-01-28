@@ -1,9 +1,9 @@
 # By Nick Erickson
 # Contains parameters for games and levels
 
-from parameters.param_utils import Args, Hyperparam, Screenparam, Hyper_a3c, Real_param
+from parameters.param_utils import Args, Hyperparam, ScreenParam, HyperA3C, RealParam
 
-screen = Screenparam(
+screen = ScreenParam(
                          app='Open Hexagon 1.92 - by vittorio romeo',
                          size=[188,188],
                          #zoom=[12,2],
@@ -12,7 +12,7 @@ screen = Screenparam(
                          scale=4
                          )
 
-screen_test = Screenparam(
+screen_test = ScreenParam(
                          app='Open Hexagon 1.92 - by vittorio romeo',
                          size=[376,376],
                          #zoom=[12,2],
@@ -21,18 +21,18 @@ screen_test = Screenparam(
                          scale=1
                          )
 
-a3c_hyperspecific = Hyper_a3c(
+a3c_hyperspecific = HyperA3C(
                                        loss_v=0.5,
                                        loss_entropy=0.01,
-                                       brain_memory_size=50000
+                                       brain_memory_size=1000
                                        )
 
-gather_a3c_hyperspecific = Hyper_a3c(brain_memory_size=500)
+gather_a3c_hyperspecific = HyperA3C(brain_memory_size=500)
 
-env = Real_param(
+env = RealParam(
                      problem='Hexagon',
-                     wrapper='Real_base_wrapper',
-                     module_name='environments.hexagon.openHexagonEmulator',
+                     wrapper='RealBaseWrapper',
+                     module_name='environments.hexagon.open_hexagon_emulator',
                      class_name='HexagonEmulator',
                      game_args=screen
                      )
@@ -40,7 +40,7 @@ env = Real_param(
 a3c_hyperparams = Hyperparam(
                              gamma=0.99,
                              batch=128,
-                             explore=20000,
+                             explore=1000,
                              epsilon_init=1,
                              epsilon_final=0.05,
                              memory_size=4,

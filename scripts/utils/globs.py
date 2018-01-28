@@ -3,26 +3,26 @@
 # TODO: Clean this up since it is now largely unused except for key codes
 import numpy as np
 import datetime
+import os
 
 app = 'Open Hexagon 1.92 - by vittorio romeo'
 keys = np.array(['none', 'left_arrow', 'right_arrow', 'enter', 'esc'])
 
 image_mode = 'standard'
-#image_mode = 'polar'  #  for polar representation
+# image_mode = 'polar'  # for polar representation
 
-import os
 RESULT_FOLDER = '/../results'
 dir = os.path.dirname(__file__)
-os.makedirs(dir + RESULT_FOLDER,exist_ok=True) # Generates results folder
+os.makedirs(dir + RESULT_FOLDER,exist_ok=True)  # Generates results folder
 RESULT_FOLDER_FULL = dir + RESULT_FOLDER
 CUR_FOLDER = datetime.datetime.now().strftime('%G-%m-%d-%H-%M-%S')
 
 DATA_FOLDER = '/../data'
 dir = os.path.dirname(__file__)
-os.makedirs(dir + DATA_FOLDER,exist_ok=True) # Generates results folder
+os.makedirs(dir + DATA_FOLDER,exist_ok=True)  # Generates results folder
 DATA_FOLDER_FULL = dir + DATA_FOLDER
 
-#Giant dictonary to hold key name and VK value
+# Giant dictionary to hold key name and VK value
 VK_CODE = {'backspace':0x08,
            'tab':0x09,
            'clear':0x0C,

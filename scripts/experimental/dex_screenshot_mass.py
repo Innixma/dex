@@ -9,7 +9,7 @@ from __future__ import print_function
 import cv2
 import numpy as np
 
-from utils.data_utils import loadMemory_direct
+from utils.data_utils import load_memory_direct
 
 
 # Experimental
@@ -49,7 +49,7 @@ class Screenshot_taker:
             print(level)
             gather_dir = '../data/gather_' + level + '/'
 
-            s, a, r, s_, t = loadMemory_direct(gather_dir)
+            s, a, r, s_, t = load_memory_direct(gather_dir)
 
             timelapse = np.arange(100, 350, 25)
 

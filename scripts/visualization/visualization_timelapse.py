@@ -10,7 +10,7 @@ import visualization
 from agents import models
 from agents.a3c.agent_a3c import Agent
 from parameters.hex import base_a3c
-from utils.data_utils import loadMemory_direct
+from utils.data_utils import load_memory_direct
 from utils.data_utils import load_weights
 
 results_folder = '../results/'
@@ -18,14 +18,15 @@ memory_folder = '../data/'
 
 
 def get_models(path):
-    onlyfiles = [f for f in listdir(path) if isfile(join(path, f))]
-    only_models = [f for f in onlyfiles if 'model_' in f and '.h5' in f]
+    only_files = [f for f in listdir(path) if isfile(join(path, f))]
+    only_models = [f for f in only_files if 'model_' in f and '.h5' in f]
     only_models_names = [f[:-3] for f in only_models if 'frame' not in f and 'max' not in f]
 
     print(only_models_names)
     only_models_run = [int(f[6:]) for f in only_models_names]
 
     return only_models_names, only_models_run
+
 
 def format_results(images, width=10, scale=1):
     length = len(images)
@@ -49,6 +50,7 @@ def format_results(images, width=10, scale=1):
 
     return new_array
 
+
 def gen_saliency(directory, directory_mem, txt):
 
     args = base_a3c
@@ -58,10 +60,9 @@ def gen_saliency(directory, directory_mem, txt):
     action_dim = 3
     brain = None
 
-
     path = results_folder + directory
 
-    #only_models_names, only_models_run = get_models(path)
+    # only_models_names, only_models_run = get_models(path)
     only_models_names = ['model_max']
     only_models_run = [txt]
 
@@ -76,7 +77,7 @@ def gen_saliency(directory, directory_mem, txt):
     path_mem = memory_folder + directory_mem + '/'
     extra = ''
 
-    s, a, r, s_, t = loadMemory_direct(path_mem, extra)
+    s, a, r, s_, t = load_memory_direct(path_mem, extra)
 
     frame = np.arange(2400, 2500, 4)
     frame = 2400
@@ -88,27 +89,27 @@ def gen_saliency(directory, directory_mem, txt):
 
     if len(s1.shape) != 4:
         s1 = s1.reshape([1] + list(s1.shape))
-        #s1 = np.repeat(s1, 2, axis=3)
+        # s1 = np.repeat(s1, 2, axis=3)
 
-    #idx = [b[0] for b in sorted(enumerate(only_models_run),key=lambda i:i[1])]
-    #only_models_run = [only_models_run[i] for i in idx]
-    #only_models_names = [only_models_names[i] for i in idx]
+    # idx = [b[0] for b in sorted(enumerate(only_models_run),key=lambda i:i[1])]
+    # only_models_run = [only_models_run[i] for i in idx]
+    # only_models_names = [only_models_names[i] for i in idx]
 
 
-    #text = [[str(i)] for i in only_models_run]
+    # text = [[str(i)] for i in only_models_run]
     text = [[str(i)] for i in only_models_run]
-    #frame = frame - np.min(frame)
-    #text = [str(i) for i in frame]
+    # frame = frame - np.min(frame)
+    # text = [str(i) for i in frame]
 
 
 
 
     output_list = []
     length = len(only_models_names)
-    #length2 = int(length/2)
+    # length2 = int(length/2)
 
     for i in range(0, length):
-    #for i in range(1):
+    # for i in range(1):
         name = only_models_names[i]
         curText = text[i]
         load_weights(agent, name)
@@ -117,20 +118,18 @@ def gen_saliency(directory, directory_mem, txt):
 
         output_list.extend(text_images)
 
-    #scale = 8
-    #rescale_images = visualization.rescale_images(output_list, scale)
-    #formatted = format_results(output_list)
-
-
+    # scale = 8
+    # rescale_images = visualization.rescale_images(output_list, scale)
+    # formatted = format_results(output_list)
 
     print(only_models_run)
     return output_list
 
-    #cv2.imshow('Saliency', formatted)
-    #cv2.waitKey(0)
-    #cv2.imwrite('outfile.png', formatted)
-    #img = smp.toimage(formatted, mode='P')
-    #smp.imsave('outfile.png', img)
+    # cv2.imshow('Saliency', formatted)
+    # cv2.waitKey(0)
+    # cv2.imwrite('outfile.png', formatted)
+    # img = smp.toimage(formatted, mode='P')
+    # smp.imsave('outfile.png', img)
 """
 levels = [
               'rotation_1',
@@ -171,10 +170,10 @@ directory_mem = ['experiment_v1/test_base_3' for d in directories]
 
 output_list = []
 
-nameList = [1,2,3,4,5,6,7,2,3,4,5,6,7]
-nameList = [1,2,3,2,3]
+name_list = [1, 2, 3, 4, 5, 6, 7, 2, 3, 4, 5, 6, 7]
+name_list = [1, 2, 3, 2, 3]
 for i in range(len(directories)):
-    output_list.extend(gen_saliency(directories[i], directory_mem[i], str(nameList[i])))
+    output_list.extend(gen_saliency(directories[i], directory_mem[i], str(name_list[i])))
 
 scale = 8
 rescale_images = visualization.rescale_images(output_list, scale)

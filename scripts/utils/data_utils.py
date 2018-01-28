@@ -29,14 +29,15 @@ def save_memory_subset(agent, pointer_start, pointer_end, frame_saved, skip=8):
                     )
     print('Memory Saved...')
 
-def load_weights(agent, filename_input=None): # TODO: Update this function
+
+def load_weights(agent, filename_input=None):  # TODO: Update this function
         if agent.args.directory == 'default':
             agent.args.directory = G.CUR_FOLDER
 
         results_location = G.RESULT_FOLDER_FULL + '/' + agent.args.directory
         data_location = G.DATA_FOLDER_FULL + '/' + agent.args.directory
-        os.makedirs(results_location,exist_ok=True) # Generates results folder
-        os.makedirs(data_location,exist_ok=True) # Generates data folder
+        os.makedirs(results_location,exist_ok=True)  # Generates results folder
+        os.makedirs(data_location,exist_ok=True)  # Generates data folder
         agent.results_location = results_location + '/'
         agent.data_location = data_location + '/'
 
@@ -53,29 +54,30 @@ def load_weights(agent, filename_input=None): # TODO: Update this function
 
         if agent.args.mode == 'run':
             try:
-                agent.h.extra.observe = 999999999    # Never train
+                agent.h.extra.observe = 999999999  # Never train
             except:
                 pass
             agent.mode = 'observe'
             agent.epsilon = 0
-            print ("Now we load weight from " + agent.results_location + filename + '.h5')
+            print("Now we load weight from " + agent.results_location + filename + '.h5')
             agent.brain.model.load_weights(agent.results_location + filename + '.h5')
 
-            print ("Weights loaded successfully")
-        elif agent.args.mode == 'train_old': # Continue training old network
+            print("Weights loaded successfully")
+        elif agent.args.mode == 'train_old':  # Continue training old network
             agent.epsilon = agent.h.epsilon_init
-            print ("Now we load weight from " + agent.results_location + filename + '.h5')
+            print("Now we load weight from " + agent.results_location + filename + '.h5')
             agent.brain.model.load_weights(agent.results_location + filename + '.h5')
-            print ("Weights loaded successfully, training")
-        elif agent.args.mode == 'gather': # Gather data, then exit
+            print("Weights loaded successfully, training")
+        elif agent.args.mode == 'gather':  # Gather data, then exit
             print('Gathering Data')
             if agent.args.weight_override:
                 agent.epsilon = agent.h.epsilon_init
                 print ("Now we load weight from " + agent.results_location + filename + '.h5')
                 agent.brain.model.load_weights(agent.results_location + filename + '.h5')
-        else: # Train new
+        else:  # Train new
             print('Training new network!')
             agent.epsilon = agent.h.epsilon_init
+
 
 def save_weights(agent, addon=None):
     name = 'model'
@@ -86,16 +88,18 @@ def save_weights(agent, addon=None):
     with open(agent.results_location + name + '.json', "w") as outfile:
         json.dump(agent.brain.model.to_json(), outfile)
 
+
 # Saves memory, hyperparams, and screen info
-def saveAll(agent):
-    saveMemory_v2(agent)
-    hyperfile = agent.data_location + 'hyper'
-    screenfile = agent.data_location + 'screen'
-    save_class(agent.h, hyperfile)
-    save_class(agent.args.screen, screenfile)
+def save_all(agent):
+    save_memory_v2(agent)
+    hyper_file = agent.data_location + 'hyper'
+    screen_file = agent.data_location + 'screen'
+    save_class(agent.h, hyper_file)
+    save_class(agent.args.screen, screen_file)
+
 
 # For Memory_v2 agents
-def saveMemory_v2(agent):
+def save_memory_v2(agent):
     memory = agent.brain.brain_memory
     np.savez_compressed(
                         agent.data_location+'memory.npz',
@@ -144,16 +148,19 @@ def saveMemory(agent):
     #return #a
 """
 
+
 # Saves class info
 def save_class(object_, location):
     with open(location,"wb") as file:
         pickle.dump(object_, file)
 
-def loadClass(location):
+
+def load_class(location):
     with open(location,"rb") as file:
         return pickle.load(file)
 
-def loadMemory_v2(agent, memory_location, extra=''):
+
+def load_memory_v2(agent, memory_location, extra=''):
     memory = np.load(memory_location + 'memory' + extra + '.npz')
     agent.brain.brain_memory.s  = memory['s' ]
     agent.brain.brain_memory.a  = memory['a' ]
@@ -161,14 +168,14 @@ def loadMemory_v2(agent, memory_location, extra=''):
     agent.brain.brain_memory.s_ = memory['s_']
     agent.brain.brain_memory.t  = memory['t' ]
 
-
     agent.brain.brain_memory.size = agent.brain.brain_memory.s.shape[0]
     agent.brain.brain_memory.max_size = agent.brain.brain_memory.size
     agent.brain.brain_memory.total_saved = agent.brain.brain_memory.size
-    agent.brain.brain_memory.isFull = True
+    agent.brain.brain_memory.is_full = True
     print('Importing', agent.brain.brain_memory.size, 'states')
 
-def loadMemory_direct(memory_location, extra=''):
+
+def load_memory_direct(memory_location, extra=''):
     memory = np.load(memory_location + 'memory' + extra + '.npz')
     s  = memory['s' ]
     a  = memory['a' ]

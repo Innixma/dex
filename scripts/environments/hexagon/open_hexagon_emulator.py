@@ -18,7 +18,7 @@ from utils import globs as G
 
 class HexagonEmulator:
 
-    def __init__(self, screen_info, screen_id=-1, screen_number=0, rewards=[1,-1], mode='standard'): # window_size = x,y
+    def __init__(self, screen_info, screen_id=-1, screen_number=0, rewards=[1,-1], mode='standard'):  # window_size = x,y
         self.keys = np.array(['none', 'left_arrow', 'right_arrow'])
         self.scale = screen_info.scale
         self.action_dim = 3
@@ -31,20 +31,18 @@ class HexagonEmulator:
         else:
             self.game_window = self.screen_id
 
-        #self.window_size = screen_info.size
+        # self.window_size = screen_info.size
         self.window_size = [0,0]
-        #self.window_offset = [(self.window_size[0]+10)*self.screen_number,0] # [0, 0]
-        #self.capture_size = [0,0]
+        # self.window_offset = [(self.window_size[0]+10)*self.screen_number,0]  # [0, 0]
+        # self.capture_size = [0,0]
         self.capture_size = np.copy(screen_info.size)
-        self.window_offset = [(self.capture_size[0]+10)*self.screen_number,0] # [0, 0]
+        self.window_offset = [(self.capture_size[0]+10)*self.screen_number,0]  # [0, 0]
         self.capture_offset = [0,0]
         self.capture_zoom = screen_info.zoom
         self.reward_alive = rewards[0]
         self.reward_terminal = rewards[1]
         self.mode = mode
         self.alive = False
-
-
 
         self.configure()
         self.get_application_focus()
@@ -68,14 +66,13 @@ class HexagonEmulator:
             self.state_dim[1] = int(self.state_dim[1]/self.scale)
 
         print(self.state_dim)
-    #==============================================================================
 
     def start_game(self):
         self.get_focus_light()
-        #time.sleep(0.05)
+        # time.sleep(0.05)
         self.press('enter')
         time.sleep(0.05)
-        #self.get_focus_light()
+        # self.get_focus_light()
         self.release('enter')
         self.alive = True
 
@@ -83,26 +80,26 @@ class HexagonEmulator:
         self.get_focus_light()
         self.release(self.curKey)
         time.sleep(0.2)
-        #self.get_focus_light()
+        # self.get_focus_light()
         self.press('esc')
         time.sleep(0.05)
-        #self.get_focus_light()
+        # self.get_focus_light()
         self.release('esc')
         self.alive = False
         time.sleep(0.03)
 
     def get_focus_light(self):
-        #hwnd = win32gui.FindWindow(None, self.application)
-        #shell = win32com.client.Dispatch("WScript.Shell")
-        #self.shell.SendKeys('%')
+        # hwnd = win32gui.FindWindow(None, self.application)
+        # shell = win32com.client.Dispatch("WScript.Shell")
+        # self.shell.SendKeys('%')
         try:
             win32gui.SetForegroundWindow(self.game_window)
         except Exception as e:
             print(str(e))
 
     def get_application_focus(self):
-        #hwnd = win32gui.FindWindow(None, self.application)
-        #shell = win32com.client.Dispatch("WScript.Shell")
+        # hwnd = win32gui.FindWindow(None, self.application)
+        # shell = win32com.client.Dispatch("WScript.Shell")
         self.shell.SendKeys('%')
         win32gui.SetForegroundWindow(self.game_window)
         win32gui.MoveWindow(self.game_window, self.window_offset[0], self.window_offset[1], self.window_size[0], self.window_size[1], True)
@@ -114,30 +111,26 @@ class HexagonEmulator:
         return
 
     def press(self, *args):
-        '''
-        one press
-        accepts as many arguments as you want. e.g. press('left_arrow', 'a','b').
-        '''
+        # one press
+        # accepts as many arguments as you want. e.g. press('left_arrow', 'a','b').
         for i in args:
             if i != 'none':
                 win32api.keybd_event(G.VK_CODE[i], 0, 0, 0)
 
     def release(self, *args):
-        '''
-        release depressed keys
-        accepts as many arguments as you want.
-        e.g. release('left_arrow', 'a','b').
-        '''
+        # release depressed keys
+        # accepts as many arguments as you want.
+        # e.g. release('left_arrow', 'a','b').
         for i in args:
             if i != 'none':
                 win32api.keybd_event(G.VK_CODE[i], 0, win32con.KEYEVENTF_KEYUP, 0)
 
     def configure(self):
-        #win32gui.SetForegroundWindow(hwnd)
+        # win32gui.SetForegroundWindow(hwnd)
         time.sleep(0.5)
 
-        #self.capture_offset[0] = 10
-        #self.capture_offset[1] = 31
+        # self.capture_offset[0] = 10
+        # self.capture_offset[1] = 31
         self.capture_offset[0] = 9
         self.capture_offset[1] = 32
 
@@ -149,12 +142,11 @@ class HexagonEmulator:
         print(self.capture_size)
         print(self.window_size)
 
-        #self.window_size[0] += 21
-        #self.window_size[1] += 41
+        # self.window_size[0] += 21
+        # self.window_size[1] += 41
 
-        #self.capture_size[0] = self.window_size[0] - self.capture_offset[0] - 10
-        #self.capture_size[1] = self.window_size[1] - self.capture_offset[1] - 10
-
+        # self.capture_size[0] = self.window_size[0] - self.capture_offset[0] - 10
+        # self.capture_size[1] = self.window_size[1] - self.capture_offset[1] - 10
 
         # Center on image
         self.capture_offset[0] += self.window_offset[0]
@@ -173,49 +165,47 @@ class HexagonEmulator:
             self.capture_size[1] += 1
 
         # Marked for deletion:
-        #if G.image_mode == 'polar':
-        #    self.capture_size[1] -= 14
+        # if G.image_mode == 'polar':
+        #     self.capture_size[1] -= 14
 
     # Capture 1 screenshot
-    def captureIm(self):
+    def capture_img(self):
         self.cDC.BitBlt((0, 0), (self.capture_size[0], self.capture_size[1]), self.dcObj, (self.capture_offset[0], self.capture_offset[1]), win32con.SRCCOPY)
         image = np.frombuffer(self.dataBitMap.GetBitmapBits(True), dtype=np.uint8).reshape((self.capture_size[1], self.capture_size[0], 4))[:,:,:-1][:,:,::-1]
 
         # ----------------------------------------------------
         # Polar Conversion
-        #if self.mode == 'polar':
+        # if self.mode == 'polar':
         #    image = convert_to_polar.reproject_image_into_polar(image)[0].reshape((self.capture_size[1], self.capture_size[0], 3))
         #    image = image[14:][:]
         # ----------------------------------------------------
 
-
-
         # ----
         # Testing
-        #img = smp.toimage(image)
-        #smp.imsave('outfile.png', img)
-        #img.show()
-        #exit()
+        # img = smp.toimage(image)
+        # smp.imsave('outfile.png', img)
+        # img.show()
+        # exit()
         # ----
 
         return image
 
     # Converts image to grayscale, and forces image to proper dimensions
-    def prepareImage(self, image):
+    def prepare_image(self, image):
 
-        tmpImage = color.rgb2gray(image).astype('float16')
+        tmp_image = color.rgb2gray(image).astype('float16')
 
         # Following line commented out Feb 25 2017, due to potential issues caused.
-        #tmpImage = skimage.exposure.rescale_intensity(tmpImage, out_range=(0, 255))
+        # tmp_image = skimage.exposure.rescale_intensity(tmp_image, out_range=(0, 255))
 
         if self.scale != 1:
-            tmpImage = transf.downscale_local_mean(tmpImage, (self.scale,self.scale)) # Downsample
+            tmp_image = transf.downscale_local_mean(tmp_image, (self.scale,self.scale)) # Downsample
 
-        tmpImage = tmpImage.reshape(tmpImage.shape[0], tmpImage.shape[1], 1) # Tensorflow
-        return tmpImage
+        tmp_image = tmp_image.reshape(tmp_image.shape[0], tmp_image.shape[1], 1) # Tensorflow
+        return tmp_image
 
     # Free resources
-    def freeResources(self):
+    def free_resources(self):
 
         self.dcObj.DeleteDC()
         self.cDC.DeleteDC()
@@ -231,29 +221,29 @@ class HexagonEmulator:
         return t
 
     # Game state function
-    def step(self, inKey=0):
-        if self.alive == False:
+    def step(self, in_key=0):
+        if self.alive is False:
             print('invalid step call')
             return False
 
-        inKey = self.keys[inKey]
-        #self.get_focus_light()
+        in_key = self.keys[in_key]
+        # self.get_focus_light()
         self.release(self.curKey)
-        self.press(inKey)
+        self.press(in_key)
 
         self.prevKey = self.curKey
-        self.curKey = inKey
+        self.curKey = in_key
 
-        s = self.captureIm()
-        s = self.prepareImage(s)
+        s = self.capture_img()
+        s = self.prepare_image(s)
         t = terminal_detection.check_terminal(s)
 
         if t:
-            self.release(inKey)
+            self.release(in_key)
             r = self.reward_terminal
             self.alive = False
             self.end_game()
         else:
             r = self.reward_alive
 
-        return(s, r, t)
+        return s, r, t
